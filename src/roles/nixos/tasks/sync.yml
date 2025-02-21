@@ -1,0 +1,14 @@
+- name: Ensure /etc/nixos directory exists
+  become: true
+  file:
+    path: /etc/nixos
+    state: directory
+    mode: '0755'
+
+- name: Synchronize NixOS configuration to /etc/nixos
+  become: true
+  synchronize:
+    src: "{{ role_path }}/files/etc/nixos/"
+    dest: /etc/nixos/
+    recursive: true
+    delete: true

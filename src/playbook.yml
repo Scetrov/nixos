@@ -1,0 +1,4 @@
+- name: Deploy NixOS Configuration
+  hosts: localhost
+  roles:
+    - nixos

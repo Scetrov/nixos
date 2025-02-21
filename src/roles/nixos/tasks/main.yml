@@ -1,0 +1,8 @@
+- name: Include NixOS sync tasks
+  ansible.builtin.include_tasks: sync.yml
+
+- name: Include NixOS rebuild tasks
+  ansible.builtin.include_tasks: rebuild.yml
+
+- name: Include NixOS garbage collection tasks
+  ansible.builtin.include_tasks: gc.yml

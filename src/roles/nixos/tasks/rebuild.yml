@@ -1,0 +1,8 @@
+- name: Apply NixOS configuration
+  become: true
+  command: nixos-rebuild switch --upgrade
+  register: nixos_output
+  changed_when: "'switching' in nixos_output.stdout"
+
+- debug:
+    var: nixos_output.stdout_lines
