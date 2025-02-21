@@ -1,0 +1,7 @@
+- name: Add Nix Packages Unstable
+  become: true
+  command: nix-channel --add https://nixos.org/channels/nixpkgs-unstable
+
+- name: Nix Channel Update
+  become: true
+  command: nix-channel --update
