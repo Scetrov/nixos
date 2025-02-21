@@ -1,4 +1,4 @@
-{ config, pkgs, ...}:
+{ config, pkgs, ... }:
 let
   baseconfig = { allowUnfree = true; };
 in {
