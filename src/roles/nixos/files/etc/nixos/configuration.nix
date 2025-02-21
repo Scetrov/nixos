@@ -3,7 +3,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ./modules/defaults.nix
     ./modules/locale.nix
     ./modules/maintenance.nix
     ./modules/networking.nix
@@ -12,13 +11,14 @@
     ./modules/pkgs-latest.nix
     ./modules/programs.nix
     ./modules/security.nix
-    ./modules/user-secetrov.nix
+    ./modules/user-scetrov.nix
     ./modules/docker.nix
     ./modules/xserver.nix
   ];
 
-  virtualisation.docker.enable = true;
-  services.dockerRegistry.enableGarbageCollect = true;
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+  nixpkgs.config.allowUnfree = true;
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions

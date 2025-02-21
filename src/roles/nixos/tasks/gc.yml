@@ -1,0 +1,4 @@
+- name: Garbage Collect Nix Store
+  become: true
+  command: nix-collect-garbage
+  

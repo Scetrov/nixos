@@ -10,5 +10,7 @@ in {
     nodejs_18
     nodejs_18.pkgs.pnpm
     gcc
+    ansible
+    python3
   ];
 }

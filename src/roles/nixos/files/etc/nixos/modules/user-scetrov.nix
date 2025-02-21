@@ -23,9 +23,8 @@
       discord
       jetbrains.rider
       dotnetCorePackages.dotnet_9.sdk
-      ansible
       btop
-      nixfmt
+      nixfmt-rfc-style
     ];
   };
 }
