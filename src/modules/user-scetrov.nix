@@ -16,7 +16,6 @@
       rustup
       lsb-release
       git
-      zig
       curl
       vscode-fhs
       fira-code-nerdfont
