@@ -1,6 +1,14 @@
+- name: Add NixOS 24.11
+  become: true
+  command: nix-channel --add https://nixos.org/channels/nixos-24.11 nixos
+
+- name: Add Nix Unstable
+  become: true
+  command: nix-channel --add https://nixos.org/channels/nixos-unstable nixos-unstable
+
 - name: Add Nix Packages Unstable
   become: true
-  command: nix-channel --add https://nixos.org/channels/nixpkgs-unstable
+  command: nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
 
 - name: Nix Channel Update
   become: true
