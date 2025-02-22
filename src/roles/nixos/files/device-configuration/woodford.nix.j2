@@ -2,6 +2,7 @@
 
 {
   networking = {
+    useDHCP = false;
     networkmanager.enable = false;
     wireless.enable = true;
     wireless.networks = {
@@ -12,7 +13,6 @@
     hostName = "woodford";
     defaultGateway = "10.229.0.1";
     interfaces.wlp0s20f3 = {
-      useDHCP = false;
       ipv4.addresses = [
         {
           address = "10.229.0.40";
