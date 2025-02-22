@@ -20,7 +20,7 @@
       dest: /etc/nixos/hardware-configuration.nix
   - name: Configure 'Blade 15 Advanced Model (Early 2020) - RZ09-033' Device
     copy:
-      src: "{{ role_path }}/files/device-configuration/woodford.nix"
+      src: "{{ role_path }}/files/device-configuration/woodford.nix.j2"
       dest: /etc/nixos/device-configuration.nix
   when:
     - ansible_product_name == "Blade 15 Advanced Model (Early 2020) - RZ09-033"
