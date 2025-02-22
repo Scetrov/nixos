@@ -35,6 +35,7 @@
       rustup
       tmux
       vscode-fhs
+      oh-my-posh
     ];
   };
 }

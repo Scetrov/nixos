@@ -2,11 +2,16 @@
 
 {
   networking = {
-    wireless.enable = true;
     networkmanager.enable = false;
+    wireless.enable = true;
+    wireless.networks = {
+      "{{ wireless_ssid }}" = {
+        psk = "{{ wireless_psk }}";
+      };
+    };
     hostName = "woodford";
     defaultGateway = "10.229.0.1";
-    interfaces.wlo0.ipv4.addresses = [
+    interfaces.wlp0s20f3.ipv4.addresses = [
       {
         address = "10.229.0.40";
         prefixLength = 16;
