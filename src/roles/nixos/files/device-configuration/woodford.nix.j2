@@ -11,11 +11,14 @@
     };
     hostName = "woodford";
     defaultGateway = "10.229.0.1";
-    interfaces.wlp0s20f3.ipv4.addresses = [
-      {
-        address = "10.229.0.40";
-        prefixLength = 16;
-      }
-    ];
+    interfaces.wlp0s20f3 = {
+      useDHCP = false;
+      ipv4.addresses = [
+        {
+          address = "10.229.0.40";
+          prefixLength = 16;
+        }
+      ];
+    };
   };
 }
