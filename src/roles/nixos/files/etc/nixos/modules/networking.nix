@@ -2,18 +2,11 @@
 
 {
   networking = {
-    wireless.enable = false;
     networkmanager.enable = true;
 
     nameservers = [ "127.0.0.1" "::1" ];
     networkmanager.dns = "none";
 
-    hostName = "nixos";
-    defaultGateway = "10.229.0.1";
-    interfaces.eth0.ipv4.addresses = [ {
-      address = "10.229.0.39";
-      prefixLength = 16;
-    } ];
     firewall.allowedTCPPorts = [ 22 3389 ];
   };
 
