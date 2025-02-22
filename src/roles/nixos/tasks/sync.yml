@@ -19,7 +19,7 @@
       src: "{{ role_path }}/files/hardware-configuration/blade-15-advanced-early-2020-RZ09-033.nix"
       dest: /etc/nixos/hardware-configuration.nix
   - name: Configure 'Blade 15 Advanced Model (Early 2020) - RZ09-033' Device
-    copy:
+    template:
       src: "{{ role_path }}/files/device-configuration/woodford.nix.j2"
       dest: /etc/nixos/device-configuration.nix
   when:
