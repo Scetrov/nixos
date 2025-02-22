@@ -4,10 +4,11 @@ This repository stores the NixOS configuration and an Ansible Playbook used to p
 
 ## Running
 
-Ansible needs to be installed, which can be done initially with:
+Ansible needs to be installed and you will need access to the vault password, which can be done initially with:
 
 ```
 nix-shell -p ansible python3
+echo "[INSERT PASSWORD]" > ~/.ansible/nixos_vault_password
 ```
 
 > [!TIP]
@@ -16,7 +17,7 @@ nix-shell -p ansible python3
 Then execute the playbook from the root:
 
 ```
-ansible-playbook -i src/inventory.yml src/playbook.yml
+ansible-playbook -i src/inventory.yml src/playbook.yml --vault-password-file ~/.ansible/.nixos_vault_password
 ```
 ## Reference
 
