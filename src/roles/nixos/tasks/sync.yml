@@ -13,17 +13,27 @@
     recursive: true
     delete: true
 
-- name: Configure 'Blade 15 Advanced Model (Early 2020) - RZ09-033'
-  copy:
-    src: "{{ role_path }}/files/hardware-configuration/blade-15-advanced-early-2020-RZ09-033.nix"
-    dest: /etc/nixos/hardware-configuration.nix
+- block:
+  - name: Configure 'Blade 15 Advanced Model (Early 2020) - RZ09-033' Hardware
+    copy:
+      src: "{{ role_path }}/files/hardware-configuration/blade-15-advanced-early-2020-RZ09-033.nix"
+      dest: /etc/nixos/hardware-configuration.nix
+  - name: Configure 'Blade 15 Advanced Model (Early 2020) - RZ09-033' Device
+    copy:
+      src: "{{ role_path }}/files/device-configuration/woodford.nix"
+      dest: /etc/nixos/device-configuration.nix
   when:
     - ansible_product_name == "Blade 15 Advanced Model (Early 2020) - RZ09-033"
 
-- name: Configure 'Hyper-V Virtual Machine'
-  copy:
-    src: "{{ role_path }}/files/hardware-configuration/hyperv-virtual-machine.nix"
-    dest: /etc/nixos/hardware-configuration.nix
+- block:
+  - name: Configure 'Hyper-V Virtual Machine' Hardware
+    copy:
+      src: "{{ role_path }}/files/hardware-configuration/hyperv-virtual-machine.nix"
+      dest: /etc/nixos/hardware-configuration.nix
+  - name: Configure 'Hyper-V Virtual Machine' Device
+    copy:
+      src: "{{ role_path }}/files/device-configuration/bullit.nix"
+      dest: /etc/nixos/device-configuration.nix
   when:
     - ansible_product_name == "Virtual Machine"
     - ansible_system_vendor == "Microsoft Corporation"
