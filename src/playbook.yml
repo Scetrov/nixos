@@ -1,5 +1,5 @@
 - name: Deploy NixOS Configuration
-  hosts: localhost
+  hosts: all
   vars_files:
     - secrets.yml
   roles:
