@@ -2,7 +2,7 @@
 
     - name: Create keys
       become: true
-      command: sbctl create-keys
+      command: sbctl create-keys --export /var/lib/sbctl --database-path /var/lib/sbctl
 
     - name: Check LUKS header for each candidate device
       command: cryptsetup luksDump /dev/{{ item }}
