@@ -1,6 +1,6 @@
 { pkgs, lib, ... }:
 let
-  unstable = import <nixos-unstable> { config = baseconfig; };
+  unstable = import <nixos-unstable>;
 in {
   environment.systemPackages = [
     # For debugging and troubleshooting Secure Boot.
@@ -16,8 +16,8 @@ in {
   # for now.
   boot.loader.systemd-boot.enable = lib.mkForce false;
 
-  # boot.lanzaboote = {
-  #   enable = true;
-  #   pkiBundle = "/var/lib/sbctl";
-  # };
+  boot.lanzaboote = {
+    enable = true;
+    pkiBundle = "/var/lib/sbctl";
+  };
 }
