@@ -1,0 +1,34 @@
+- block:
+
+    - name: Check LUKS header for each candidate device
+      command: cryptsetup luksDump /dev/{{ item }}
+      loop: "{{ luks_candidates }}"
+      register: luks_dump_results
+      ignore_errors: yes
+
+    - name: Determine which volumes are LUKS2
+      set_fact:
+        luks2_volumes: >-
+          {{
+            luks_dump_results.results
+            | selectattr('stdout', 'search', 'Version: 2')
+            | map(attribute='item')
+            | list
+          }}
+
+    - name: "Debug output: list of LUKS2 volumes found"
+      debug:
+        msg: "Found LUKS2 volumes: {{ luks2_volumes }}"
+
+    - name: Bind TPM2 to each LUKS2 volume using Clevis
+      command: "clevis luks bind -d /dev/{{ item }} tpm2 '{\"pcr_ids\": \"7\"}'"
+      loop: "{{ luks2_volumes }}"
+      register: clevis_bind_results
+      ignore_errors: yes
+
+    - name: Show TPM2 binding results
+      debug:
+        msg: "{{ clevis_bind_results.results }}"
+
+  when:
+    - ansible_product_name == "Blade 15 Advanced Model (Early 2020) - RZ09-033"

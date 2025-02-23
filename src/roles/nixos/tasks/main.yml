@@ -9,3 +9,6 @@
 
 - name: Include NixOS garbage collection tasks
   ansible.builtin.include_tasks: gc.yml
+
+- name: Include Luks for encryption
+  ansible.builtin.include_tasks: luks.yml
