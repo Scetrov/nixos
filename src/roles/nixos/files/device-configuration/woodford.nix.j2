@@ -2,24 +2,27 @@
 
 {
   networking = {
-    useDHCP = false;
-    dhcpcd.enable = false;
-    networkmanager.enable = false;
-    wireless.enable = true;
-    wireless.networks = {
-      "{{ wireless_ssid }}" = {
-        psk = "{{ wireless_psk }}";
-      };
-    };
+    networkmanager.enable = true;
     hostName = "woodford";
     defaultGateway = "10.229.0.1";
-    interfaces.wlp0s20f3 = {
-      ipv4.addresses = [
-        {
-          address = "10.229.0.40";
-          prefixLength = 16;
-        }
-      ];
-    };
   };
+
+  environment.etc."NetworkManager/system-connections/simian.collingwood" = {
+    text = ''
+      [connection]
+      id=simian.collingwood
+      uuid=00112233-4455-6677-8899-aabbccddeeff
+      type=wifi
+
+      [wifi]
+      ssid={{ wireless_ssid }}
+
+      [wifi-security]
+      psk={{ wireless_psk }}
+
+      [ipv4]
+      method=auto
+    '';
+    mode = "0400";
+  }
 }
