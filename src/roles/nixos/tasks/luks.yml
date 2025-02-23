@@ -1,5 +1,9 @@
 - block:
 
+    - name: Create keys
+      become: true
+      command: sbctl create-keys
+
     - name: Check LUKS header for each candidate device
       command: cryptsetup luksDump /dev/{{ item }}
       loop: "{{ luks_candidates }}"
