@@ -14,4 +14,13 @@
       PermitRootLogin = "no";
     };
   };
+
+  services.pcscd.enable = true;
+
+  security.pam.yubico = {
+    enable = true;
+    debug = true;
+    mode = "challenge-response";
+    id = [ "11073070" ];
+  };
 }
