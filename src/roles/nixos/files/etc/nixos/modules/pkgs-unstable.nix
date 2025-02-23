@@ -10,6 +10,5 @@ in {
     brave
     obsidian
     hugo
-    waypipe
   ];
 }
