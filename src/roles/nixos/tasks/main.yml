@@ -1,6 +1,3 @@
-- name: Include Luks for encryption
-  ansible.builtin.include_tasks: luks.yml
-
 - name: Include Nix Channel tasks
   ansible.builtin.include_tasks: channel.yml
 
