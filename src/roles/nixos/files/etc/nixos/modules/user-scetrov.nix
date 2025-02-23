@@ -36,6 +36,7 @@
       tmux
       vscode-fhs
       oh-my-posh
+      yubioath-flutter
     ];
   };
 }
