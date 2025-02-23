@@ -11,6 +11,7 @@
       ignore_errors: yes
 
     - name: Determine which volumes are LUKS2
+      become: true
       set_fact:
         luks2_volumes: >-
           {{
@@ -25,6 +26,7 @@
         msg: "Found LUKS2 volumes: {{ luks2_volumes }}"
 
     - name: Bind TPM2 to each LUKS2 volume using Clevis
+      become: true
       command: "clevis luks bind -d /dev/{{ item }} tpm2 '{\"pcr_ids\": \"7\"}'"
       loop: "{{ luks2_volumes }}"
       register: clevis_bind_results
