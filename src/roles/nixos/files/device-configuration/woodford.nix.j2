@@ -1,6 +1,10 @@
 { config, ... }:
 
 {
+  imports = [
+    ./luks.nix
+  ];
+
   networking = {
     networkmanager.enable = true;
     hostName = "woodford";
