@@ -9,6 +9,7 @@ in
   environment.systemPackages = [
     # For debugging and troubleshooting Secure Boot.
     pkgs.sbctl
+    pkgs.mokutiln
   ];
 
   # Lanzaboote currently replaces the systemd-boot module.
