@@ -4,7 +4,6 @@
 
 {
   environment.systemPackages = [
-    luksCryptenroller
     # For debugging and troubleshooting Secure Boot.
     pkgs.sbctl
     # Needed to use the TPM2 chip with `systemd-cryptenroll`
