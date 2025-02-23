@@ -37,6 +37,7 @@
       vscode-fhs
       oh-my-posh
       yubioath-flutter
+      usbutils
     ];
   };
 }
