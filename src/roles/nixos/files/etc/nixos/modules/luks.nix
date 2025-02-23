@@ -1,7 +1,7 @@
 { pkgs, lib, ... }:
 let
-  sources = import ./nix/sources.nix;
-  lanzaboote = import sources.lanzaboote;
+    sources = import ./nix/sources.nix;
+    lanzaboote = import sources.lanzaboote;
 in
 {
   imports = [ lanzaboote.nixosModules.lanzaboote ];
@@ -9,9 +9,6 @@ in
   environment.systemPackages = [
     # For debugging and troubleshooting Secure Boot.
     pkgs.sbctl
-    # Needed to use the TPM2 chip with `systemd-cryptenroll`
-    pkgs.tpm2-tss
-    pkgs.clevis
   ];
 
   # Lanzaboote currently replaces the systemd-boot module.
