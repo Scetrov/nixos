@@ -1,8 +1,7 @@
-# cite: https://laniakita.com/blog/d1fa986f/nixos-fde-tpm-hm-guide
-
 { pkgs, lib, ... }:
-
-{
+let
+  unstable = import <nixos-unstable> { config = baseconfig; };
+in {
   environment.systemPackages = [
     # For debugging and troubleshooting Secure Boot.
     pkgs.sbctl
@@ -17,8 +16,8 @@
   # for now.
   boot.loader.systemd-boot.enable = lib.mkForce false;
 
-  boot.lanzaboote = {
-    enable = true;
-    pkiBundle = "/var/lib/sbctl";
-  };
+  # boot.lanzaboote = {
+  #   enable = true;
+  #   pkiBundle = "/var/lib/sbctl";
+  # };
 }
