@@ -6,21 +6,31 @@
     hostName = "woodford";
   };
 
-  environment.etc."NetworkManager/system-connections/simian.collingwood" = {
+  environment.etc."NetworkManager/system-connections/simian.collingwood.nmconnection" = {
     text = ''
       [connection]
-      id=simian.collingwood
-      uuid=00112233-4455-6677-8899-aabbccddeeff
+      id={{ wireless_ssid }}
+      uuid=166120e1-3fd9-422e-8617-fa49a597abf5
       type=wifi
+      interface-name=wlo1
 
       [wifi]
+      mode=infrastructure
       ssid={{ wireless_ssid }}
 
       [wifi-security]
+      auth-alg=open
+      key-mgmt=wpa-psk
       psk={{ wireless_psk }}
 
       [ipv4]
       method=auto
+
+      [ipv6]
+      addr-gen-mode=default
+      method=auto
+
+      [proxy]
     '';
     mode = "0400";
   };
