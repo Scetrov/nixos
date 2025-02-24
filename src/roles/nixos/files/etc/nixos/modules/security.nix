@@ -15,23 +15,22 @@
     };
   };
 
-  services.pcscd.enable = false;
-
-  security.pam.yubico = {
-    enable = true;
-    debug = true;
-    mode = "challenge-response";
-    id = [ "11073070" ];
+  security = {
+    pam.u2f.enable = true;
   };
 
-  services.udev.extraRules = ''
-    ACTION!="add|change", GOTO="yubikey_end"
-
-    # Udev rule for YubiKey 5 series (e.g. YubiKey 5 NFC)
-    ATTRS{idVendor}=="1050", ATTRS{idProduct}=="0113|0114|0115|0116|0120|0402|0403|0406|0407|0410", \
-        ENV{ID_SECURITY_TOKEN}="1"
-
-    LABEL="yubikey_end"
-  '';
+  security.pam.services = {
+    login.u2fAuth = true;
+    sudo.u2fAuth = true;
+  };
   
+  services = {
+    pcscd.enable = true;
+
+    udev = {
+      packages = [
+        pkgs.yubikey-personalization
+      ];
+    };
+  };
 }

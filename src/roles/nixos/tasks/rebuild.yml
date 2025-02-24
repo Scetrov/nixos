@@ -1,5 +1,50 @@
+- name: Get current git commit hash from the current repo on the local machine
+  delegate_to: localhost
+  command: git rev-parse HEAD
+  args:
+    chdir: "{{ playbook_dir }}"
+  register: git_hash
+  changed_when: false
+
+- name: Get the most recent git commit message
+  delegate_to: localhost
+  command: git log -1 --pretty=%B
+  args:
+    chdir: "{{ playbook_dir }}"
+  register: git_commit_message
+  changed_when: false
+
+- name: Set fact for recent git commit message
+  delegate_to: localhost
+  set_fact:
+    recent_git_commit_message: "{{ git_commit_message.stdout }}"
+  run_once: true
+
+- name: Set fact for current git hash
+  delegate_to: localhost
+  set_fact:
+    current_git_hash: "{{ git_hash.stdout }}"
+  run_once: true
+
+- name: Generate label
+  vars:
+    current_date: "{{ ansible_date_time.date }}"
+    commit_message: "{{ recent_git_commit_message }}"
+    commit_hash: "{{ current_git_hash[:7] }}"
+  set_fact:
+    nixos_label: "{{ current_date }}-{{ commit_hash }}-{{ commit_message }}"
+
+- name: Sanitise label
+  set_fact:
+    clean_nixos_label: "{{ nixos_label | regex_replace('\\(\\):\\s', ':') | regex_replace('[^a-zA-Z0-9:_\\.-]', '_') }}"
+
+- debug:
+    var: clean_nixos_label
+
 - name: Apply NixOS configuration
   become: true
+  environment:
+    NIXOS_LABEL: "{{ clean_nixos_label }}"
   command: nixos-rebuild switch --upgrade
   register: nixos_output
   changed_when: "'switching' in nixos_output.stdout"
