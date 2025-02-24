@@ -4,7 +4,8 @@ let
   unstable = import <nixos-unstable> { config = baseconfig; };
 in {
   environment.systemPackages = with unstable; [
-    bottles-unwrapped
+    bottles
     vulkan-tools
+    winePackages.stableFull
   ];
 }
