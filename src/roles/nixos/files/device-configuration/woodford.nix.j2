@@ -6,21 +6,23 @@
     hostName = "woodford";
   };
 
+  services.xserver.videoDrivers = ["nvidia"];
+
   hardware.graphics = {
     enable = true;
-    enable32Bit = true;
   };
 
-  services.xserver.videoDrivers = [ "nvidia" ];
-
-  hardware.nvidia.modesetting.enable = true;
-
-  hardware.nvidia.prime = {
-    sync.enable = true;
-
-    # dedicated
-    nvidiaBusId = "PCI:1:0:0";
-  };
+  hardware.nvidia = {
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
+    modesetting.enable = true;
+    powerManagement.enable = false;
+    powerManagement.finegrained = true;
+    open = false;
+    nvidiaSettings = true;
+    prime = {
+      nvidiaBusId = "PCI:1:0:0";
+    }
+  }
 
   environment.etc."NetworkManager/system-connections/simian.collingwood.nmconnection" = {
     text = ''
