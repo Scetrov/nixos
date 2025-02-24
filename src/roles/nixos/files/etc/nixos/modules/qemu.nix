@@ -4,8 +4,14 @@ let
   unstable = import <nixos-unstable> { config = baseconfig; };
 in {
   environment.systemPackages = with unstable; [
-    lutris
-    vulkan-tools
-    winePackages.stableFull
+    qemu
+    virt-manager
+    virt-viewer
+    spice
+    spice-gtk
+    win-virtio
+    win-spice
+    gnome.adwaita-icon-theme
   ];
 }
+
