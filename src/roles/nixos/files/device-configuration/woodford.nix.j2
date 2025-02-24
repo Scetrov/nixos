@@ -1,6 +1,10 @@
 { config, ... }:
 
 {
+  imports = [
+    ./modules/lutris.nix
+  ];
+
   networking = {
     networkmanager.enable = true;
     hostName = "woodford";
