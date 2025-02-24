@@ -1,8 +1,15 @@
 { config, ... }:
 let
-  baseconfig = { allowUnfree = true; };
+  baseconfig = {
+    allowUnfree = true;
+  };
   unstable = import <nixos-unstable> { config = baseconfig; };
-in {
+in
+{
+  programs.dconf.enable = true;
+
+  users.users.scetrov.extraGroups = [ "libvirtd" ];
+
   environment.systemPackages = with unstable; [
     qemu
     virt-manager
@@ -13,5 +20,17 @@ in {
     win-spice
     adwaita-icon-theme
   ];
-}
 
+  virtualisation = {
+    libvirtd = {
+      enable = treu;
+      qemu = {
+        swtpm.enable = true;
+        ovmf.enable = true;
+        ovmf.packages = [ pkgs.OVMFFull.fd ];
+      };
+    };
+    spiceUSBRedirection.enable = true;
+  };
+  services.spice-vdagentd.enable = true;
+}
