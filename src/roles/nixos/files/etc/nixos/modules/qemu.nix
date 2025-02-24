@@ -11,7 +11,7 @@ in {
     spice-gtk
     win-virtio
     win-spice
-    gnome.adwaita-icon-theme
+    adwaita-icon-theme
   ];
 }
 
