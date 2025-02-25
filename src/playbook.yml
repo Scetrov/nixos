@@ -24,7 +24,7 @@
         state: directory
         mode: '0700'
         owner: "{{ username }}"
-        group: "{{ group }}"
+        group: "{{ user_group }}"
 
     - name: Write U2F key to .config/Yubico
       ansible.builtin.copy:
@@ -32,6 +32,6 @@
         content: "{{ u2f_key }}"
         mode: '0600'
         owner: "{{ username }}"
-        group: "{{ group }}"
+        group: "{{ user_group }}"
       when:
         - u2f_key is defined
