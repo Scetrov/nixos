@@ -5,3 +5,4 @@
   roles:
     - nixos
     - user-scetrov
+    - live-cd

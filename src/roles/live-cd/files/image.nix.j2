@@ -1,0 +1,72 @@
+{
+  pkgs,
+  modulesPath,
+  lib,
+  ...
+}:
+{
+  imports = [
+    "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
+  ];
+
+  networking = {
+    networkmanager.enable = true;
+    wireless.enable = false;
+    hostName = "nixup";
+  };
+  
+  environment.etc."NetworkManager/system-connections/simian.collingwood.nmconnection" = {
+    text = ''
+      [connection]
+      id={{ wireless_ssid }}
+      uuid=166120e1-3fd9-422e-8617-fa49a597abf5
+      type=wifi
+      interface-name=wlo1
+
+      [wifi]
+      mode=infrastructure
+      ssid={{ wireless_ssid }}
+
+      [wifi-security]
+      auth-alg=open
+      key-mgmt=wpa-psk
+      psk={{ wireless_psk }}
+
+      [ipv4]
+      method=auto
+
+      [ipv6]
+      addr-gen-mode=default
+      method=auto
+
+      [proxy]
+    '';
+    mode = "0400";
+  };
+
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  users.users."{{ username }}" = {
+    isNormalUser = true;
+    description = "{{ username }}";
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+    ];
+    openssh.authorizedKeys.keys = [
+      "{{ ssh_hsm_key }}"
+      "{{ ssh_bastion_key }}"
+    ];
+  };
+
+  # Needed for https://github.com/NixOS/nixpkgs/issues/58959
+  boot.supportedFilesystems = lib.mkForce [
+    "btrfs"
+    "reiserfs"
+    "vfat"
+    "f2fs"
+    "xfs"
+    "ntfs"
+    "cifs"
+  ];
+}
