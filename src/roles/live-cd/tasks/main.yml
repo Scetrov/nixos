@@ -1,0 +1,29 @@
+- name: Set file fact
+  set_fact:
+    nixup_path: "/home/{{ username }}/nixup/"
+    nixup_source: "/home/{{ username }}/nixup/image.nix"
+    nixup_image: "/home/{{ username }}/nixup/image.iso"
+
+- name: Get file
+  stat:
+    path: "{{ nixup_image }}"
+  register: nixup_image_file_stat
+
+- name: Ensure folder exists to store the live cd
+  file:
+    path: "{{ nixup_path }}"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ user_group }}"
+    mode: '0755'
+
+- name: Copy files
+  template:
+    src: "{{ role_path }}/files/image.nix.j2"
+    dest: "{{ nixup_source }}"
+
+- name: Create a bootable ISO
+  command: "nixos-generate --format iso --configuration {{ nixup_source }} -o {{ nixup_image }}"
+  environment:
+    - NIX_PATH: "nixpkgs=https://github.com/NixOS/nixpkgs/archive/74e2faf5965a12e8fa5cff799b1b19c6cd26b0e3.tar.gz"
+  when: (not nixup_image_file_stat.stat.exists) or (nixup_image_file_stat.stat.mtime < (ansible_date_time.epoch | int - 604800))

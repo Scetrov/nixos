@@ -9,6 +9,7 @@ in {
     ansible
     gcc
     niv
+    nixos-generators
     nodejs_18
     nodejs_18.pkgs.pnpm
     python3
