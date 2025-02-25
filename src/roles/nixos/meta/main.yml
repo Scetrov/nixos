@@ -1,0 +1,15 @@
+galaxy_info:
+  author: Richard Slater
+  description: Ansible role for managing NixOS
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms:
+    - name: NixOS
+      versions:
+        - all
+        - all
+  galaxy_tags:
+    - nixos
+    - nix
+
+dependencies: []
