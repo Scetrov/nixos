@@ -9,8 +9,5 @@
   services.xrdp.defaultWindowManager = "startplasma-x11";
   services.xrdp.openFirewall = true;
 
-  services.displayManager.autoLogin.enable = false;
-  services.displayManager.autoLogin.user = "scetrov";
-  
   programs.chromium.enablePlasmaBrowserIntegration = true;
 }
