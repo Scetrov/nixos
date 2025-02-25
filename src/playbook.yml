@@ -5,32 +5,33 @@
   roles:
     - nixos
 
-- name: Update Authorized Keys
-  ansible.builtin.authorized_key:
-    user: "{{ username }}"
-    state: present
-    key: "{{ item }}"
-  loop:
-    - "{{ ssh_hsm_key }}"
-    - "{{ ssh_bastion_key }}"
-  when:
-    - ssh_hsm_key is defined
-    - ssh_bastion_key is defined
+  tasks:
+    - name: Update Authorized Keys
+      ansible.builtin.authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ item }}"
+      loop:
+        - "{{ ssh_hsm_key }}"
+        - "{{ ssh_bastion_key }}"
+      when:
+        - ssh_hsm_key is defined
+        - ssh_bastion_key is defined
 
-- name: Ensure .config/Yubico directory exists
-  ansible.builtin.file:
-    path: "/home/{{ username }}/.config/Yubico"
-    state: directory
-    mode: '0700'
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    - name: Ensure .config/Yubico directory exists
+      ansible.builtin.file:
+        path: "/home/{{ username }}/.config/Yubico"
+        state: directory
+        mode: '0700'
+        owner: "{{ username }}"
+        group: "{{ group }}"
 
-- name: Write U2F key to .config/Yubico
-  ansible.builtin.copy:
-    dest: "/home/{{ username }}/.config/Yubico/u2f_keys"
-    content: "{{ u2f_key }}"
-    mode: '0600'
-    owner: "{{ username }}"
-    group: "{{ username }}"
-  when:
-    - u2f_key is defined
+    - name: Write U2F key to .config/Yubico
+      ansible.builtin.copy:
+        dest: "/home/{{ username }}/.config/Yubico/u2f_keys"
+        content: "{{ u2f_key }}"
+        mode: '0600'
+        owner: "{{ username }}"
+        group: "{{ group }}"
+      when:
+        - u2f_key is defined
