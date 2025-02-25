@@ -10,4 +10,9 @@
   services.xrdp.openFirewall = true;
 
   programs.chromium.enablePlasmaBrowserIntegration = true;
+  
+  services.xserver.xkb = {
+    layout = "gb";
+    variant = "";
+  };
 }

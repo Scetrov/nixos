@@ -8,8 +8,7 @@
     ./modules/maintenance.nix
     ./modules/networking.nix
     ./modules/audio.nix
-    ./modules/pkgs-unstable.nix
-    ./modules/pkgs-latest.nix
+    ./modules/pkgs.nix
     ./modules/programs.nix
     ./modules/security.nix
     ./modules/user-scetrov.nix
