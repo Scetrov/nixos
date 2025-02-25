@@ -25,7 +25,6 @@ in
     shell = pkgs.zsh;
     packages = with pkgs; [
       btop
-      unstable.chezmoi
       curl
       discord
       dotnetCorePackages.dotnet_9.sdk
@@ -41,10 +40,18 @@ in
       powershell
       rustup
       tmux
-      vscode-fhs
+      unstable.brave
+      unstable.chezmoi
+      unstable.devenv
+      unstable.foundry
+      unstable.framesh
+      unstable.ghostty
+      unstable.hugo
+      unstable.obsidian
       unstable.oh-my-posh
-      yubioath-flutter
       usbutils
+      vscode-fhs
+      yubioath-flutter
     ];
   };
 }
