@@ -1,4 +1,10 @@
 { config, pkgs, ... }:
+let
+  baseconfig = {
+    allowUnfree = true;
+  };
+  unstable = import <nixos-unstable> { config = baseconfig; };
+in
 {
   nix.settings.trusted-users = [
     "root"
@@ -19,7 +25,7 @@
     shell = pkgs.zsh;
     packages = with pkgs; [
       btop
-      chezmoi
+      unstable.chezmoi
       curl
       discord
       dotnetCorePackages.dotnet_9.sdk
@@ -36,7 +42,7 @@
       rustup
       tmux
       vscode-fhs
-      oh-my-posh
+      unstable.oh-my-posh
       yubioath-flutter
       usbutils
     ];
