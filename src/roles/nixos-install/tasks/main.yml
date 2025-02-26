@@ -1,0 +1,17 @@
+- name: Partition Disks
+  ansible.builtin.include_tasks: partition.yml
+
+- name: Mount Disks
+  ansible.builtin.include_tasks: mount.yml
+
+- name: Enable Swap
+  ansible.builtin.include_tasks: swap.yml
+
+- name: Generate Config
+  ansible.builtin.include_tasks: nixos-generate.yml
+
+- name: Install NixOS
+  become: true
+  shell: nixos-install --no-root-password
+  args:
+    chdir: /mnt
