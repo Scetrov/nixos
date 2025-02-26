@@ -41,6 +41,10 @@
     '';
     mode = "0400";
   };
+  
+  services.openssh = {
+    enable = true;
+  };
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
