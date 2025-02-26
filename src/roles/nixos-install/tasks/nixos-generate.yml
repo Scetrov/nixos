@@ -1,16 +1,16 @@
 - block:
-    - name: Check if NixOS configuration exists
-      stat:
-        path: /mnt/etc/nixos
-      register: nixos_config
+  - name: Check if NixOS configuration exists
+    stat:
+      path: /mnt/etc/nixos
+    register: nixos_config
 
-    - name: Generate NixOS configuration
-      become: true
-      command: nixos-generate-config --root /mnt
-      when: not nixos_config.stat.exists
+  - name: Generate NixOS configuration
+    become: true
+    command: nixos-generate-config --root /mnt
+    when: not nixos_config.stat.exists
 
-    - name: Copy Temporary Configuration
-      become: true
-      template:
-        src: "{{ role_path }}/files/configuration.nix.j2"
-        dest: /mnt/etc/nixos/configuration.nix
+  - name: Copy Temporary Configuration
+    become: true
+    template:
+      src: "{{ role_path }}/files/configuration.nix.j2"
+      dest: /mnt/etc/nixos/configuration.nix
