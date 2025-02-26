@@ -12,3 +12,7 @@
   shell: nixos-install --no-root-password
   args:
     chdir: /mnt
+
+- name: Reboot the system
+  become: true
+  shell: shutdown -r now

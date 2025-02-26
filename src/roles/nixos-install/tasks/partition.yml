@@ -19,7 +19,7 @@
         command: parted {{ target_device }} -- mklabel gpt
 
       - name: Create root partition
-        command: parted {{ target_device }} -- mkpart primary ext4 {{ efi_size }} 100%
+        command: parted {{ target_device }} -- mkpart primary ext4 {{ efi_size }} -{{ swap_size }}
 
       - name: Create swap partition
         command: parted {{ target_device }} -- mkpart swap linux-swap -{{ swap_size }} 100%
