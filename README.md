@@ -17,7 +17,7 @@ echo "[INSERT PASSWORD]" > ~/.ansible/nixos_vault_password
 Then execute the playbook from the root:
 
 ```
-ansible-playbook -i src/inventory.yml src/playbook.yml --vault-password-file ~/.ansible/.nixos_vault_password
+ansible-playbook -i src/inventory.yml src/playbook.yml --vault-password-file ~/.ansible/nixos_vault_password
 ```
 
 ## Reference
