@@ -15,4 +15,5 @@
 
 - name: Reboot the system
   become: true
-  shell: shutdown -r now
+  shell: shutdown -r 1
+  
