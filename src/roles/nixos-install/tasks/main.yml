@@ -4,9 +4,6 @@
 - name: Mount Disks
   ansible.builtin.include_tasks: mount.yml
 
-- name: Enable Swap
-  ansible.builtin.include_tasks: swap.yml
-
 - name: Generate Config
   ansible.builtin.include_tasks: nixos-generate.yml
 

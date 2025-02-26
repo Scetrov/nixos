@@ -3,7 +3,7 @@
     become: true
     mount:
       path: /mnt
-      src: /dev/disk/by-label/NIXROOT
+      src: /dev/disk/by-label/nixos
       fstype: ext4
       state: mounted
       fstab: /tmp/tmp.fstab
@@ -19,7 +19,7 @@
     become: true
     mount:
       path: /mnt/boot
-      src: /dev/disk/by-label/NIXBOOT
+      src: /dev/disk/by-label/boot
       fstype: vfat
       state: mounted
       fstab: /tmp/tmp.fstab

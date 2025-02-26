@@ -6,30 +6,36 @@
   
   - name: Generate Facts
     set_fact:
-      boot_device: "{{ target_device + '1' }}"
-      root_device: "{{ target_device + '2' }}"
+      root_device: "{{ target_device + '1' }}"
+      swap_device: "{{ target_device + '2' }}"
+      boot_device: "{{ target_device + '3' }}"
+      efi_size: "512MB"
+      swap_size: "16GB"
 
   - name: Partition the disk only if it's empty
     become: true
     block:
       - name: Create partition table (GPT)
-        command: parted {{ target_device }} --script mklabel gpt
-
-      - name: Create EFI partition
-        command: parted {{ target_device }} --script mkpart ESP fat32 1MiB 513MiB
-
-      - name: Set EFI partition boot flag
-        command: parted {{ target_device }} --script set 1 esp on
+        command: parted {{ target_device }} -- mklabel gpt
 
       - name: Create root partition
-        command: parted {{ target_device }} --script mkpart primary ext4 4609MiB 100%
+        command: parted {{ target_device }} -- mkpart primary ext4 {{ efi_size }} 100%
 
-      - name: Format EFI partition as FAT32
-        command: mkfs.fat -F 32 {{ boot_device }}
+      - name: Create swap partition
+        command: parted {{ target_device }} -- mkpart swap linux-swap -{{ swap_size }} 100%
 
-      - name: Label NIXBOOT
-        command: fatlabel {{ boot_device }} NIXBOOT
+      - name: Create EFI partition
+        command: parted {{ target_device }} -- mkpart ESP fat32 1MB {{ efi_size }}
+
+      - name: Set EFI partition boot flag
+        command: parted {{ target_device }} --script set 3 esp on
 
       - name: Format root partition as ext4
-        command: mkfs.ext4 {{ root_device }} -L NIXROOT
+        command: mkfs.ext4 {{ root_device }} -L nixos
+
+      - name: Format EFI partition as FAT32 and label as boot
+        command: mkfs.fat -F 32 -n boot {{ boot_device }}
+
+      - name: Make swap and label as swap
+        command: mkswap -L swapt {{ swap_device }}
     when: disk_check.stdout_lines | length == 1  # Only contains the disk itself, no partitions

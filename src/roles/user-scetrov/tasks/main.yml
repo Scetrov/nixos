@@ -27,3 +27,23 @@
     group: "{{ user_group }}"
   when:
     - u2f_key is defined
+
+- name: Ensure ~/.gnupg directory exists
+  file:
+    path: "/home/{{ username }}/.gnupg"
+    state: directory
+    mode: '0700'
+
+- name: Add SSH support to gpg-agent.conf
+  lineinfile:
+    path: "/home/{{ username }}/.gnupg/gpg-agent.conf"
+    line: "enable-ssh-support"
+    create: yes
+    mode: '0600'
+
+- name: Enable GPG Agent
+  lineinfile:
+    path: "/home/{{ username }}/.gnupg/gpg.conf"
+    line: "use-agent"
+    create: yes
+    mode: '0600'
