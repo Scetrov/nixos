@@ -1,0 +1,4 @@
+!#/bin/sh
+
+dd if={{ nixup_output }}/iso/*.iso of=/dev/{{ usb_key_device }} status=progress
+sync

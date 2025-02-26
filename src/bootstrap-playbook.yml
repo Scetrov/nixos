@@ -1,0 +1,6 @@
+- name: Bootstrap Nixos
+  hosts: bootstrap
+  vars_files:
+    - secrets.yml
+  roles:
+    - nixos-install

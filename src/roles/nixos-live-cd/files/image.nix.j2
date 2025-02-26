@@ -59,6 +59,13 @@
     ];
   };
 
+  environment.systemPackages = with pkgs; [
+    gcc
+    python3
+    wget
+    curl
+  ];
+
   # Needed for https://github.com/NixOS/nixpkgs/issues/58959
   boot.supportedFilesystems = lib.mkForce [
     "btrfs"

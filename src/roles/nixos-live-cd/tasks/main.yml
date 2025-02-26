@@ -1,0 +1,53 @@
+- name: Set file fact
+  set_fact:
+    nixup_path: "/home/{{ username }}/nixup/"
+    nixup_source: "/home/{{ username }}/nixup/image.nix"
+    nixup_output: "/home/{{ username }}/nixup/image"
+
+- name: Get file
+  stat:
+    path: "{{ nixup_output }}"
+  register: nixup_image_file_stat
+
+- name: Ensure folder exists to store the live cd
+  file:
+    path: "{{ nixup_path }}"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ user_group }}"
+    mode: '0755'
+
+- name: Copy files
+  template:
+    src: "{{ role_path }}/files/image.nix.j2"
+    dest: "{{ nixup_source }}"
+
+- name: Create a bootable ISO
+  command: "nixos-generate --format iso --configuration {{ nixup_source }} -o {{ nixup_output }}"
+  environment:
+    - NIX_PATH: "nixpkgs=https://github.com/NixOS/nixpkgs/archive/04ef94c4c1582fd485bbfdb8c4a8ba250e359195.tar.gz"
+  when: (not nixup_image_file_stat.stat.exists) or (nixup_image_file_stat.stat.mtime < (ansible_date_time.epoch | int - 604800))
+
+- name: Get block device info with transport type
+  command: lsblk -o NAME,TRAN
+  register: lsblk_output
+
+- name: Extract USB storage devices
+  set_fact:
+    usb_storage: "{{ lsblk_output.stdout_lines | select('search', 'usb') | list }}"
+
+- name: Debug USB storage devices
+  debug:
+    msg: "USB Storage Devices found: {{ usb_storage }}"
+  when: usb_storage | length > 0
+
+- name: Set device
+  set_fact:
+    usb_key_device: "{{ usb_storage[0][:3] }}"
+  when: usb_storage | length > 0
+
+- name: Write script
+  template:
+    src: "{{ role_path }}/files/write_to_usb_key.sh.j2"
+    dest: "{{ nixup_path }}/write_to_usb_key.sh"
+  when: usb_storage | length > 0

@@ -1,0 +1,34 @@
+- block:
+  - name: Check if swap file exists
+    stat:
+      path: /mnt/.swapfile
+    register: swapfile_stat
+
+  - name: Create swap file if it does not exist
+    become: true
+    command: dd if=/dev/zero of=/mnt/.swapfile bs=1024 count=2097152
+    when: not swapfile_stat.stat.exists
+
+  - name: Set correct permissions for swap file
+    become: true
+    file:
+      path: /mnt/.swapfile
+      mode: '0600'
+    when: swapfile_stat.stat.exists
+
+  - name: Check if swap file is already formatted as swap
+    become: true
+    command: file /mnt/.swapfile
+    register: swapfile_check
+    changed_when: "'swap file' not in swapfile_check.stdout"
+    failed_when: false  # Ignore errors if the file does not exist
+
+  - name: Format swap file
+    become: true
+    command: mkswap /mnt/.swapfile
+    when: "'swap file' not in swapfile_check.stdout"
+
+  - name: Enable swap
+    become: true
+    command: swapon /mnt/.swapfile
+    when: "'swap file' in swapfile_check.stdout"

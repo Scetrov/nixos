@@ -1,0 +1,9 @@
+all:
+  hosts:
+    bootstrap:
+      ansible_connection: ssh
+      ansible_user: scetrov
+      ansible_host: 10.229.5.4
+      target_device: /dev/sda
+      new_hostname: nixos00002
+      username: scetrov

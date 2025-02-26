@@ -1,0 +1,69 @@
+{ pkgs, modulesPath, lib, ...  }:
+{
+  imports = [
+    ./hardware-configuration.nix
+  ];
+
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  networking = {
+    networkmanager.enable = true;
+    wireless.enable = false;
+    hostName = "{{ new_hostname }}";
+  };
+  
+  environment.etc."NetworkManager/system-connections/simian.collingwood.nmconnection" = {
+    text = ''
+      [connection]
+      id={{ wireless_ssid }}
+      uuid=166120e1-3fd9-422e-8617-fa49a597abf5
+      type=wifi
+      interface-name=wlo1
+
+      [wifi]
+      mode=infrastructure
+      ssid={{ wireless_ssid }}
+
+      [wifi-security]
+      auth-alg=open
+      key-mgmt=wpa-psk
+      psk={{ wireless_psk }}
+
+      [ipv4]
+      method=auto
+
+      [ipv6]
+      addr-gen-mode=default
+      method=auto
+
+      [proxy]
+    '';
+    mode = "0400";
+  };
+
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  users.users."{{ username }}" = {
+    isNormalUser = true;
+    description = "{{ username }}";
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+    ];
+    openssh.authorizedKeys.keys = [
+      "{{ ssh_hsm_key }}"
+      "{{ ssh_bastion_key }}"
+    ];
+  };
+
+  environment.systemPackages = with pkgs; [
+    gcc
+    python3
+    wget
+    curl
+  ];
+
+  system.stateVersion = "24.11";
+}
+

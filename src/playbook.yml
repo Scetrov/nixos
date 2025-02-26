@@ -1,3 +1,8 @@
+- name: Check NixOS Configuration
+  hosts: localhost
+  roles:
+    - nixos-lint
+
 - name: Deploy NixOS Configuration
   hosts: all
   vars_files:
@@ -5,4 +10,4 @@
   roles:
     - nixos
     - user-scetrov
-    - live-cd
+    - nixos-live-cd

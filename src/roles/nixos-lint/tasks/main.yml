@@ -1,0 +1,54 @@
+- name: Find all .nix files in the directory structure
+  find:
+    paths: "{{ playbook_dir }}"
+    patterns: "*.nix"
+  register: nix_files
+
+- name: Run nixfmt on each .nix file
+  command: nixfmt "{{ item.path }}"
+  loop: "{{ nix_files.files }}"
+  when: nix_files.matched > 0
+
+- name: Check for unstaged changes in the playbook directory
+  delegate_to: localhost
+  command: git status --porcelain
+  args:
+    chdir: "{{ playbook_dir }}"
+  register: git_status
+  changed_when: false
+
+- name: Fail if there are unstaged changes in the playbook directory
+  delegate_to: localhost
+  fail:
+    msg: "Unstaged changes detected in the playbook directory!"
+  when: git_status.stdout != ""
+
+- name: Check for uncommitted local changes in playbook directory
+  delegate_to: localhost
+  command: git diff-index --quiet HEAD --
+  args:
+    chdir: "{{ playbook_dir }}"
+  register: git_clean_check
+  changed_when: false
+  ignore_errors: true
+
+- name: Fail if there are uncommitted local changes
+  delegate_to: localhost
+  fail:
+    msg: "Uncommitted local changes detected in the playbook directory!"
+  when: git_clean_check.rc != 0
+
+- name: Check for unpushed commits in playbook directory
+  delegate_to: localhost
+  command: git rev-list --count @{u}..HEAD
+  args:
+    chdir: "{{ playbook_dir }}"
+  register: unpushed_count
+  changed_when: false
+  failed_when: false
+
+- name: Fail if there are unpushed commits
+  delegate_to: localhost
+  fail:
+    msg: "There are {{ unpushed_count.stdout }} unpushed commits in the playbook directory!"
+  when: unpushed_count.stdout | int > 0

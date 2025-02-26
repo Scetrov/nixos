@@ -1,0 +1,35 @@
+- block:
+  - name: Check if the disk has existing partitions
+    command: lsblk -no NAME {{ target_device }}
+    register: disk_check
+    changed_when: false
+  
+  - name: Generate Facts
+    set_fact:
+      boot_device: "{{ target_device + '1' }}"
+      root_device: "{{ target_device + '2' }}"
+
+  - name: Partition the disk only if it's empty
+    become: true
+    block:
+      - name: Create partition table (GPT)
+        command: parted {{ target_device }} --script mklabel gpt
+
+      - name: Create EFI partition
+        command: parted {{ target_device }} --script mkpart ESP fat32 1MiB 513MiB
+
+      - name: Set EFI partition boot flag
+        command: parted {{ target_device }} --script set 1 esp on
+
+      - name: Create root partition
+        command: parted {{ target_device }} --script mkpart primary ext4 4609MiB 100%
+
+      - name: Format EFI partition as FAT32
+        command: mkfs.fat -F 32 {{ boot_device }}
+
+      - name: Label NIXBOOT
+        command: fatlabel {{ boot_device }} NIXBOOT
+
+      - name: Format root partition as ext4
+        command: mkfs.ext4 {{ root_device }} -L NIXROOT
+    when: disk_check.stdout_lines | length == 1  # Only contains the disk itself, no partitions
