@@ -47,3 +47,10 @@
     line: "use-agent"
     create: yes
     mode: '0600'
+
+- name: Enable SSH Control
+  lineinfile:
+    path: "/home/{{ username }}/.gnupg/sshcontrol"
+    line: "{{ sshcontrol_key }}"
+    create: yes
+    mode: '0600'
