@@ -10,5 +10,3 @@ all:
       ansible_connection: ssh
       ansible_user: scetrov
       ansible_host: 10.229.5.165
-
-      
