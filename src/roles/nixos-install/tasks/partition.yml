@@ -37,5 +37,5 @@
         command: mkfs.fat -F 32 -n boot {{ boot_device }}
 
       - name: Make swap and label as swap
-        command: mkswap -L swapt {{ swap_device }}
+        command: mkswap -L swap {{ swap_device }}
     when: disk_check.stdout_lines | length == 1  # Only contains the disk itself, no partitions
