@@ -1,9 +1,4 @@
-{
-  pkgs,
-  modulesPath,
-  lib,
-  ...
-}:
+{ pkgs, modulesPath, lib, ...  }:
 {
   imports = [
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
@@ -49,6 +44,7 @@
   users.users."{{ username }}" = {
     isNormalUser = true;
     description = "{{ username }}";
+    hashedPassword = "{{ user_password }}";
     extraGroups = [
       "networkmanager"
       "wheel"
@@ -64,6 +60,8 @@
     python3
     wget
     curl
+    ansible
+    neovim
   ];
 
   # Needed for https://github.com/NixOS/nixpkgs/issues/58959
