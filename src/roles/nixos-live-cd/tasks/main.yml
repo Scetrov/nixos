@@ -32,7 +32,7 @@
   command: lsblk -o NAME,TRAN
   register: lsblk_output
 
-- name: Extract USB storage devices
+- name: Get a list of USB storage devices
   set_fact:
     usb_storage: "{{ lsblk_output.stdout_lines | select('search', 'usb') | list }}"
 
