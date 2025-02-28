@@ -6,7 +6,6 @@
     - { name: "Nix Packages Unstable", url: "https://nixos.org/channels/nixpkgs-unstable", channel: "nixpkgs" }
     - { name: "Age Nix", url: "https://github.com/ryantm/agenix/archive/main.tar.gz", channel: "agenix" }
   command: "nix-channel --add {{ item.url }} {{ item.channel }}"
-  with_items: "{{ channels }}"
 
 - name: Nix Channel Update
   become: true
