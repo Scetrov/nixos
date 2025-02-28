@@ -44,7 +44,7 @@
   users.users."{{ username }}" = {
     isNormalUser = true;
     description = "{{ username }}";
-    hashedPassword = "{{ user_password }}";
+    hashedPassword = "{{ user_password_hashed }}";
     extraGroups = [
       "networkmanager"
       "wheel"
