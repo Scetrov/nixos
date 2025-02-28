@@ -3,16 +3,12 @@
   roles:
     - nixos-lint
 
-- name: Generate Nixage Secrets
-  hosts: localhost
-  roles:
-    - secrets
-
 - name: Deploy NixOS Configuration
   hosts: all
   vars_files:
     - secrets.yml
   roles:
+    - secrets
     - nixos
     - user-scetrov
     - nixos-live-cd
