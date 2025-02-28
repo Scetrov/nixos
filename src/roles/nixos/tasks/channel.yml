@@ -1,14 +1,12 @@
-- name: Add NixOS 24.11
+- name: Add NixOS channels
   become: true
-  command: nix-channel --add https://nixos.org/channels/nixos-24.11 nixos
-
-- name: Add Nix Unstable
-  become: true
-  command: nix-channel --add https://nixos.org/channels/nixos-unstable nixos-unstable
-
-- name: Add Nix Packages Unstable
-  become: true
-  command: nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+  loop:
+    - { name: "NixOS 24.11", url: "https://nixos.org/channels/nixos-24.11", channel: "nixos" }
+    - { name: "Nix Unstable", url: "https://nixos.org/channels/nixos-unstable", channel: "nixos-unstable" }
+    - { name: "Nix Packages Unstable", url: "https://nixos.org/channels/nixpkgs-unstable", channel: "nixpkgs" }
+    - { name: "Age Nix", url: "https://github.com/ryantm/agenix/archive/main.tar.gz", channel: "agenix" }
+  command: "nix-channel --add {{ item.url }} {{ item.channel }}"
+  with_items: "{{ channels }}"
 
 - name: Nix Channel Update
   become: true

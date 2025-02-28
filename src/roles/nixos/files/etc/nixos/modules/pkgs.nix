@@ -15,5 +15,6 @@ in {
     python3
     wget
     zsh
+    (pkgs.callPackage <agenix/pkgs/agenix.nix> {})
   ];
 }
