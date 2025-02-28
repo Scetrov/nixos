@@ -3,6 +3,11 @@
   roles:
     - nixos-lint
 
+- name: Generate Nixage Secrets
+  hosts: localhost
+  roles:
+    - secrets
+
 - name: Deploy NixOS Configuration
   hosts: all
   vars_files:
