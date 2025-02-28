@@ -6,7 +6,7 @@ let
   unstable = import <nixos-unstable> { config = baseconfig; };
 in
 {
-  age.secrets.scetrov-password.file = /root/secrets/scetrov_password.age;
+  age.secrets.scetrov-password.file = /root/secrets/scetrov_password.path;
   nix.settings.trusted-users = [
     "root"
     "scetrov"
