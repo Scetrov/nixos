@@ -4,8 +4,9 @@ let
   users = [ scetrov_hsm scetrov_bastion ];
 
   devenv = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID/F3dBtSPoouR5qVTHCJTsVVgPBFTFJB1WVxnUkvgKa";
-  systems = [ devenv ];
+  woodford = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF6a5bYzqwYWOJ2ORbg4ANoALIGUfO2fVwLW9UyWfq50";
+  systems = [ devenv woodford ];
 in
 {
-  "scetrov_hashed_password.age".publicKeys = users ++ systems;
+  "scetrov_password.age".publicKeys = users ++ systems;
 }
