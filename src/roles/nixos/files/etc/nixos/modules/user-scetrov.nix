@@ -14,7 +14,7 @@ in
   users.users.scetrov = {
     isNormalUser = true;
     description = "scetrov";
-    passwordFile = config.age.secrets.passwordFile = config.age.secrets.scetrov-password.path;
+    passwordFile = config.age.secrets.scetrov-password.path;
     extraGroups = [
       "networkmanager"
       "wheel"
