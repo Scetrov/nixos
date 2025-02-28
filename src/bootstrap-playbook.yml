@@ -3,4 +3,5 @@
   vars_files:
     - secrets.yml
   roles:
+    - secrets
     - nixos-install
