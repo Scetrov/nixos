@@ -7,6 +7,7 @@ in {
   # $ nix search wget
   environment.systemPackages = with pkgs; [
     ansible
+    bat
     gcc
     niv
     nixos-generators
