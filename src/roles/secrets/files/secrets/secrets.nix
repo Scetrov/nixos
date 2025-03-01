@@ -12,4 +12,5 @@ in
   "scetrov_password.age".publicKeys = users ++ systems;
   "ssh_hsm_key.age".publicKeys = users ++ systems;
   "ssh_bastion_key.age".publicKeys = users ++ systems;
+  "wireless_psk.age".publicKeys = users ++ systems;
 }
