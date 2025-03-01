@@ -29,7 +29,7 @@
     owner: root
     group: root
     mode: '0644'
-  loop: "{{ synced_items.files }}"
+  loop: "{{ synced_items.files | selectattr('isdir', 'equalto', False) | list }}"
   loop_control:
     label: "{{ item.path }}"
 
@@ -40,7 +40,7 @@
     owner: root
     group: root
     mode: '0755'
-  loop: "{{ synced_items.directories }}"
+  loop: "{{ synced_items.files | selectattr('isdir', 'equalto', True) | list }}"
   loop_control:
     label: "{{ item.path }}"
 
