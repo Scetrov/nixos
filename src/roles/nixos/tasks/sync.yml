@@ -56,12 +56,21 @@
     - ansible_product_name == "Virtual Machine"
     - ansible_system_vendor == "Microsoft Corporation"
 
+- name: Set ownership and permissions /etc/nixos
+  become: true
+  file:
+    path: "/etc/nixos"
+    owner: root
+    group: root
+    mode: '0755'
+ 
 - name: Find synchronized files and directories
   become: true
   find:
     paths: /etc/nixos
     recurse: yes
-  register: synced_items
+    file_type: files
+  register: synced_files
 
 - name: Set ownership and permissions for synchronized files
   become: true
@@ -70,9 +79,17 @@
     owner: root
     group: root
     mode: '0644'
-  loop: "{{ synced_items.files | selectattr('isdir', 'equalto', False) | list }}"
+  loop: "{{ synced_files.files }}"
   loop_control:
     label: "{{ item.path }}"
+
+- name: Find synchronized files and directories
+  become: true
+  find:
+    paths: /etc/nixos
+    recurse: yes
+    file_type: directories
+  register: synced_dirs
 
 - name: Set ownership and permissions for synchronized directories
   become: true
@@ -81,7 +98,7 @@
     owner: root
     group: root
     mode: '0755'
-  loop: "{{ synced_items.files | selectattr('isdir', 'equalto', True) | list }}"
+  loop: "{{ synced_dirs.files }}"
   loop_control:
     label: "{{ item.path }}"
 
