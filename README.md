@@ -17,10 +17,17 @@ echo "[INSERT PASSWORD]" > ~/.ansible/nixos_vault_password
 Then execute the playbook from the root:
 
 ```
-ansible-playbook -i src/inventory.yml src/playbook.yml --vault-password-file ~/.ansible/nixos_vault_password
+git add . && git commit && git push origin HEAD && ansible-playbook -i src/inventory.yml src/playbook.yml --vault-password-file ~/.ansible/nixos_vault_password
 ```
 
+> [!IMPORTANT]
+> The `git` commands are important as the playbook will check to see if there are any uncommitted changes to the repository, or local changesets. This ensures that if you do push a change that destroys the local machine you don't lose any progress. Additionally, the commit message is used to generate a NixOS Label for Grub.
+
 ## Reference
+
+### Secret Management
+
+Secrets are managed through Ansible Vault, they are variously deployed to machines either by pushing the secret through Ansible; or by using `agenix` for inclusion in NixOS's `configuration.nix` and modules.
 
 ### Ansible Directory Structure
 
