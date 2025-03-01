@@ -1,8 +1,27 @@
 {
     "cSpell.words": [
         "agenix",
+        "baseconfig",
+        "btop",
+        "chezmoi",
+        "collingwood",
+        "devenv",
         "endswith",
+        "finegrained",
+        "fira",
+        "framesh",
+        "ghostty",
+        "mgmt",
+        "nerdfont",
+        "nixfmt",
         "nixos",
-        "scetrov"
+        "nmap",
+        "pkgs",
+        "plugdev",
+        "rustup",
+        "scetrov",
+        "usbutils",
+        "woodford",
+        "yubioath"
     ]
 }

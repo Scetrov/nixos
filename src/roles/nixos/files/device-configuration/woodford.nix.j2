@@ -1,9 +1,42 @@
 { config, ... }:
 
 {
+  age.secrets.wireless_psk.file = /root/secrets/wireless_psk.age;
+
   networking = {
-    networkmanager.enable = true;
     hostName = "woodford";
+    networkmanager = {
+      enable = true;
+      ensureProfiles = {
+        environmentFiles = [
+          config.age.secrets."wireless_psk".path
+        ];
+
+        profiles = {
+          "simian.collingwood" = {
+            connection = {
+              id = "simian.collingwood";
+              type = "wifi";
+              interface-name = "wlo1";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "simian.collingwood";
+            };
+            wifi-security = {
+              auth-alg = "open";
+              key-mgmt = "wpa-psk";
+              psk = "$WIRELESS_PSK"
+            };
+        }
+      }
+    };
   };
 
   services.xserver.videoDrivers = ["nvidia"];
@@ -23,34 +56,5 @@
       nvidiaBusId = "PCI:1:0:0";
       intelBusId = "PCI:0:2:0";
     };
-  };
-
-  environment.etc."NetworkManager/system-connections/simian.collingwood.nmconnection" = {
-    text = ''
-      [connection]
-      id={{ wireless_ssid }}
-      uuid=166120e1-3fd9-422e-8617-fa49a597abf5
-      type=wifi
-      interface-name=wlo1
-
-      [wifi]
-      mode=infrastructure
-      ssid={{ wireless_ssid }}
-
-      [wifi-security]
-      auth-alg=open
-      key-mgmt=wpa-psk
-      psk={{ wireless_psk }}
-
-      [ipv4]
-      method=auto
-
-      [ipv6]
-      addr-gen-mode=default
-      method=auto
-
-      [proxy]
-    '';
-    mode = "0400";
   };
 }
