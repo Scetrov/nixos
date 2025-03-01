@@ -15,6 +15,35 @@
     rsync_opts:
       - "--exclude=*.j2"
 
+- name: Find synchronized files and directories
+  become: true
+  find:
+    paths: /etc/nixos
+    recurse: yes
+  register: synced_items
+
+- name: Set ownership and permissions for synchronized files
+  become: true
+  file:
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ synced_items.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Set ownership and permissions for synchronized directories
+  become: true
+  file:
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ synced_items.directories }}"
+  loop_control:
+    label: "{{ item.path }}"
+
 - name: Find all .nix.j2 files
   find:
     paths: "{{ role_path }}/files/etc/nixos"
