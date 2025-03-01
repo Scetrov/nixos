@@ -15,6 +15,22 @@
     rsync_opts:
       - "--exclude=*.j2"
 
+- name: Find all .nix.j2 files
+  find:
+    paths: "{{ role_path }}/files/etc/nixos"
+    patterns: "*.nix.j2"
+    recurse: yes
+  register: found_templates
+
+- name: Template .nix.j2 files to /etc/nixos
+  become: true
+  template:
+    src: "{{ item.path }}"
+    dest: "/etc/nixos/{{ item.path | regex_replace('^' + role_path + '/files/etc/nixos/', '') | regex_replace('.j2$', '') }}"
+  loop: "{{ found_templates.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
 - block:
   - name: Configure 'Blade 15 Advanced Model (Early 2020) - RZ09-033' Hardware
     copy:

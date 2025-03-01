@@ -8,6 +8,7 @@
   security.acme.certs."scetrov.live" = {
     dnsProvider = "cloudflare";
     dnsResolver = "1.1.1.1:53";
+    server = "https://acme-staging-v02.api.letsencrypt.org/directory";
     extraDomainNames = [
       "*.net.scetrov.live"
       "*.garnet.scetrov.live"
