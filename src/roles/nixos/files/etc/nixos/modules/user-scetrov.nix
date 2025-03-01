@@ -6,7 +6,7 @@ let
   unstable = import <nixos-unstable> { config = baseconfig; };
 in
 {
-  age.secrets.scetrov_password.file = /root/secrets/scetrov_password.age;
+  age.secrets.user_password_hashed.file = /root/secrets/user_password_hashed.age;
   nix.settings.trusted-users = [
     "root"
     "scetrov"
@@ -14,7 +14,7 @@ in
   users.users.scetrov = {
     isNormalUser = true;
     description = "scetrov";
-    passwordFile = config.age.secrets.scetrov_password.path;
+    hashedPasswordFile = config.age.secrets.user_password_hashed.path;
     extraGroups = [
       "networkmanager"
       "wheel"
