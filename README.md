@@ -1,6 +1,6 @@
 ## Abstract
 
-This repository stores the NixOS configuration and an Ansible Playbook used to push configuration to a machine, predominatly expected to be run locally but can be run against a remote target.
+This repository stores the NixOS configuration and an Ansible Playbook used to push configuration to a machine, predominantly expected to be run locally but can be run against a remote target.
 
 ## Running
 
