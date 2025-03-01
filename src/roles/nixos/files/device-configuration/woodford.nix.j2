@@ -1,6 +1,10 @@
 { config, ... }:
 
 {
+  imports = [
+    ./acme.nix
+  ];
+
   age.secrets.wireless_psk.file = /root/secrets/wireless_psk.age;
 
   networking = {
