@@ -69,7 +69,7 @@
   find:
     paths: /etc/nixos
     recurse: yes
-    file_type: files
+    file_type: file
   register: synced_files
 
 - name: Set ownership and permissions for synchronized files
@@ -88,7 +88,7 @@
   find:
     paths: /etc/nixos
     recurse: yes
-    file_type: directories
+    file_type: directory
   register: synced_dirs
 
 - name: Set ownership and permissions for synchronized directories
