@@ -16,6 +16,8 @@
       - "--exclude=*.j2"
 
 - name: Find all .nix.j2 files
+  delegate_to: localhost
+  run_once: true
   find:
     paths: "{{ role_path }}/files/etc/nixos"
     patterns: "*.nix.j2"
