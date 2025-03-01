@@ -2,6 +2,7 @@
 
 {
   age.secrets.cloudflare_dns_zone_api_key.file = /root/secrets/cloudflare_dns_zone_api_key.age;
+  age.secrets.cloudflare_email.file = /root/secrets/cloudflare_dns_zone_api_key.age;
 
   security.acme.acceptTerms = true;
   security.acme.defaults.email = "{{ lets_encrypt_email }}";
@@ -15,7 +16,7 @@
       "*.pyrope.scetrov.live"
     ];
     credentialFiles = {
-      "CLOUDFLARE_EMAIL_FILE" = "{{ cloudflare_email }}";
+      "CLOUDFLARE_EMAIL_FILE" = config.age.secrets.cloudflare_email.path;
       "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.age.secrets.cloudflare_dns_zone_api_key.path;
     };
     dnsPropagationCheck = true;

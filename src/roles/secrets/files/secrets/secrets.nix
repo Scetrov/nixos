@@ -14,4 +14,5 @@ in
   "ssh_bastion_key.age".publicKeys = users ++ systems;
   "wireless_psk.age".publicKeys = users ++ systems;
   "cloudflare_dns_zone_api_key.age".publicKeys = users ++ systems;
+  "cloudflare_email.age".publicKeys = users ++ systems;
 }
