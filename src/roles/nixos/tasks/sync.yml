@@ -12,6 +12,8 @@
     dest: /etc/nixos/
     recursive: true
     delete: true
+    rsync_opts:
+      - "--exclude=*.j2"
 
 - block:
   - name: Configure 'Blade 15 Advanced Model (Early 2020) - RZ09-033' Hardware

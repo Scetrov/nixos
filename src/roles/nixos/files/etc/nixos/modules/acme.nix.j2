@@ -1,0 +1,21 @@
+{ config, ... }:
+
+{
+  age.secrets.cloudflare_dns_zone_api_key.file = /root/secrets/cloudflare_dns_zone_api_key.age;
+
+  security.acme.acceptTerms = true;
+  security.acme.defaults.email = "{{ lets_encrypt_email }}";
+  security.acme.certs."scetrov.live" = {
+    dnsProvider = "cloudflare";
+    dnsResolver = "1.1.1.1:53";
+    extraDomainNames = [
+      "*.net.scetrov.live"
+      "*.web3.scetrov.live"
+    ];
+    credentialFiles = {
+      "CLOUDFLARE_EMAIL_FILE" = "{{ cloudflare_email }}";
+      "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.age.secrets.cloudflare_dns_zone_api_key.path;
+    };
+    dnsPropagationCheck = true;
+  };
+}
