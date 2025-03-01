@@ -2,6 +2,7 @@
 
 {
   imports = [
+    <agenix/modules/age.nix>
     ./hardware-configuration.nix
     ./device-configuration.nix
     ./modules/locale.nix
