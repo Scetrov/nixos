@@ -18,13 +18,13 @@
 - name: Synchronize Prometheus
   become: true
   synchronize:
-    src: "{{ role_path }}/files/{{ item }}"
-    dest: "{{ item }}"
+    src: "{{ role_path }}/files/etc/{{ item }}/"
+    dest: "/etc/{{ item }}"
     recursive: true
     delete: true
   loop:
-    - etc/traefik
-    - etc/prometheus
+    - traefik
+    - prometheus
 
 - name: Find all .nix.j2 files
   delegate_to: localhost
