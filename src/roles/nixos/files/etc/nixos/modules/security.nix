@@ -8,7 +8,8 @@
     ports = [ 22 ];
     openFirewall = true;
     settings = {
-      PasswordAuthentication = true;
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
       AllowUsers = [ "scetrov" ];
       UseDns = true;
       X11Forwarding = false;
