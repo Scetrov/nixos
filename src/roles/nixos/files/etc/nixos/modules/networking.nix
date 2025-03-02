@@ -2,18 +2,33 @@
 
 {
   networking = {
-    nameservers = [ "127.0.0.1" "::1" ];
+    nameservers = [
+      "127.0.0.1"
+      "::1"
+    ];
     networkmanager.dns = "none";
     firewall.enable = true;
     hosts = {
-      "10.229.0.39" = [ "bullit" "bullit.net.scetrov.live" ];
-      "10.229.5.19" = [ "woodford" "woodford.net.scetrov.live" "traefik.net.scetrov.live" "grafana.net.scetrov.live" "prometheus.net.scetrov.live" "json-rpc.sepolia.scetrov.live" ];
+      "10.229.0.39" = [
+        "bullit"
+        "bullit.net.scetrov.live"
+      ];
+      "10.229.5.19" = [
+        "woodford"
+        "woodford.net.scetrov.live"
+        "traefik.net.scetrov.live"
+        "grafana.net.scetrov.live"
+        "prometheus.net.scetrov.live"
+        "json-rpc.sepolia.scetrov.live"
+      ];
     };
   };
 
+  services.resolved.enable = true;
+
   services.dnscrypt-proxy2 = {
     enable = true;
-  settings = {
+    settings = {
       ipv6_servers = true;
       require_dnssec = true;
       sources.public-resolvers = {

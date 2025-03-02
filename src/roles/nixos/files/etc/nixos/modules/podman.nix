@@ -34,5 +34,8 @@
   # allow for DNS across the podman[0-9] interface
   networking.firewall.interfaces."podman+".allowedUDPPorts = [ 53 ];
 
+
+  firewall.allowedUDPPorts = [ 53 5353 ];
+
   services.dockerRegistry.enableGarbageCollect = true;
 }
