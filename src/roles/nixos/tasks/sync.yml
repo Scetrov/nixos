@@ -15,6 +15,17 @@
     rsync_opts:
       - "--exclude=*.j2"
 
+- name: Synchronize Prometheus
+  become: true
+  synchronize:
+    src: "{{ role_path }}/files/{{ item }}"
+    dest: "{{ item }}"
+    recursive: true
+    delete: true
+  loop:
+    - etc/traefik
+    - etc/prometheus
+
 - name: Find all .nix.j2 files
   delegate_to: localhost
   run_once: true
