@@ -22,6 +22,10 @@
       extraPackages = [
         pkgs.podman-compose
       ];
+      defaultNetwork.settings = {
+        dns_enabled = true;
+        dns = [ "1.1.1.1" "8.8.8.8" ]
+      };
     };
   
     oci-containers.backend = "podman";
