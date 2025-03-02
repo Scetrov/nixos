@@ -26,6 +26,7 @@
         "nmap",
         "pkgs",
         "plugdev",
+        "redirections",
         "rustup",
         "scetrov",
         "startplasma",
