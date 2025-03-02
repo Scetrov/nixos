@@ -15,7 +15,6 @@ in {
     nodejs_18.pkgs.pnpm
     python3
     wget
-    zsh
     (pkgs.callPackage <agenix/pkgs/agenix.nix> {})
   ];
 }
