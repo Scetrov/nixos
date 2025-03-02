@@ -14,6 +14,7 @@
         "framesh",
         "ghostty",
         "hyperv",
+        "Kwallet",
         "mgmt",
         "nerdfont",
         "nixfmt",
@@ -23,8 +24,10 @@
         "plugdev",
         "rustup",
         "scetrov",
+        "startplasma",
         "usbutils",
         "woodford",
+        "xrdp",
         "yubioath"
     ]
 }
