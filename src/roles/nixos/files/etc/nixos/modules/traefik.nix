@@ -11,12 +11,12 @@
     target = "traefik/dynamic.toml";
   };
 
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
+  networking.firewall.allowedTCPPorts = [ 80 443 8080 ];
   networking.firewall.allowedUDPPorts = [  ];
 
   virtualisation = {
     oci-containers.containers = {
-      reverse-proxy = {
+      traefik = {
         image = "traefik:latest";
         autoStart = true;
         ports = [
@@ -38,7 +38,7 @@
           "/etc/traefik/dynamic.toml:/etc/traefik/dynamic.toml:ro"
         ];
         labels = {
-          "traefik.http.routers.api.rule" = "Host(`traefik.net.scetrov.live`) || Host(`dashboard-test.web3.scetrov.live`)";
+          "traefik.http.routers.api.rule" = "Host(`traefik.net.scetrov.live`)";
           "traefik.http.routers.api.service" = "api@internal";
           "traefik.http.routers.api.tls" = "true";
           "traefik.http.routers.api.entrypoints" = "websecure";

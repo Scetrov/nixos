@@ -27,35 +27,35 @@
 [entryPoints.websecure]
   address = ":443"
 
-[entryPoints.grpc-tcp]
-  address = ":9090/tcp"
+# [entryPoints.grpc-tcp]
+#   address = ":9090/tcp"
 
-[entryPoints.snap-tcp]
-  address = ":42069/tcp"
-[entryPoints.snap-udp]
-  address = ":42069/udp"
+# [entryPoints.snap-tcp]
+#   address = ":42069/tcp"
+# [entryPoints.snap-udp]
+#   address = ":42069/udp"
 
-[entryPoints.eth68-tcp]
-  address = ":30303/tcp"
-[entryPoints.eth68-udp]
-  address = ":30303/udp"
+# [entryPoints.eth68-tcp]
+#   address = ":30303/tcp"
+# [entryPoints.eth68-udp]
+#   address = ":30303/udp"
 
-[entryPoints.eth67-tcp]
-  address = ":30304/tcp"
-[entryPoints.eth67-udp]
-  address = ":30304/udp"
+# [entryPoints.eth67-tcp]
+#   address = ":30304/tcp"
+# [entryPoints.eth67-udp]
+#   address = ":30304/udp"
 
-[entryPoints.sentinel-udp]
-  address = ":4000/udp"
-[entryPoints.sentinel-tcp]
-  address = ":4001/tcp"
+# [entryPoints.sentinel-udp]
+#   address = ":4000/udp"
+# [entryPoints.sentinel-tcp]
+#   address = ":4001/tcp"
 
-[entryPoints.op-node-p2p-udp]
-  address = ":9003/udp"
-[entryPoints.op-node-p2p-tcp]
-  address = ":9003/tcp"
+# [entryPoints.op-node-p2p-udp]
+#   address = ":9003/udp"
+# [entryPoints.op-node-p2p-tcp]
+#   address = ":9003/tcp"
 
 # [tracing]
 #   addInternals = true
-#   serviceName = "reverse-proxy"
+#   serviceName = "traefik"
 #   sampleRate = 0.2
