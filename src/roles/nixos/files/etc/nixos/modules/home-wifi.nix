@@ -13,9 +13,8 @@
         ];
 
         profiles = {
-          "Home WiFi" = {
+          "home-wifi" = {
             connection = {
-              id = "home-wifi";
               type = "wifi";
               interface-name = "wlo1";
             };
