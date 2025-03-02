@@ -1,0 +1,19 @@
+datadir = "/var/lib/ethereum/erigon/sepolia"
+internalcl = true
+chain = "sepolia"
+prune = "hrtc"
+
+http = true
+"http.port" = 8454
+"http.vhosts" = "*"
+"http.addr" = "0.0.0.0"
+"http.api" = ["eth", "debug", "web3", "net", "debug", "trace", "txpool"]
+
+"lightclient.discovery.addr" = "0.0.0.0"
+"lightclient.discovery.port" = 4000
+"lightclient.discovery.tcpport" = 4001
+
+metrics = true
+"metrics.port" = 6060
+
+nat = "stun"
