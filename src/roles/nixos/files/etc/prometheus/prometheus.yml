@@ -5,10 +5,10 @@ scrape_configs:
 - job_name: traefik
   static_configs:
   - targets: ['traefik:8080']
-- job_name: ethereum-erigon
+- job_name: ethereum-erigon-sepolia
   metrics_path: /debug/metrics/prometheus
   static_configs:
-  - targets: ['erigon-ethereum-holesky:6060']
-- job_name: host-node
+  - targets: ['ethereum-erigon-sepolia:6060']
+- job_name: host
   static_configs:
   - targets: ['host.containers.internal:9100']

@@ -35,6 +35,9 @@
           "traefik.http.routers.prometheus.service" = "prometheus-service";
           "traefik.http.services.prometheus-service.loadbalancer.server.port" = "9090";
         };
+        extraOptions = [
+          "--add-host=host.podman.internal:host-gateway"
+        ];
       };
     };
   };
