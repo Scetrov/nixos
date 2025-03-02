@@ -8,5 +8,5 @@ in {
     syntaxHighlighting.enable = true;
   };
   
-  users.defaultShell = pkgs.zsh;
+  users.defaultUserShell = pkgs.zsh;
 }
