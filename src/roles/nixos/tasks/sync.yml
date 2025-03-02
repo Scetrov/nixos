@@ -15,7 +15,7 @@
     rsync_opts:
       - "--exclude=*.j2"
 
-- name: Synchronize Prometheus
+- name: Synchronize container configuration to /etc
   become: yes
   synchronize:
     src: "{{ role_path }}/files/etc/{{ item }}/"
@@ -23,8 +23,9 @@
     recursive: true
     delete: true
   loop:
-    - traefik
+    - ethereum
     - prometheus
+    - traefik
 
 - name: Find all .nix.j2 files
   delegate_to: localhost
