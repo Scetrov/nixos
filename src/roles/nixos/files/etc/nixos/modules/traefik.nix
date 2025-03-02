@@ -2,12 +2,12 @@
 
 {
   environment.etc.traefik-static = {
-    source = ./etc/traefik/traefik.toml;
+    source = ../../traefik/traefik.toml;
     target = "traefik/traefik.toml";
   };
 
   environment.etc.traefik-dynamic = {
-    source = ./etc/traefik/dynamic.toml;
+    source = ../../traefik/dynamic.toml;
     target = "traefik/dynamic.toml";
   };
 
