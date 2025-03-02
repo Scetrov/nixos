@@ -7,7 +7,7 @@
     firewall.enable = true;
     hosts = {
       "10.229.0.39" = [ "bullit" ];
-      "10.229.1.19" = [ "woodford" "traefik.net.scetrov.live" ];
+      "10.229.5.19" = [ "woodford" "traefik.net.scetrov.live" ];
     };
   };
 
