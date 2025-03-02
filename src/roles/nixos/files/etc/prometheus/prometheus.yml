@@ -11,4 +11,4 @@ scrape_configs:
   - targets: ['ethereum-erigon-sepolia:6060']
 - job_name: host
   static_configs:
-  - targets: ['host.containers.internal:9100']
+  - targets: ['host.podman.internal:9100']
