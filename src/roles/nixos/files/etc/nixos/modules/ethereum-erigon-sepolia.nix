@@ -9,8 +9,8 @@
   systemd.services.setup-erigon-data = {
     script = ''
       mkdir -p /var/lib/ethereum/erigon/sepolia
-      chmod 750 /var/lib/ethereum/erigon/sepolia
-      chown 100:1000 /var/lib/ethereum/erigon/sepolia
+      chmod -r 750 /var/lib/ethereum
+      chown -r 100:1000 /var/lib/ethereum
     '';
     wantedBy = ["multi-user.target"];
     serviceConfig = {
