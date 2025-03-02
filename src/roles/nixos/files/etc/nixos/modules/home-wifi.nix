@@ -1,7 +1,8 @@
 { config, ... }:
 
 {
-  age.secrets.wireless_psk.file = /root/secrets/wireless_psk.age;
+  age.secrets.wireless_pskraw.file = /root/secrets/wireless_pskraw.age;
+  age.secrets.wireless_ssid.file = /root/secrets/wireless_ssid.age;
 
   networking = {
     hostName = "woodford";
@@ -9,7 +10,8 @@
       enable = true;
       ensureProfiles = {
         environmentFiles = [
-          config.age.secrets.wireless_psk.path
+          config.age.secrets.wireless_pskraw.path
+          config.age.secrets.wireless_ssid.path
         ];
 
         profiles = {
@@ -27,12 +29,12 @@
             };
             wifi = {
               mode = "infrastructure";
-              ssid = "simian.collingwood";
+              ssid = "$WIRELESS_SSID";
             };
             wifi-security = {
               auth-alg = "open";
               key-mgmt = "wpa-psk";
-              psk = "$WIRELESS_PSK";
+              pskRaw = "$WIRELESS_PSKRAW";
             };
           };
         };
