@@ -2,7 +2,7 @@
 
 {
   environment.etc.erigon-ethereum-sepolia = {
-    source = ./etc/ethereum/erigon/sepolia.toml;
+    source = ../../ethereum/erigon/sepolia.toml;
     target = "erigon-ethereum-sepolia.toml";
   };
 
