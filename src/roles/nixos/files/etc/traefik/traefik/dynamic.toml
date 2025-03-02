@@ -1,0 +1,9 @@
+[tls.stores]
+  [tls.stores.default]
+    [tls.stores.default.defaultCertificate]
+    certFile = "/var/lib/acme/scetrov.live/cert.pem"
+    keyFile = "/var/lib/acme/scetrov.live/key.pem"
+
+[tls.options]
+  [tls.options.default]
+  minVersion = "VersionTLS12"
