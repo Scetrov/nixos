@@ -5,11 +5,11 @@
     ./device-configuration.nix
     ./hardware-configuration.nix
     ./modules/audio.nix
-    ./modules/docker.nix
     ./modules/locale.nix
     ./modules/maintenance.nix
     ./modules/networking.nix
     ./modules/pkgs.nix
+    ./modules/podman.nix
     ./modules/programs.nix
     ./modules/security.nix
     ./modules/user-scetrov.nix

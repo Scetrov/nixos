@@ -7,6 +7,8 @@
         "chezmoi",
         "collingwood",
         "devenv",
+        "dnscrypt",
+        "dnssec",
         "endswith",
         "equalto",
         "finegrained",
@@ -16,9 +18,11 @@
         "hyperv",
         "Kwallet",
         "mgmt",
+        "minisign",
         "nerdfont",
         "nixfmt",
         "nixos",
+        "nixpkgs",
         "nmap",
         "pkgs",
         "plugdev",
@@ -26,8 +30,10 @@
         "scetrov",
         "startplasma",
         "usbutils",
+        "virtualisation",
         "woodford",
         "xrdp",
+        "yubikey",
         "yubioath"
     ]
 }

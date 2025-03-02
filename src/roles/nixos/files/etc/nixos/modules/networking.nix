@@ -4,7 +4,7 @@
   networking = {
     nameservers = [ "127.0.0.1" "::1" ];
     networkmanager.dns = "none";
-    firewall.allowedTCPPorts = [ 22 3389 ];
+    firewall.enable = true;
   };
 
   services.dnscrypt-proxy2 = {
