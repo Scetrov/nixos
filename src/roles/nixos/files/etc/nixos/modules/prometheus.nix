@@ -10,6 +10,7 @@
     exporters = {
       node = {
         enable = true;
+        listenAddress = "0.0.0.0";
         enabledCollectors = [ "systemd" ];
         port = 9100;
       };
