@@ -4,6 +4,7 @@
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
+  services.kde.kwallet.enable = true;
 
   services.xrdp.enable = true;
   services.xrdp.defaultWindowManager = "startplasma-x11";
