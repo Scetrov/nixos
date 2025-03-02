@@ -2,19 +2,20 @@
 
 {
   imports = [
-    <agenix/modules/age.nix>
-    ./hardware-configuration.nix
     ./device-configuration.nix
+    ./hardware-configuration.nix
+    ./modules/audio.nix
+    ./modules/docker.nix
     ./modules/locale.nix
     ./modules/maintenance.nix
     ./modules/networking.nix
-    ./modules/audio.nix
     ./modules/pkgs.nix
     ./modules/programs.nix
     ./modules/security.nix
     ./modules/user-scetrov.nix
-    ./modules/docker.nix
     ./modules/xserver.nix
+    ./modules/zsh.nix
+    <agenix/modules/age.nix>
   ];
 
   boot.loader.systemd-boot.enable = true;
