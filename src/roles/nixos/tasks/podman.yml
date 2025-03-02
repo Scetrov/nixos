@@ -1,0 +1,17 @@
+- name: Get list of running Podman containers
+  ansible.builtin.command: podman ps -q
+  register: running_containers
+  changed_when: false
+
+- name: Restart each container
+  ansible.builtin.command: podman restart {{ item }}
+  loop: "{{ running_containers.stdout_lines }}"
+  when: running_containers.stdout != ""
+  register: restart_results
+  changed_when: restart_results.rc == 0
+
+- name: Show restart results
+  ansible.builtin.debug:
+    msg: "Restarted container {{ item.item }} with status: {{ item.rc }}"
+  loop: "{{ restart_results.results }}"
+  when: restart_results.results is defined
