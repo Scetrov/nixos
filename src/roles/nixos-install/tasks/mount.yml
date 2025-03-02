@@ -1,6 +1,6 @@
 - block:
   - name: Ensure root partition is mounted
-    become: true
+    become: yes
     mount:
       path: /mnt
       src: /dev/disk/by-label/nixos
@@ -9,14 +9,14 @@
       fstab: /tmp/tmp.fstab
 
   - name: Ensure /mnt/boot directory exists
-    become: true
+    become: yes
     file:
       path: /mnt/boot
       state: directory
       mode: '0755'
 
   - name: Ensure boot partition is mounted
-    become: true
+    become: yes
     mount:
       path: /mnt/boot
       src: /dev/disk/by-label/boot

@@ -42,7 +42,7 @@
     var: clean_nixos_label
 
 - name: Apply NixOS configuration
-  become: true
+  become: yes
   environment:
     NIXOS_LABEL: "{{ clean_nixos_label }}"
   command: nixos-rebuild switch --upgrade

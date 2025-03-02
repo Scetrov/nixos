@@ -13,7 +13,7 @@
       swap_size: "16GB"
 
   - name: Partition the disk only if it's empty
-    become: true
+    become: yes
     block:
       - name: Create partition table (GPT)
         command: parted {{ target_device }} -- mklabel gpt

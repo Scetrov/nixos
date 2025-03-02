@@ -1,5 +1,5 @@
 - name: Add NixOS channels
-  become: true
+  become: yes
   loop:
     - { name: "NixOS 24.11", url: "https://nixos.org/channels/nixos-24.11", channel: "nixos" }
     - { name: "Nix Unstable", url: "https://nixos.org/channels/nixos-unstable", channel: "nixos-unstable" }
@@ -8,5 +8,5 @@
   command: "nix-channel --add {{ item.url }} {{ item.channel }}"
 
 - name: Nix Channel Update
-  become: true
+  become: yes
   command: nix-channel --update

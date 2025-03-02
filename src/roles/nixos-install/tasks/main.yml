@@ -8,12 +8,12 @@
   ansible.builtin.include_tasks: nixos-generate.yml
 
 - name: Install NixOS
-  become: true
+  become: yes
   shell: nixos-install --no-root-password
   args:
     chdir: /mnt
 
 - name: Reboot the system
-  become: true
+  become: yes
   shell: shutdown -r 1
   

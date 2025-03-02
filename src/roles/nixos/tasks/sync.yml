@@ -1,12 +1,12 @@
 - name: Ensure /etc/nixos directory exists
-  become: true
+  become: yes
   file:
     path: /etc/nixos
     state: directory
     mode: '0755'
 
 - name: Synchronize NixOS configuration to /etc/nixos
-  become: true
+  become: yes
   synchronize:
     src: "{{ role_path }}/files/etc/nixos/"
     dest: /etc/nixos/
@@ -16,7 +16,7 @@
       - "--exclude=*.j2"
 
 - name: Synchronize Prometheus
-  become: true
+  become: yes
   synchronize:
     src: "{{ role_path }}/files/etc/{{ item }}/"
     dest: "/etc/{{ item }}"
@@ -36,7 +36,7 @@
   register: found_templates
 
 - name: Template .nix.j2 files to /etc/nixos
-  become: true
+  become: yes
   template:
     src: "{{ item.path }}"
     dest: "/etc/nixos/{{ item.path | regex_replace('^' + role_path + '/files/etc/nixos/', '') | regex_replace('.j2$', '') }}"
@@ -70,7 +70,7 @@
     - ansible_system_vendor == "Microsoft Corporation"
 
 - name: Set ownership and permissions /etc/nixos
-  become: true
+  become: yes
   file:
     path: "/etc/nixos"
     owner: root
@@ -78,7 +78,7 @@
     mode: '0755'
  
 - name: Find synchronized files and directories
-  become: true
+  become: yes
   find:
     paths: /etc/nixos
     recurse: yes
@@ -86,7 +86,7 @@
   register: synced_files
 
 - name: Set ownership and permissions for synchronized files
-  become: true
+  become: yes
   file:
     path: "{{ item.path }}"
     owner: root
@@ -97,7 +97,7 @@
     label: "{{ item.path }}"
 
 - name: Find synchronized files and directories
-  become: true
+  become: yes
   find:
     paths: /etc/nixos
     recurse: yes
@@ -105,7 +105,7 @@
   register: synced_dirs
 
 - name: Set ownership and permissions for synchronized directories
-  become: true
+  become: yes
   file:
     path: "{{ item.path }}"
     owner: root
