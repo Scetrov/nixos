@@ -6,8 +6,8 @@
     networkmanager.dns = "none";
     firewall.enable = true;
     hosts = {
-      "10.229.0.39" = [ "bullit" ];
-      "10.229.5.19" = [ "woodford" "traefik.net.scetrov.live" "grafana.net.scetrov.live" "prometheus.net.scetrov.live" ];
+      "10.229.0.39" = [ "bullit" "bullit.net.scetrov.live" ];
+      "10.229.5.19" = [ "woodford" "woodford.net.scetrov.live" "traefik.net.scetrov.live" "grafana.net.scetrov.live" "prometheus.net.scetrov.live" ];
     };
   };
 
