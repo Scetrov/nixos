@@ -8,6 +8,7 @@
   users.users.erigon = {
     isSystemUser = true;
     uid = 101;
+    home = "/var/lib/ethereum/erigon/sepolia";
     group = "ethereum";
     shell = "/sbin/nologin";
   };
@@ -20,6 +21,7 @@
   systemd.services.setup-erigon-data = {
     script = ''
       mkdir --parents "$ETHEREUM_DATA/erigon/sepolia"
+      mkdir --parents "$ETHEREUM_DATA/erigon/sepolia/share"
       chown --recursive erigon:ethereum "$ETHEREUM_DATA/erigon"
       find "$ETHEREUM_DATA" -type d -exec chmod 750 {} +
       find "$ETHEREUM_DATA" -type f -exec chmod 640 {} +
@@ -52,9 +54,11 @@
         environment = {
           DOCKER_UID = "101";
           DOCKER_GID = "1001";
+          XDG_DATA_HOME = "/var/lib/ethereum/erigon/sepolia/share";
         };
         volumes = [
           "/var/lib/ethereum/erigon/sepolia:/var/lib/ethereum/erigon/sepolia:rw"
+          "/var/lib/ethereum/erigon/sepolia/share:/var/lib/ethereum/erigon/sepolia/share:rw"
           "/etc/ethereum/erigon/sepolia.toml:/etc/ethereum/erigon/sepolia.toml:ro"
         ];
         labels = {
