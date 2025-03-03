@@ -6,12 +6,10 @@ chain = "sepolia"
 
 "prune.mode" = "archive"
 
-[http]
-enabled = true
-port = 8454
-vhosts = "*"
-addr = "0.0.0.0"
-api = ["eth", "erigon", "engine", "debug", "web3", "net", "trace", "txpool"]
+"http.enabled" = true
+"http.port" = 8454
+"http.vhosts" = "*"
+"http.addr" = "0.0.0.0"
+"http.api" = ["eth", "erigon", "engine", "debug", "web3", "net", "trace", "txpool"]
 
-[metrics]
-port = 6060
+"metrics.port" = 6060
