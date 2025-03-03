@@ -22,7 +22,7 @@
     script = ''
       mkdir --parents "$ETHEREUM_DATA/erigon/sepolia"
       mkdir --parents "$ETHEREUM_DATA/erigon/sepolia/share"
-      chown --recursive erigon:ethereum "$ETHEREUM_DATA/erigon"
+      chown --recursive erigon:ethereum "$ETHEREUM_DATA"
       find "$ETHEREUM_DATA" -type d -exec chmod 750 {} +
       find "$ETHEREUM_DATA" -type f -exec chmod 640 {} +
     '';
