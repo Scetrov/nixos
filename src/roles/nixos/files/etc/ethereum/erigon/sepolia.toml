@@ -1,9 +1,11 @@
 datadir = "/var/lib/ethereum/erigon/sepolia"
 "ethash.dagdir" = "/var/lib/ethereum/erigon/sepolia/ethash"
 nat = "stun"
-
+verbosity = "warn"
 chain = "sepolia"
-prune.mode = "archive"
+
+[prune]
+mode = "archive"
 
 [http]
 enabled = true
