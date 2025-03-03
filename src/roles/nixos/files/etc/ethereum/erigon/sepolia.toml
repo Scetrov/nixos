@@ -19,7 +19,6 @@ addr = "0.0.0.0"
 api = ["eth", "erigon", "engine", "debug", "web3", "net", "trace", "txpool"]
 
 [metrics]
-enable = true
 port = 6060
 
 [stagedsync]
