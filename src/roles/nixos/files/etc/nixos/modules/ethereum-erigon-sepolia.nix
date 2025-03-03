@@ -15,7 +15,7 @@
     '';
     environment = {
       ETHEREUM_DATA = "/var/lib/ethereum";
-    }
+    };
     wantedBy = ["multi-user.target"];
     serviceConfig = {
       Type = "oneshot";
