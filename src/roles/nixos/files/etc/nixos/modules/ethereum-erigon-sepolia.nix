@@ -51,7 +51,7 @@
         image = "erigontech/erigon:v3.0.0-beta2";
         cmd = [ "--config" "/etc/ethereum/erigon/sepolia.toml" ];
         autoStart = true;
-        user = "erigon";
+        user = "101:1001";
         environmentFiles = [
           /etc/ethereum/erigon/.env
         ];
