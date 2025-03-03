@@ -52,13 +52,9 @@
         cmd = [ "--config" "/etc/ethereum/erigon/sepolia.toml" ];
         autoStart = true;
         user = "erigon";
-        environment = {
-          USER = "erigon";
-          GROUP = "ethereum";
-          DOCKER_UID = "101";
-          DOCKER_GID = "1001";
-          XDG_DATA_HOME = "/var/lib/ethereum/erigon/sepolia/share";
-        };
+        environmentFiles = [
+          /etc/ethereum/erigon/.env
+        ];
         volumes = [
           "/var/lib/ethereum/erigon/sepolia:/var/lib/ethereum/erigon/sepolia:rw"
           "/var/lib/ethereum/erigon/sepolia/share:/var/lib/ethereum/erigon/sepolia/share:rw"
