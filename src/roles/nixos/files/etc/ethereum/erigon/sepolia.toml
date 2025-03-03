@@ -1,15 +1,12 @@
 datadir = "/var/lib/ethereum/erigon/sepolia"
-cpuprofile = false
-maxpeers = 100
+"ethash.dagdir" = "/var/lib/ethereum/erigon/sepolia/ethash"
 nat = "stun"
 
-[eth]
-network = "sepolia"
-prune = "archive"
-cache = 4096
+chain = "sepolia"
+prune.mode = "archive"
 
-[rpc]
-http = true
+[http]
+enabled = true
 port = 8454
 vhosts = "*"
 addr = "0.0.0.0"
