@@ -47,7 +47,7 @@
   virtualisation = {
     oci-containers.containers = {
       ethereum-erigon-sepolia = {
-        image = "erigontech/erigon:latest";
+        image = "erigontech/erigon:v3.0.0-beta2";
         cmd = [ "--config" "/etc/ethereum/erigon/sepolia.toml" ];
         autoStart = true;
         user = "erigon";
