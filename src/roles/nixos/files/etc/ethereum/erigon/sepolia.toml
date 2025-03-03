@@ -1,16 +1,27 @@
+[global]
 datadir = "/var/lib/ethereum/erigon/sepolia"
-
-prune.mode = "archive"
-
-externalcl = false
-
-http = true
-"http.port" = 8454
-"http.vhosts" = "*"
-"http.addr" = "0.0.0.0"
-"http.api" = ["eth", "erigon", "engine", "debug", "web3", "net", "trace", "txpool"]
-
-metrics = true
-"metrics.port" = 6060
-
+cpuprofile = false
+maxpeers = 100
 nat = "stun"
+
+[eth]
+network = "sepolia"
+prune = "archive"
+cache = 4096
+
+[snapshots]
+enable = true
+
+[rpc]
+http = true
+port = 8454
+vhosts = "*"
+addr = "0.0.0.0"
+api = ["eth", "erigon", "engine", "debug", "web3", "net", "trace", "txpool"]
+
+[metrics]
+enable = true
+port = 6060
+
+[stagedsync]
+enable = true
