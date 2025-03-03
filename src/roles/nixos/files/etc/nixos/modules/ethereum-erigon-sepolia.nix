@@ -8,10 +8,10 @@
 
   systemd.services.setup-erigon-data = {
     script = ''
-      mkdir --parents "${ETHEREUM_DATA}/erigon/sepolia"
-      chown --recursive 100:1000 "${ETHEREUM_DATA}/erigon"
-      find "${ETHEREUM_DATA}" -type d -exec chmod 750 {} +
-      find "${ETHEREUM_DATA}" -type f -exec chmod 640 {} +
+      mkdir --parents "$ETHEREUM_DATA/erigon/sepolia"
+      chown --recursive 100:1000 "$ETHEREUM_DATA/erigon"
+      find "$ETHEREUM_DATA" -type d -exec chmod 750 {} +
+      find "$ETHEREUM_DATA" -type f -exec chmod 640 {} +
     '';
     environment = {
       ETHEREUM_DATA = "/var/lib/ethereum";
