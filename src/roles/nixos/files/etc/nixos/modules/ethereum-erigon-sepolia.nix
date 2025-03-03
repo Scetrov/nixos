@@ -1,6 +1,17 @@
 { config, lib, ... }:
 
 {
+  users.groups.ethereum = {
+    gid = 1001;
+  };
+
+  users.users.erigon = {
+    isSystemUser = true;
+    uid = 101;
+    group = "ethereum";
+    shell = "/sbin/nologin";
+  };
+
   environment.etc.erigon-ethereum-sepolia = {
     source = ../../ethereum/erigon/sepolia.toml;
     target = "erigon-ethereum-sepolia.toml";
@@ -9,7 +20,7 @@
   systemd.services.setup-erigon-data = {
     script = ''
       mkdir --parents "$ETHEREUM_DATA/erigon/sepolia"
-      chown --recursive 100:1000 "$ETHEREUM_DATA/erigon"
+      chown --recursive erigon:ethereum "$ETHEREUM_DATA/erigon"
       find "$ETHEREUM_DATA" -type d -exec chmod 750 {} +
       find "$ETHEREUM_DATA" -type f -exec chmod 640 {} +
     '';
@@ -34,12 +45,14 @@
   virtualisation = {
     oci-containers.containers = {
       ethereum-erigon-sepolia = {
+        user = "erigon";
+        group = "ethereum";
         image = "erigontech/erigon:latest";
         cmd = [ "--config" "/etc/ethereum/erigon/sepolia.toml" ];
         autoStart = true;
         volumes = [
           "/var/lib/ethereum/erigon/sepolia:/var/lib/ethereum/erigon/sepolia:rw"
-          "/etc/ethereum/erigon/sepolia.toml:/etc/ethereum/erigon/sepolia.toml"
+          "/etc/ethereum/erigon/sepolia.toml:/etc/ethereum/erigon/sepolia.toml:ro"
         ];
         labels = {
           # HTTPS RPC

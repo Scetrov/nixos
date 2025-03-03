@@ -30,6 +30,7 @@
         "nixos",
         "nixpkgs",
         "nmap",
+        "nologin",
         "oneshot",
         "pkgs",
         "plugdev",
