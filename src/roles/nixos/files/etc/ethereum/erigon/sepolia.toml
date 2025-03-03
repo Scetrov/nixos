@@ -4,8 +4,7 @@ nat = "stun"
 verbosity = "warn"
 chain = "sepolia"
 
-[prune]
-mode = "archive"
+"prune.mode" = "archive"
 
 [http]
 enabled = true
