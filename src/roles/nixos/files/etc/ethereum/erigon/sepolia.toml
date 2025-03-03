@@ -1,5 +1,4 @@
 datadir = "/var/lib/ethereum/erigon/sepolia"
-ethash.dagdir = "/var/lib/ethereum/erigon/sepolia/ethash"
 
 prune.mode = "archive"
 
