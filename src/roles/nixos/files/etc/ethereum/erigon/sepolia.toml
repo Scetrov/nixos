@@ -13,4 +13,5 @@ ws = true
 "http.api" = ["eth", "erigon", "engine", "debug", "web3", "net", "trace", "txpool"]
 
 metrics = true
+"metrics.addr" = "0.0.0.0"
 "metrics.port" = 6060
