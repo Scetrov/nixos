@@ -45,11 +45,13 @@
   virtualisation = {
     oci-containers.containers = {
       ethereum-erigon-sepolia = {
-        user = "erigon";
-        group = "ethereum";
         image = "erigontech/erigon:latest";
         cmd = [ "--config" "/etc/ethereum/erigon/sepolia.toml" ];
         autoStart = true;
+        environment = {
+          DOCKER_UID = "101";
+          DOCKER_GID = "1001";
+        };
         volumes = [
           "/var/lib/ethereum/erigon/sepolia:/var/lib/ethereum/erigon/sepolia:rw"
           "/etc/ethereum/erigon/sepolia.toml:/etc/ethereum/erigon/sepolia.toml:ro"
