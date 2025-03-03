@@ -1,8 +1,8 @@
 datadir = "/var/lib/ethereum/erigon/sepolia"
 "ethash.dagdir" = "/var/lib/ethereum/erigon/sepolia/ethash"
 nat = "stun"
-verbosity = "warn"
 chain = "sepolia"
+ws = true
 
 "prune.mode" = "archive"
 
@@ -12,4 +12,5 @@ chain = "sepolia"
 "http.addr" = "0.0.0.0"
 "http.api" = ["eth", "erigon", "engine", "debug", "web3", "net", "trace", "txpool"]
 
+metrics = true
 "metrics.port" = 6060
