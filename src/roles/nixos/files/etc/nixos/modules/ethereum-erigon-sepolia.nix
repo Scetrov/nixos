@@ -30,14 +30,11 @@
     environment = {
       ETHEREUM_DATA = "/var/lib/ethereum";
     };
-    wantedBy = ["multi-user.target"];
+    wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
     };
   };
-
-  networking.firewall.allowedTCPPorts = [ 30303 30304 42069 ];
-  networking.firewall.allowedUDPPorts = [ 30303 30304 42069 ];
 
   systemd.services.podman-ethereum-erigon-sepolia = {
     wantedBy = [ "multi-user.target" ];
@@ -49,7 +46,10 @@
     oci-containers.containers = {
       ethereum-erigon-sepolia = {
         image = "erigontech/erigon:v3.0.0-beta2";
-        cmd = [ "--config" "/etc/ethereum/erigon/sepolia.toml" ];
+        cmd = [
+          "--config"
+          "/etc/ethereum/erigon/sepolia.toml"
+        ];
         autoStart = true;
         user = "101:1001";
         environmentFiles = [
@@ -86,7 +86,7 @@
           "traefik.tcp.routers.ethereum-erigon-sepolia-sentinel.rule" = "HostSNI(`*`)";
           "traefik.tcp.routers.ethereum-erigon-sepolia-sentinel.service" = "ethereum-erigon-sepolia-sentinel";
           "traefik.tcp.services.ethereum-erigon-sepolia-sentinel.loadbalancer.server.port" = "4001";
-          
+
           # UDP
           "traefik.udp.routers.ethereum-erigon-sepolia-snap.entrypoints" = "snap-udp";
           "traefik.udp.routers.ethereum-erigon-sepolia-snap.service" = "ethereum-erigon-sepolia-snap";
@@ -104,4 +104,18 @@
       };
     };
   };
+
+  networking.firewall.allowedTCPPorts = [
+    42069
+    30303
+    30304
+    4001
+  ];
+
+  networking.firewall.allowedUDPPorts = [
+    42069
+    30303
+    30304
+    4000
+  ];
 }
