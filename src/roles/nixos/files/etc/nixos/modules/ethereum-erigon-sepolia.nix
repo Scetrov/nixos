@@ -53,6 +53,8 @@
         autoStart = true;
         user = "erigon";
         environment = {
+          USER = "erigon";
+          GROUP = "ethereum";
           DOCKER_UID = "101";
           DOCKER_GID = "1001";
           XDG_DATA_HOME = "/var/lib/ethereum/erigon/sepolia/share";
