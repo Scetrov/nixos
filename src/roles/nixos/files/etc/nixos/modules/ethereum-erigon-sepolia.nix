@@ -8,9 +8,11 @@
 
   systemd.services.setup-erigon-data = {
     script = ''
-      mkdir -p /var/lib/ethereum/erigon/sepolia
-      chmod --recursive 750 /var/lib/ethereum
-      chown --recursive 100:1000 /var/lib/ethereum
+      ETHEREUM_DATA=/var/lib/ethereum
+      mkdir --parents "${ETHEREUM_DATA}/erigon/sepolia"
+      chown --recursive 100:1000 "${ETHEREUM_DATA}/erigon"
+      find "${ETHEREUM_DATA}" -type d -exec chmod 750 {} +
+      find "${ETHEREUM_DATA}" -type f -exec chmod 640 {} +
     '';
     wantedBy = ["multi-user.target"];
     serviceConfig = {
