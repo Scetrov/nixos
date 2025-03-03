@@ -1,4 +1,3 @@
-[global]
 datadir = "/var/lib/ethereum/erigon/sepolia"
 cpuprofile = false
 maxpeers = 100
