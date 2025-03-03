@@ -48,7 +48,7 @@
         image = "erigontech/erigon:latest";
         cmd = [ "--config" "/etc/ethereum/erigon/sepolia.toml" ];
         autoStart = true;
-        user = "erigon:ethereum";
+        user = "erigon";
         environment = {
           DOCKER_UID = "101";
           DOCKER_GID = "1001";
