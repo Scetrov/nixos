@@ -33,7 +33,6 @@
   services.dnscrypt-proxy2 = {
     enable = true;
     settings = {
-      listen_addresses = ["0.0.0.0:53" "[::]:53"];
       ipv6_servers = true;
       require_dnssec = true;
       sources.public-resolvers = {
