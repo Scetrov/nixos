@@ -16,11 +16,15 @@
       "10.229.5.19" = [
         "woodford"
         "woodford.net.scetrov.live"
+      ];
+      "10.229.1.237" = [
+        "habiki"
+        "habiki.net.scetrov.live"
         "traefik.net.scetrov.live"
         "grafana.net.scetrov.live"
         "prometheus.net.scetrov.live"
         "json-rpc.sepolia.scetrov.live"
-      ];
+      ]
     };
   };
 
