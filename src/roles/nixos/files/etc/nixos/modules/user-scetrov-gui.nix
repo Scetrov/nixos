@@ -16,7 +16,7 @@ in
       unstable.obsidian
       vscode-fhs
       yubioath-flutter
-      unstable.keepassxs
+      unstable.keepassxc
     ];
   };
 }
