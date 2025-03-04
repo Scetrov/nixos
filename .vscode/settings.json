@@ -36,6 +36,7 @@
         "jdks",
         "Kwallet",
         "lightclient",
+        "lineinfile",
         "luks",
         "maxpeers",
         "mgmt",
