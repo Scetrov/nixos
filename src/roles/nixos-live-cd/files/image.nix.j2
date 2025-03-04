@@ -64,7 +64,7 @@
       "networkmanager"
       "wheel"
     ];
-    pkgs = with pkgs; [
+    packages = with pkgs; [
       neovim
       git
       curl
@@ -83,18 +83,27 @@
   };
 
   systemd.services.update-motd = {
-    description = "Update MOTD with IP Address";
+    description = "Update MOTD with IP Address (With Colors)";
     after = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = ''
-        echo "Welcome to $(hostname)" > /etc/motd
-        echo "" >> /etc/motd
-        echo "IP Addresses:" >> /etc/motd
-        ip addr show | grep "inet " | awk '{print $2}' >> /etc/motd
-        echo "" >> /etc/motd
-        echo "Have a great day!" >> /etc/motd
+        # Define ANSI color codes
+        GREEN="\033[1;32m"
+        CYAN="\033[1;36m"
+        YELLOW="\033[1;33m"
+        RESET="\033[0m"
+
+        # Start building MOTD
+        echo -e "$GREEN Welcome to $(hostname) $RESET" > /etc/motd
+        echo -e "" >> /etc/motd
+
+        echo -e "$CYAN IP Addresses: $RESET" >> /etc/motd
+        ip addr show | grep "inet " | awk '{print "  " $2}' >> /etc/motd
+
+        echo -e "" >> /etc/motd
+        echo -e "$YELLOW Have a great day! $RESET" >> /etc/motd
       '';
     };
   };
