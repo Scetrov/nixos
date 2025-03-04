@@ -34,26 +34,18 @@ in
       fzf
       git
       go
-      insomnia
-      jetbrains.rider
       lsb-release
       nixfmt-rfc-style
       nmap
       powershell
       rustup
       tmux
-      unstable.brave
       unstable.chezmoi
       unstable.devenv
       unstable.foundry
-      unstable.framesh
-      unstable.ghostty
       unstable.hugo
-      unstable.obsidian
       unstable.oh-my-posh
       usbutils
-      vscode-fhs
-      yubioath-flutter
     ];
   };
 }

@@ -1,6 +1,11 @@
 { config, ... }:
 
 {
+  imports = [
+    ./modules/home-wifi.nix
+    ./modules/user-scetrov-gui.nix
+  ];
+
   networking = {
     wireless.enable = false;
     networkmanager.enable = true;
