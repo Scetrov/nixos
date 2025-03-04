@@ -2,12 +2,8 @@
 
 {
   imports = [
-    ./modules/acme.nix
     ./modules/home-wifi.nix
-    # ./modules/traefik.nix
-    # ./modules/prometheus.nix
-    # ./modules/grafana.nix
-    # ./modules/ethereum-erigon-sepolia.nix
+    ./modules/prism-launcher.nix
   ];
 
   services.xserver.videoDrivers = ["nvidia"];

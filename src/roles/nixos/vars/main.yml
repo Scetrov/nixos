@@ -1,5 +1,3 @@
 ---
-luks_candidates:
-  - nvme0n1p2
 username: scetrov
 user_group: users
