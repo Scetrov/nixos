@@ -78,9 +78,7 @@
     ];
   };
 
-  services.getty = {
-    autologinUser = "{{ username }}";
-  };
+  services.getty.autologinUser = lib.mkForce "{{ username }}";
 
   systemd.services.update-motd = {
     description = "Update MOTD with IP Address (With Colors)";
