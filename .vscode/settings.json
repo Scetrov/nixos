@@ -53,6 +53,7 @@
         "oneshot",
         "pkgs",
         "plugdev",
+        "pskraw",
         "redirections",
         "reiserfs",
         "rustup",
