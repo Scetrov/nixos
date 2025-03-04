@@ -31,6 +31,7 @@
   services.dnscrypt-proxy2 = {
     enable = true;
     settings = {
+      listen_addresses = ["0.0.0.0:53" "[::]:53"];
       ipv6_servers = true;
       require_dnssec = true;
       sources.public-resolvers = {
@@ -40,6 +41,7 @@
         ];
         cache_file = "/var/cache/dnscrypt-proxy/public-resolvers.md";
         minisign_key = "RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3";
+        static.hosts.file = "/etc/hosts";
       };
     };
   };
