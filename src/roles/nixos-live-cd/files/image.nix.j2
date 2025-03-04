@@ -40,6 +40,16 @@
   };
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
+  
+  users.users.root = {
+    isNormalUser = false;
+    hashedPassword = "{{ user_password_hashed }}";
+  };
+
+  users.users.nixos = {
+    isNormalUser = true;
+    hashedPassword = "{{ user_password_hashed }}";
+  };
 
   users.users."{{ username }}" = {
     isNormalUser = true;
@@ -49,20 +59,19 @@
       "networkmanager"
       "wheel"
     ];
+    pkgs = with pkgs; [
+      neovim
+      git
+      curl
+      wget
+      python3
+      python3Packages.ansible
+    ];
     openssh.authorizedKeys.keys = [
       "{{ ssh_hsm_key }}"
       "{{ ssh_bastion_key }}"
     ];
   };
-
-  environment.systemPackages = with pkgs; [
-    gcc
-    python3
-    wget
-    curl
-    ansible
-    neovim
-  ];
 
   # Needed for https://github.com/NixOS/nixpkgs/issues/58959
   boot.supportedFilesystems = lib.mkForce [

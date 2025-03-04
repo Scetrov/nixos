@@ -5,12 +5,12 @@
     register: nixos_config
 
   - name: Generate NixOS configuration
-    become: yes
+    become: true
     command: nixos-generate-config --root /mnt
     when: not nixos_config.stat.exists
 
   - name: Copy Temporary Configuration
-    become: yes
+    become: true
     template:
       src: "{{ role_path }}/files/configuration.nix.j2"
       dest: /mnt/etc/nixos/configuration.nix

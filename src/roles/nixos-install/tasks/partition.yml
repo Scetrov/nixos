@@ -1,41 +1,116 @@
 - block:
-  - name: Check if the disk has existing partitions
-    command: lsblk -no NAME {{ target_device }}
-    register: disk_check
-    changed_when: false
-  
-  - name: Generate Facts
-    set_fact:
-      root_device: "{{ target_device + '1' }}"
-      swap_device: "{{ target_device + '2' }}"
-      boot_device: "{{ target_device + '3' }}"
-      efi_size: "512MB"
-      swap_size: "16GB"
+    - name: Get list of partitions on the disk
+      become: true
+      ansible.builtin.command: "lsblk -nd --output NAME {{ target_device }}"
+      register: disk_check
+      changed_when: false
+      failed_when: false # Avoid failure if the disk is empty
 
-  - name: Partition the disk only if it's empty
-    become: yes
-    block:
-      - name: Create partition table (GPT)
-        command: parted {{ target_device }} -- mklabel gpt
+    - name: Set fact for disk emptiness
+      ansible.builtin.set_fact:
+        disk_is_empty: "{{ disk_check.stdout_lines | length == 1 }}"
 
-      - name: Create root partition
-        command: parted {{ target_device }} -- mkpart primary ext4 {{ efi_size }} -{{ swap_size }}
+    - name: Debug disk status
+      ansible.builtin.debug:
+        msg: "Disk {{ target_device }} is empty: {{ disk_is_empty }}"
 
-      - name: Create swap partition
-        command: parted {{ target_device }} -- mkpart swap linux-swap -{{ swap_size }} 100%
+    - name: Wipe the disk
+      when: not disk_is_empty and wipe_disk
+      become: true
+      block:
+        - name: Ensure disk is not mounted
+          ansible.builtin.command: "umount {{ target_device }}*"
+          ignore_errors: true
 
-      - name: Create EFI partition
-        command: parted {{ target_device }} -- mkpart ESP fat32 1MB {{ efi_size }}
+        - name: Disable swap if using this disk
+          ansible.builtin.command: "swapoff -a"
+          ignore_errors: true
 
-      - name: Set EFI partition boot flag
-        command: parted {{ target_device }} --script set 3 esp on
+        - name: Wipe all partitions using wipefs
+          ansible.builtin.command: "wipefs --all {{ target_device }}"
+          changed_when: true
 
-      - name: Format root partition as ext4
-        command: mkfs.ext4 {{ root_device }} -L nixos
+        - name: Zero out the beginning of the disk using dd
+          ansible.builtin.command: "dd if=/dev/zero of={{ target_device }} bs=1M count=100 status=progress"
+          changed_when: true
 
-      - name: Format EFI partition as FAT32 and label as boot
-        command: mkfs.fat -F 32 -n boot {{ boot_device }}
+        - name: Flush kernel disk cache
+          ansible.builtin.command: "sync"
+    
+    - name: Detect Naming Convention for NVMe/SATA
+      set_fact:
+        partition_suffix: "{% if target_device | regex_search('nvme') %}p{% else %}{{ '' }}{% endif %}"
 
-      - name: Make swap and label as swap
-        command: mkswap -L swap {{ swap_device }}
-    when: disk_check.stdout_lines | length == 1  # Only contains the disk itself, no partitions
+    - name: Generate Facts
+      set_fact:
+        boot_device: "{{ target_device + partition_suffix + '1' }}"
+        root_device: "{{ target_device + partition_suffix + '2' }}"
+        swap_device: "{{ target_device + partition_suffix + '3' }}"
+        efi_size: "512MB"
+        swap_size: "16GB"
+
+    - name: Partition the disk
+      become: true
+      block:
+        - name: Create GPT partition table
+          community.general.parted:
+            device: "{{ target_device }}"
+            label: gpt
+
+        - name: Create EFI partition
+          community.general.parted:
+            device: "{{ target_device }}"
+            number: 1
+            state: present
+            part_start: "1MB"
+            part_end: "{{ efi_size }}"
+            flags:
+              - esp
+              - boot
+            label: gpt
+            name: boot
+            fs_type: fat32
+
+        - name: Create root partition
+          community.general.parted:
+            device: "{{ target_device }}"
+            number: 2
+            state: present
+            part_start: "{{ efi_size }}"
+            part_end: "-{{ swap_size }}"
+            label: gpt
+            name: nixos
+            fs_type: ext4
+
+        - name: Create swap partition
+          community.general.parted:
+            device: "{{ target_device }}"
+            number: 3
+            state: present
+            part_start: "-{{ swap_size }}"
+            part_end: "100%"
+            label: gpt
+            fs_type: linux-swap
+
+        - name: Format root partition as ext4
+          community.general.filesystem:
+            fstype: ext4
+            force: true
+            dev: "{{ root_device }}"
+            opts: "-L nixos"
+
+        - name: Format EFI partition as FAT32 and label as boot
+          community.general.filesystem:
+            fstype: vfat
+            force: true
+            dev: "{{ boot_device }}"
+            opts: "-F 32 -n boot"
+
+        - name: Make swap and label as swap
+          community.general.filesystem:
+            fstype: swap
+            force: true
+            dev: "{{ swap_device }}"
+            opts: "-L swap"
+
+        - when: disk_is_empty

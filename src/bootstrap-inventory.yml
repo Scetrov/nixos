@@ -3,7 +3,9 @@ all:
     bootstrap:
       ansible_connection: ssh
       ansible_user: scetrov
-      ansible_host: 10.229.5.166
-      target_device: /dev/sda
-      new_hostname: nixos00002
+      ansible_host: 10.229.1.237
+      ansible_python_interpreter: /nix/store/kjgslpdqchx1sm7a5h9xibi5rrqcqfnl-python3-3.12.8/bin/python3
+      target_device: /dev/nvme0n1
+      new_hostname: habiki
       username: scetrov
+      
