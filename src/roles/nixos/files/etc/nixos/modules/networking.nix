@@ -24,7 +24,7 @@
         "grafana.net.scetrov.live"
         "prometheus.net.scetrov.live"
         "json-rpc.sepolia.scetrov.live"
-      ]
+      ];
     };
   };
 
