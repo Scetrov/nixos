@@ -73,6 +73,11 @@
     ];
   };
 
+  services.getty.autoLogin = {
+    enable = true;
+    user = "{{ username }}";
+  };
+
   # Needed for https://github.com/NixOS/nixpkgs/issues/58959
   boot.supportedFilesystems = lib.mkForce [
     "btrfs"
