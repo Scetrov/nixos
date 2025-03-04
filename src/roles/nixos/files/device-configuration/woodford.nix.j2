@@ -16,6 +16,8 @@
     enable = true;
   };
 
+  networking.hostName = "woodford";
+
   hardware.nvidia = {
     package = config.boot.kernelPackages.nvidiaPackages.stable;
     modesetting.enable = true;

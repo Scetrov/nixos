@@ -3,7 +3,6 @@
 {
   imports = [
     ./modules/acme.nix
-    ./modules/home-wifi.nix
     ./modules/traefik.nix
     ./modules/prometheus.nix
     ./modules/grafana.nix

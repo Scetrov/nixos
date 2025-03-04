@@ -5,7 +5,6 @@
   age.secrets.wireless_ssid.file = /root/secrets/wireless_ssid.age;
 
   networking = {
-    hostName = "woodford";
     networkmanager = {
       enable = true;
       ensureProfiles = {
