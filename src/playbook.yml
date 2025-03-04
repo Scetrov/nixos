@@ -15,7 +15,7 @@
 - name: Create Bootable ISO
   hosts: woodford
   vars_files:
-    - secrets
+    - secrets.yml
   roles:
     - nixos-live-cd
     
