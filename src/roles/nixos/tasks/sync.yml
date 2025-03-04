@@ -70,6 +70,18 @@
     - ansible_product_name == "Virtual Machine"
     - ansible_system_vendor == "Microsoft Corporation"
 
+- block:
+  - name: Configure 'Gigabyte BRIX BSI5' Hardware
+    copy:
+      src: "{{ role_path }}/files/hardware-configuration/gb-bsi5-6200.nix"
+      dest: /etc/nixos/hardware-configuration.nix
+  - name: Configure 'Gigabyte BRIX BSI5' Device
+    copy:
+      src: "{{ role_path }}/files/device-configuration/habiki.nix"
+      dest: /etc/nixos/device-configuration.nix
+  when:
+    - ansible_product_name == "GB-BSi5-6200"
+
 - name: Set ownership and permissions /etc/nixos
   become: true
   file:

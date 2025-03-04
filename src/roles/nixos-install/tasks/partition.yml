@@ -36,6 +36,10 @@
 
         - name: Flush kernel disk cache
           ansible.builtin.command: "sync"
+
+        - name: Set disk as empty
+          set_fact:
+            disk_is_empty: true
     
     - name: Detect Naming Convention for NVMe/SATA
       set_fact:
@@ -51,6 +55,7 @@
 
     - name: Partition the disk
       become: true
+      when: disk_is_empty
       block:
         - name: Create GPT partition table
           community.general.parted:
@@ -113,4 +118,3 @@
             dev: "{{ swap_device }}"
             opts: "-L swap"
 
-        - when: disk_is_empty
