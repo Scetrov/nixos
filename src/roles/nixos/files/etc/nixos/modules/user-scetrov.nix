@@ -48,4 +48,12 @@ in
       usbutils
     ];
   };
+
+  services.syncthing = {
+    enable = true;
+    user = "scetrov";
+    dataDir = "/home/scetrov/Sync";
+    configDir = "/home/scetrov/.config/syncthing";
+    openDefaultPorts = true;
+  };
 }

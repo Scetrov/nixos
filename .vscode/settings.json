@@ -67,6 +67,7 @@
         "stagedsync",
         "startplasma",
         "swapoff",
+        "syncthing",
         "tcpport",
         "traefik",
         "txpool",
