@@ -3,8 +3,10 @@
 {
   networking = {
     nameservers = [
-      "127.0.0.1"
+      "127.0.0.1" # dnscrypt2-proxy
       "::1"
+      "1.1.1.1" # Cloudflare
+      "8.8.8.8" # Google
     ];
     networkmanager.dns = "none";
     firewall.enable = true;
