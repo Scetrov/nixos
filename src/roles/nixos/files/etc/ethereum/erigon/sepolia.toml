@@ -12,6 +12,8 @@ ws = true
 "http.addr" = "0.0.0.0"
 "http.api" = ["eth", "erigon", "engine", "debug", "web3", "net", "trace", "txpool"]
 
+"caplin.blobs-immediate-backfill" = true
+
 metrics = true
 "metrics.addr" = "0.0.0.0"
 "metrics.port" = 6060
