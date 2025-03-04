@@ -1,4 +1,9 @@
-{ pkgs, modulesPath, lib, ...  }:
+{
+  pkgs,
+  modulesPath,
+  lib,
+  ...
+}:
 {
   imports = [
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
@@ -9,7 +14,7 @@
     wireless.enable = false;
     hostName = "nixup";
   };
-  
+
   environment.etc."NetworkManager/system-connections/simian.collingwood.nmconnection" = {
     text = ''
       [connection]
@@ -40,7 +45,7 @@
   };
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
-  
+
   users.users.root = {
     isNormalUser = false;
     hashedPassword = "{{ user_password_hashed }}";
@@ -73,9 +78,25 @@
     ];
   };
 
-  services.getty.autoLogin = {
-    enable = true;
-    user = "{{ username }}";
+  services.getty = {
+    autologinUser = "{{ username }}";
+  };
+
+  systemd.services.update-motd = {
+    description = "Update MOTD with IP Address";
+    after = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = ''
+        echo "Welcome to $(hostname)" > /etc/motd
+        echo "" >> /etc/motd
+        echo "IP Addresses:" >> /etc/motd
+        ip addr show | grep "inet " | awk '{print $2}' >> /etc/motd
+        echo "" >> /etc/motd
+        echo "Have a great day!" >> /etc/motd
+      '';
+    };
   };
 
   # Needed for https://github.com/NixOS/nixpkgs/issues/58959
