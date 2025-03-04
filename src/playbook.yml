@@ -11,4 +11,11 @@
     - secrets
     - nixos
     - user-scetrov
+
+- name: Create Bootable ISO
+  hosts: woodford
+  vars_files:
+    - secrets
+  roles:
     - nixos-live-cd
+    

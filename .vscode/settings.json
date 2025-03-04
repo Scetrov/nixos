@@ -4,6 +4,7 @@
         "ahci",
         "autologin",
         "baseconfig",
+        "Bootable",
         "BRIX",
         "btop",
         "btrfs",
