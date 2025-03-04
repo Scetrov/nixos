@@ -6,7 +6,8 @@ let
 
   devenv = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID/F3dBtSPoouR5qVTHCJTsVVgPBFTFJB1WVxnUkvgKa";
   woodford = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF6a5bYzqwYWOJ2ORbg4ANoALIGUfO2fVwLW9UyWfq50";
-  systems = [ devenv woodford ];
+  habiki = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ6Gw0SitGQ9Z2WcxD/KyS142YlBZYg6aFeYymRIdMFR";
+  systems = [ devenv woodford habiki ];
 in
 {
   "user_password_hashed.age".publicKeys = users ++ systems;
