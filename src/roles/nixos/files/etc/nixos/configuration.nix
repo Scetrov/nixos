@@ -13,7 +13,6 @@
     ./modules/programs.nix
     ./modules/security.nix
     ./modules/user-scetrov.nix
-    ./modules/xserver.nix
     ./modules/zsh.nix
     <agenix/modules/age.nix>
   ];
