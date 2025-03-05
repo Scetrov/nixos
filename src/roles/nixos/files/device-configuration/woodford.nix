@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./modules/dnscrypt-proxy.nix
     ./modules/home-wifi.nix
     ./modules/prism-launcher.nix
     ./modules/user-scetrov-gui.nix

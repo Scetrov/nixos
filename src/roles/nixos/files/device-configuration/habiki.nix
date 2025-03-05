@@ -3,10 +3,11 @@
 {
   imports = [
     ./modules/acme.nix
-    ./modules/traefik.nix
-    ./modules/prometheus.nix
-    ./modules/grafana.nix
+    ./modules/dnscrypt-proxy.nix
     ./modules/ethereum-erigon-sepolia.nix
+    ./modules/grafana.nix
+    ./modules/prometheus.nix
+    ./modules/traefik.nix
   ];
 
   networking = {
