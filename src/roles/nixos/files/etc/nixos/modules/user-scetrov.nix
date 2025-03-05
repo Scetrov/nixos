@@ -55,6 +55,5 @@ in
     dataDir = "/home/scetrov/Sync";
     configDir = "/home/scetrov/.config/syncthing";
     openDefaultPorts = true;
-    settings.options.urAccepted = true;
   };
 }
