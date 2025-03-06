@@ -9,7 +9,7 @@ in
   users.users.scetrov = {
     packages = with pkgs; [
       insomnia
-      jetbrains.rider
+      unstable.jetbrains.rider
       unstable.brave
       unstable.framesh
       unstable.ghostty
