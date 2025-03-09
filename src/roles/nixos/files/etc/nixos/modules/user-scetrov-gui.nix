@@ -17,6 +17,7 @@ in
       vscode-fhs
       yubioath-flutter
       unstable.keepassxc
+      unstable.sqlitestudio
     ];
   };
 }
