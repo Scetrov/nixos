@@ -82,6 +82,18 @@
   when:
     - ansible_product_name == "GB-BSi5-6200"
 
+- block:
+  - name: Configure 'OVH Cloud' Hardware
+    copy:
+      src: "{{ role_path }}/files/hardware-configuration/inchgower.nix"
+      dest: /etc/nixos/hardware-configuration.nix
+  - name: Configure 'OVH Cloud' Device
+    copy:
+      src: "{{ role_path }}/files/device-configuration/inchgower.nix"
+      dest: /etc/nixos/device-configuration.nix
+  when:
+    - ansible_host == "vps-42a35450.vps.ovh.net"
+
 - name: Set ownership and permissions /etc/nixos
   become: true
   file:
