@@ -4,6 +4,7 @@
   imports = [
     ./modules/dnscrypt-proxy.nix
     ./modules/home-wifi.nix
+    ./modules/local-networking.nix
     ./modules/prism-launcher.nix
     ./modules/user-scetrov-gui.nix
     ./modules/xserver.nix

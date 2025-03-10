@@ -5,6 +5,7 @@
     ./modules/dnscrypt-proxy.nix
     ./modules/home-wifi.nix
     ./modules/user-scetrov-gui.nix
+    ./modules/local-networking.nix
     ./modules/xserver.nix
   ];
 

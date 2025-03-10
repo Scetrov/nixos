@@ -7,7 +7,6 @@
     ./modules/audio.nix
     ./modules/locale.nix
     ./modules/maintenance.nix
-    ./modules/networking.nix
     ./modules/pkgs.nix
     ./modules/podman.nix
     ./modules/programs.nix
