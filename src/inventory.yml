@@ -10,10 +10,10 @@ all:
       ansible_connection: ssh
       ansible_user: scetrov
       ansible_host: 10.229.10.2
-    inchgower:
-      ansible_connection: ssh
-      ansible_user: scetrov
-      ansible_host: vps-42a35450.vps.ovh.net 
+    # inchgower:
+    #   ansible_connection: ssh
+    #   ansible_user: scetrov
+    #   ansible_host: vps-42a35450.vps.ovh.net 
     # fyne:
     #   ansible_connection: ssh
     #   ansible_user: nixos

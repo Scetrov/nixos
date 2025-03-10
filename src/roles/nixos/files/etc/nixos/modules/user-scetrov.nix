@@ -29,7 +29,7 @@ in
       btop
       curl
       discord
-      dotnetCorePackages.dotnet_9.sdk
+      unstable.dotnetCorePackages.dotnet_9.sdk
       fira-code-nerdfont
       fzf
       git

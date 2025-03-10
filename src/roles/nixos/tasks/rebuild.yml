@@ -34,7 +34,7 @@
   set_fact:
     nixos_label: "{{ current_date }}-{{ commit_hash }}-{{ commit_message }}"
 
-- name: Sanitise label
+- name: Sanitize label
   set_fact:
     clean_nixos_label: "{{ nixos_label | regex_replace('\\(\\):\\s', ':') | regex_replace('[^a-zA-Z0-9:_\\.-]', '_') }}"
 

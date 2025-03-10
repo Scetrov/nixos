@@ -14,6 +14,7 @@ in
       unstable.framesh
       unstable.ghostty
       unstable.obsidian
+      unstable.dotnet-ef
       vscode-fhs
       yubioath-flutter
       unstable.keepassxc
