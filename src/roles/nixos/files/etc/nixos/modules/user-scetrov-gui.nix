@@ -8,18 +8,18 @@ in
 {
   users.users.scetrov = {
     packages = with pkgs; [
-      fira-code-nerdfont
       discord
+      fira-code-nerdfont
       insomnia
-      unstable.jetbrains.rider
       unstable.brave
-      unstable.framesh
-      unstable.obsidian
       unstable.dotnet-ef
-      vscode-fhs
-      yubioath-flutter
+      unstable.framesh
+      unstable.jetbrains.rider
       unstable.keepassxc
+      unstable.obsidian
       unstable.sqlitestudio
+      unstable.vscode-fhs
+      yubioath-flutter
     ];
   };
 }
