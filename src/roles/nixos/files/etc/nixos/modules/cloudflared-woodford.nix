@@ -9,9 +9,9 @@ in {
       "your-tunnel-name" = {
         default = "http_status:404";
         ingress = {
-          "api.killboard.nonprod.reapers.scetrov.live" = “http://localhost:5209”;
+          "api.killboard.nonprod.reapers.scetrov.live" = "http://localhost:5209";
         };
-        credentialsFile = “/var/lib/cloudflared/woodford.json”;
+        credentialsFile = "/var/lib/cloudflared/woodford.json";
       };
     };
   };
