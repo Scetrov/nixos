@@ -8,6 +8,7 @@
     ./modules/prism-launcher.nix
     ./modules/user-scetrov-gui.nix
     ./modules/xserver.nix
+    ./modules/cloudflared-woodford.nix
   ];
 
   services.xserver.videoDrivers = ["nvidia"];
