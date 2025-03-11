@@ -28,9 +28,6 @@ in
     packages = with pkgs; [
       btop
       curl
-      discord
-      dotnetCorePackages.dotnet_9.sdk
-      fira-code-nerdfont
       fzf
       git
       go
@@ -42,7 +39,9 @@ in
       tmux
       unstable.chezmoi
       unstable.devenv
+      unstable.dotnetCorePackages.dotnet_9.sdk
       unstable.foundry
+      unstable.ghostty
       unstable.hugo
       unstable.oh-my-posh
       usbutils

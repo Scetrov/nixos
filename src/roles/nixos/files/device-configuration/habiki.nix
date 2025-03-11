@@ -4,7 +4,6 @@
   imports = [
     ./modules/acme.nix
     ./modules/dnscrypt-proxy.nix
-    ./modules/ethereum-erigon-sepolia.nix
     ./modules/grafana.nix
     ./modules/local-networking.nix
     ./modules/prometheus.nix

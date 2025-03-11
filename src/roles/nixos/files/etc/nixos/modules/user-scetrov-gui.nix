@@ -8,11 +8,12 @@ in
 {
   users.users.scetrov = {
     packages = with pkgs; [
+      fira-code-nerdfont
+      discord
       insomnia
       unstable.jetbrains.rider
       unstable.brave
       unstable.framesh
-      unstable.ghostty
       unstable.obsidian
       unstable.dotnet-ef
       vscode-fhs
