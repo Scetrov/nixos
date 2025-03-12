@@ -12,7 +12,6 @@ in {
           "api.killboard.nonprod.reapers.scetrov.live" = "http://localhost:5209";
         };
         credentialsFile = "/var/lib/cloudflared/woodford.json";
-        co
       };
     };
   };
