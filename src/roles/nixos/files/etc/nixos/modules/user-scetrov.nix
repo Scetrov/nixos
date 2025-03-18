@@ -39,7 +39,7 @@ in
       tmux
       unstable.chezmoi
       unstable.devenv
-      unstable.dotnetCorePackages.dotnet_9.sdk
+      unstable.dotnetCorePackages.sdk_9_0-bin
       unstable.foundry
       unstable.ghostty
       unstable.hugo
