@@ -31,6 +31,7 @@
 - name: Get block device info with transport type
   command: lsblk -o NAME,TRAN
   register: lsblk_output
+  changed_when: false
 
 - name: Get a list of USB storage devices
   set_fact:

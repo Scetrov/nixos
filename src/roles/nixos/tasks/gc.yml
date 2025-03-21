@@ -1,8 +1,9 @@
 - name: Garbage Collect Nix Store
   become: true
   command: nix-collect-garbage --delete-older-than 28d --quiet
+  changed_when: false
   
 - name: Optimize Nix Store
   become: true
   command: nix-store --optimize
-  
+  changed_when: false

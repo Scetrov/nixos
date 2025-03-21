@@ -9,6 +9,7 @@
   when:
     - ssh_hsm_key is defined
     - ssh_bastion_key is defined
+  no_log: true
 
 - name: Ensure .config/Yubico directory exists
   ansible.builtin.file:
