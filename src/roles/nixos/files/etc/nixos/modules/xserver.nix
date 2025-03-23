@@ -25,7 +25,6 @@
     konsole
     kate
     elisa
-    kwrite
     xterm
   ];
 }
