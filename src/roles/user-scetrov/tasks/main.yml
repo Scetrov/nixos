@@ -91,7 +91,7 @@
     privatekey_path: /home/{{ username }}/.config/syncthing/https-key.pem
     provider: selfsigned
 
-- name: Restart nginx service
+- name: Restart syncthing service
   become: true
   ansible.builtin.systemd:
     name: syncthing
