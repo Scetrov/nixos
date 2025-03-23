@@ -84,4 +84,9 @@ in
       };
     };
   };
+
+  security.pki.certificateFiles = [
+    /home/scetrov/.config/syncthing/https-key.pem
+  ];
 }
+
