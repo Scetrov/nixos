@@ -50,11 +50,16 @@ in
   };
 
   services.syncthing = {
-    enable = false;
+    enable = true;
     user = "scetrov";
-    dataDir = "/home/scetrov/.local/share/syncthing";
+
+    dataDir = "/home/scetrov/Documents";
     configDir = "/home/scetrov/.config/syncthing";
     guiAddress = "syncthing.scetrov.local:8384";
+
+    overrideDevices = true;
+    overrideFolders = true;
+
     openDefaultPorts = true;
     settings = {
       devices = {
