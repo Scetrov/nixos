@@ -54,7 +54,7 @@ in
     user = "scetrov";
     dataDir = "/home/scetrov/.local/share/syncthing";
     configDir = "/home/scetrov/.config/syncthing";
-    guiAddress = "syncthing.scetrov.local";
+    guiAddress = "syncthing.scetrov.local:8384";
     openDefaultPorts = true;
     settings = {
       devices = {
