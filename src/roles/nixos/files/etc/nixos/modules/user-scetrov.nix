@@ -54,6 +54,7 @@ in
     user = "scetrov";
     dataDir = "/home/scetrov/.local/share/syncthing";
     configDir = "/home/scetrov/.config/syncthing";
+    guiaddress = "syncthing.scetrov.local";
     openDefaultPorts = true;
     settings = {
       devices = {
@@ -70,6 +71,7 @@ in
       gui = {
         user = "scetrov";
         password = "$2a$10$yU8h0TKUwPgoM6Dx99TPk.wDagF6/imHgfj1IWyZpM7281ev2nZD6";
+        tls = true;
       };
     };
   };

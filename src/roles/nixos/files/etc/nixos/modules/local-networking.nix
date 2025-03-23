@@ -5,6 +5,10 @@
     firewall.enable = true;
 
     hosts = {
+      "127.0.0.1" = [
+        "localhost"
+        "syncthing.scetrov.local"
+      ];
       "10.229.10.1" = [
         "fyne"
         "fyne.net.scetrov.live"
