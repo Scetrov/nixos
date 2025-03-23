@@ -63,7 +63,7 @@ in
       };
       folders = {
         "passwords" = {
-          path = "/home/scetrov/Documents";
+          path = "/home/scetrov/Documents/passwords";
           devices = [ "woodford" "habiki" "bullit" ];
         };
       };
