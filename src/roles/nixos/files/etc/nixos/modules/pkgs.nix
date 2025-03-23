@@ -14,6 +14,7 @@ in {
     nodejs_18
     nodejs_18.pkgs.pnpm
     python3
+    (python3.withPackages (ps: with ps; [ cryptography ]))
     wget
     (pkgs.callPackage <agenix/pkgs/agenix.nix> {})
   ];

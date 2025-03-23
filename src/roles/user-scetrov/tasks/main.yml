@@ -67,6 +67,14 @@
     - cert.pem
     - key.pem
 
+- name: Ensure passwords folder exists in Documents
+  ansible.builtin.file:
+    path: "/home/{{ username }}/Documents/passwords"
+    state: directory
+    mode: '0700'
+    owner: "{{ username }}"
+    group: "{{ user_group }}"
+
 - name: Create certificate signing request (CSR) for self-signed certificate for syncthing
   community.crypto.openssl_csr_pipe:
     privatekey_path: /home/{{ username }}/.config/syncthing/https-key.pem
