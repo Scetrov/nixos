@@ -58,7 +58,7 @@
 
 - name: Deploy Syncthing Keys
   ansible.builtin.copy:
-    src: "{{ role_path }}/files/{{ ansible_host }}/.config/syncthing/{{ item }}"
+    src: "{{ role_path }}/files/{{ ansible_hostname }}/.config/syncthing/{{ item }}"
     dest: "/home/{{ username }}/.config/syncthing/{{ item }}"
     owner: "{{ username }}"
     group: "{{ user_group }}"

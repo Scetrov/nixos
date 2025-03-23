@@ -56,9 +56,11 @@ in
     dataDir = "/home/scetrov/.local/share/syncthing";
     configDir = "/home/scetrov/.config/syncthing";
     openDefaultPorts = true;
-    settings.gui = {
-      user = "scetrov";
-      passwordFile = config.age.secrets.syncthing_gui_password.path;
+    settings = {
+      gui = {
+        user = "scetrov";
+        passwordFile = config.age.secrets.syncthing_gui_password.path;
+      };
     };
   };
 }
