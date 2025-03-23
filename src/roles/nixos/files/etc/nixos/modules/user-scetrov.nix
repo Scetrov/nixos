@@ -50,7 +50,7 @@ in
   };
 
   services.syncthing = {
-    enable = true;
+    enable = false;
     user = "scetrov";
     dataDir = "/home/scetrov/.local/share/syncthing";
     configDir = "/home/scetrov/.config/syncthing";
