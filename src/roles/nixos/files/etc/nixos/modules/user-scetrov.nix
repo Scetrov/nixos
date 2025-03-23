@@ -67,6 +67,7 @@ in
         "woodford" = { id = "BCXATW4-QDVK6DP-G42DTSY-R62SFE3-EKSGV4I-EAIPXE2-HUK7SOX-6KJP5A7"; };
         "habiki" = { id = "6WMNQCS-LMHAQTF-Z5EY4BP-GA75H6W-6CZX5J6-6KXSHV6-RMYNKEV-LZHFMQU"; };
         "bullit" = { id = "4AFWIQD-ZRNKCFV-HJLVAWH-RLWZC5I-XHVDDKR-3RXPNDV-7MWYEVW-XFZCTQ5"; };
+        "molasses" = { id = "QYQEVGE-EXSWWA3-SDME3KG-I5KMUBI-SE346WH-XUBAX4Q-KGZFRZF-HVKYCQ3"; };
       };
       folders = {
         "passwords" = {
@@ -75,7 +76,7 @@ in
         };
         "shared" = {
           path = "/home/scetrov/Documents/shared";
-          devices = [ "woodford" "habiki" "bullit" ];
+          devices = [ "woodford" "habiki" "bullit" "molasses" ];
         };
       };
       options = {
