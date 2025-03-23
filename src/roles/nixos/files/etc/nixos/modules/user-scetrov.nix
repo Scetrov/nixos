@@ -61,7 +61,7 @@ in
     overrideFolders = true;
 
     openDefaultPorts = true;
-    
+
     settings = {
       devices = {
         "woodford" = { id = "BCXATW4-QDVK6DP-G42DTSY-R62SFE3-EKSGV4I-EAIPXE2-HUK7SOX-6KJP5A7"; };
@@ -75,7 +75,7 @@ in
         };
       };
       options = {
-        "urAccepted" = 1;
+        "urAccepted" = 99;
       };
       gui = {
         user = "scetrov";
