@@ -17,4 +17,5 @@ in
   "wireless_ssid.age".publicKeys = users ++ systems;
   "cloudflare_dns_zone_api_key.age".publicKeys = users ++ systems;
   "cloudflare_email.age".publicKeys = users ++ systems;
+  "syncthing_gui_password.age".publicKeys = users ++ systems;
 }

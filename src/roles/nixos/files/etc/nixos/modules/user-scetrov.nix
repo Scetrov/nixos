@@ -7,6 +7,8 @@ let
 in
 {
   age.secrets.user_password_hashed.file = /root/secrets/user_password_hashed.age;
+  age.secrets.syncthing_gui_password.file = /root/secrets/syncthing_gui_password.age;
+
   nix.settings.trusted-users = [
     "root"
     "scetrov"
@@ -54,5 +56,9 @@ in
     dataDir = "/home/scetrov/Sync";
     configDir = "/home/scetrov/.config/syncthing";
     openDefaultPorts = true;
+    settings.gui = {
+      user = "scetrov";
+      passwordFile = config.age.secrets.syncthing_gui_password.path;
+    };
   };
 }
