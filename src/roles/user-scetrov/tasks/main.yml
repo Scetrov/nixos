@@ -66,3 +66,19 @@
   loop:
     - cert.pem
     - key.pem
+
+- name: Create certificate signing request (CSR) for self-signed certificate for syncthing
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: /home/{{ username }}/.config/syncthing/https-key.pem
+    common_name: "scetrov.local"
+    organization_name: Scetrov
+    subject_alt_name:
+      - "DNS:syncthing.scetrov.local"
+  register: csr
+
+- name: Create self-signed certificate from CSR
+  community.crypto.x509_certificate:
+    path: /home/{{ username }}/.config/syncthing/https-cert.pem
+    csr_content: "{{ csr.csr }}"
+    privatekey_path: /home/{{ username }}/.config/syncthing/https-key.pem
+    provider: selfsigned
