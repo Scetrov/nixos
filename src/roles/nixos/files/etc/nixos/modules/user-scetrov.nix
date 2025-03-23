@@ -73,6 +73,10 @@ in
           path = "/home/scetrov/Documents/passwords";
           devices = [ "woodford" "habiki" "bullit" ];
         };
+        "shared" = {
+          path = "/home/scetrov/Documents/shared";
+          devices = [ "woodford" "habiki" "bullit" ];
+        };
       };
       options = {
         "urAccepted" = 99;
