@@ -7,7 +7,6 @@ let
 in
 {
   age.secrets.user_password_hashed.file = /root/secrets/user_password_hashed.age;
-  age.secrets.syncthing_gui_password.file = /root/secrets/syncthing_gui_password.age;
 
   nix.settings.trusted-users = [
     "root"
@@ -57,9 +56,20 @@ in
     configDir = "/home/scetrov/.config/syncthing";
     openDefaultPorts = true;
     settings = {
+      devices = {
+        "woodford" = { id = "BCXATW4-QDVK6DP-G42DTSY-R62SFE3-EKSGV4I-EAIPXE2-HUK7SOX-6KJP5A7"; };
+        "habiki" = { id = "6WMNQCS-LMHAQTF-Z5EY4BP-GA75H6W-6CZX5J6-6KXSHV6-RMYNKEV-LZHFMQU"; };
+        "bullit" = { id = "4AFWIQD-ZRNKCFV-HJLVAWH-RLWZC5I-XHVDDKR-3RXPNDV-7MWYEVW-XFZCTQ5"; };
+      };
+      folders = {
+        "passwords" = {
+          path = "/home/scetrov/Documents";
+          devices = [ "woodford" "habiki" "bullit" ];
+        };
+      };
       gui = {
         user = "scetrov";
-        passwordFile = config.age.secrets.syncthing_gui_password.path;
+        password = "$2a$10$yU8h0TKUwPgoM6Dx99TPk.wDagF6/imHgfj1IWyZpM7281ev2nZD6";
       };
     };
   };
