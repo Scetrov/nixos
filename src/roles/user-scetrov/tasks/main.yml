@@ -90,3 +90,8 @@
     csr_content: "{{ csr.csr }}"
     privatekey_path: /home/{{ username }}/.config/syncthing/https-key.pem
     provider: selfsigned
+
+- name: Restart nginx service
+  ansible.builtin.systemd:
+    name: syncthing
+    state: restarted
