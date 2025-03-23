@@ -96,3 +96,21 @@
   ansible.builtin.systemd:
     name: syncthing
     state: restarted
+
+- name: Ensure .passwords folder
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.passwords"
+    state: directory
+    mode: '0700'
+    owner: "{{ username }}"
+    group: "{{ user_group }}"
+
+- name: Deploy Keepass Keyfiles
+  ansible.builtin.copy:
+    src: "{{ role_path }}/files/keepass/{{ item }}"
+    dest: "/home/{{ username }}/.passwords/{{ item }}"
+    owner: "{{ username }}"
+    group: "{{ user_group }}"
+    mode: '0600'
+  loop:
+    - NixOS.keyx
