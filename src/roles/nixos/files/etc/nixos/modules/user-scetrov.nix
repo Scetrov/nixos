@@ -53,7 +53,7 @@ in
   services.syncthing = {
     enable = true;
     user = "scetrov";
-    dataDir = "/home/scetrov/Sync";
+    dataDir = "/home/scetrov/.local/share/syncthing";
     configDir = "/home/scetrov/.config/syncthing";
     openDefaultPorts = true;
     settings.gui = {
