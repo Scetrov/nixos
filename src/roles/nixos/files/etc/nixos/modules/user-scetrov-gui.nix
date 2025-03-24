@@ -11,6 +11,7 @@ in
       discord
       fira-code-nerdfont
       insomnia
+      charles
       unstable.brave
       unstable.dotnet-ef
       unstable.framesh
