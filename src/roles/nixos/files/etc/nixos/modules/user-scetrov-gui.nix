@@ -8,10 +8,10 @@ in
 {
   users.users.scetrov = {
     packages = with pkgs; [
+      charles
       discord
       fira-code-nerdfont
       insomnia
-      charles
       unstable.brave
       unstable.dotnet-ef
       unstable.framesh
@@ -19,6 +19,7 @@ in
       unstable.keepassxc
       unstable.obsidian
       unstable.sqlitestudio
+      unstable.syncthingtray
       unstable.vscode-fhs
       yubioath-flutter
     ];

@@ -74,6 +74,7 @@
         "startplasma",
         "swapoff",
         "syncthing",
+        "syncthingtray",
         "tcpport",
         "traefik",
         "txpool",
