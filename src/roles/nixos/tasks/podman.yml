@@ -11,6 +11,8 @@
   when: running_containers.stdout != ""
   register: restart_results
   changed_when: restart_results.rc == 0
+  loop_control:
+    label: "{{ item }}"
 
 - name: Show restart results
   become: true

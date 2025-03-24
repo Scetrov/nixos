@@ -27,6 +27,8 @@
     - ethereum
     - prometheus
     - traefik
+  loop_control:
+    label: "{{ item }}"
 
 - name: Find all .nix.j2 files
   delegate_to: localhost
