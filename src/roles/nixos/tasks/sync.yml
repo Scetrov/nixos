@@ -14,6 +14,7 @@
     delete: true
     rsync_opts:
       - "--exclude=*.j2"
+      - "--chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r"
 
 - name: Synchronize container configuration to /etc
   become: true
