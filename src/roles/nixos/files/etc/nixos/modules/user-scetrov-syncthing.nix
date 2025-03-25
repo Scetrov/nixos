@@ -31,7 +31,7 @@ in
       folders = {
         "passwords" = {
           path = "/home/scetrov/Documents/passwords";
-          devices = [ "woodford" "habiki" "bullit" ];
+          devices = [ "woodford" "habiki" "bullit" "fyne" ];
         };
         "shared" = {
           path = "/home/scetrov/Documents/shared";
