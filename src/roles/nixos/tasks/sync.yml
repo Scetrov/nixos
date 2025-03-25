@@ -16,6 +16,12 @@
       - "--exclude=*.j2"
       - "--chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r"
 
+- name: Synchronize configuration.nix to /etc/nixos
+  become: true
+  template:
+    src: "{{ role_path }}/files/etc/nixos/{{ nixos_architecture }}-configuration.nix.j2"
+    dest: /etc/nixos/configuration.nix
+
 - name: Synchronize container configuration to /etc
   become: true
   synchronize:
