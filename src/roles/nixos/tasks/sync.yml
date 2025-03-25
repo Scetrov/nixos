@@ -91,6 +91,18 @@
   when:
     - ansible_product_name == "GB-BSi5-6200"
 
+- block:
+  - name: Configure 'Raspberry Pi 4 Model B' Hardware
+    copy:
+      src: "{{ role_path }}/files/hardware-configuration/raspberry-pi-4.nix"
+      dest: /etc/nixos/hardware-configuration.nix
+  - name: Configure 'Raspberry Pi 4 Model B' Device
+    copy:
+      src: "{{ role_path }}/files/device-configuration/fyne.nix"
+      dest: /etc/nixos/device-configuration.nix
+  when:
+    - ansible_product_name == "Raspberry Pi 4 Model B"
+
 - name: Set ownership and permissions /etc/nixos
   become: true
   file:

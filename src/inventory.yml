@@ -19,6 +19,7 @@ all:
       nixos_architecture: aarch64 
       nixos_install_version: 25.05
       nixos_current_version: 24.11
+      ansible_product_name: "Raspberry Pi 4B"
     habiki:
       ansible_connection: ssh
       ansible_user: scetrov
