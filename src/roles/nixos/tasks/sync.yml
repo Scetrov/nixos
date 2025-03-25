@@ -63,7 +63,7 @@
 - name: Configure Device
   become: true
   copy:
-    src: "{{ role_path }}/files/device-configuration/{{ nixos_device_configuration }}.nix"
+    src: "{{ role_path }}/files/device-configuration/{{ nixos_device_configuration }}"
     dest: /etc/nixos/device-configuration.nix
 
 - name: Set ownership and permissions /etc/nixos
