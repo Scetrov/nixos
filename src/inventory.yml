@@ -14,7 +14,7 @@ all:
       nixos_current_version: 24.11
     fyne:
       ansible_connection: ssh
-      ansible_user: nixos
+      ansible_user: scetrov
       ansible_host: 10.229.1.10
       nix_architecture: aarch64 
       nixos_install_version: 25.04
