@@ -9,8 +9,8 @@
     - secrets.yml
   roles:
     - secrets
-    - nixos
     - user-scetrov
+    - nixos
 
 - name: Create Bootable ISO
   hosts: woodford
