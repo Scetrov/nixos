@@ -35,7 +35,7 @@ in
         };
         "shared" = {
           path = "/home/scetrov/Documents/shared";
-          devices = [ "woodford" "habiki" "bullit" "molasses" "razer" ];
+          devices = [ "woodford" "habiki" "bullit" "molasses" "razer" "fyne" ];
         };
       };
       options = {
