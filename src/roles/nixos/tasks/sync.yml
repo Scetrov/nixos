@@ -5,7 +5,7 @@
     state: directory
     mode: '0755'
 
-- name: Synchronize NixOS configuration to /etc/nixos
+- name: Synchronize NixOS modules to /etc/nixos
   become: true
   synchronize:
     src: "{{ role_path }}/files/etc/nixos/"
