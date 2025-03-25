@@ -4,8 +4,9 @@
   imports = [
     ./modules/dnscrypt-proxy.nix
     ./modules/home-wifi.nix
-    ./modules/user-scetrov-gui.nix
     ./modules/local-networking.nix
+    ./modules/user-scetrov-gui.nix
+    ./modules/user-scetrov-syncthing.nix
     ./modules/xserver.nix
   ];
 

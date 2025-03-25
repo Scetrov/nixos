@@ -2,16 +2,17 @@
 
 {
   imports = [
+    ./modules/cloudflared-woodford.nix
     ./modules/dnscrypt-proxy.nix
     ./modules/home-wifi.nix
     ./modules/local-networking.nix
     ./modules/prism-launcher.nix
     ./modules/user-scetrov-gui.nix
+    ./modules/user-scetrov-syncthing.nix
     ./modules/xserver.nix
-    ./modules/cloudflared-woodford.nix
   ];
 
-  services.xserver.videoDrivers = ["nvidia"];
+  services.xserver.videoDrivers = [ "nvidia" ];
 
   hardware.graphics = {
     enable = true;

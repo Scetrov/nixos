@@ -8,6 +8,7 @@
     ./modules/local-networking.nix
     ./modules/prometheus.nix
     ./modules/traefik.nix
+    ./modules/user-scetrov-syncthing.nix
   ];
 
   networking = {
