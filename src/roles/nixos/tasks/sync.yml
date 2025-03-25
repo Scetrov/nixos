@@ -54,54 +54,17 @@
   loop_control:
     label: "{{ item.path }}"
 
-- block:
-  - name: Configure 'Blade 15 Advanced Model (Early 2020) - RZ09-033' Hardware
-    copy:
-      src: "{{ role_path }}/files/hardware-configuration/blade-15-advanced-early-2020-RZ09-033.nix"
-      dest: /etc/nixos/hardware-configuration.nix
-  - name: Configure 'Blade 15 Advanced Model (Early 2020) - RZ09-033' Device
-    template:
-      src: "{{ role_path }}/files/device-configuration/woodford.nix"
-      dest: /etc/nixos/device-configuration.nix
-  when:
-    - ansible_product_name == "Blade 15 Advanced Model (Early 2020) - RZ09-033"
+- name: Configure Hardware
+  become: true
+  copy:
+    src: "{{ role_path }}/files/hardware-configuration/{{ nixos_hardware_configuration }}"
+    dest: /etc/nixos/hardware-configuration.nix
 
-- block:
-  - name: Configure 'Hyper-V Virtual Machine' Hardware
-    copy:
-      src: "{{ role_path }}/files/hardware-configuration/hyperv-virtual-machine.nix"
-      dest: /etc/nixos/hardware-configuration.nix
-  - name: Configure 'Hyper-V Virtual Machine' Device
-    copy:
-      src: "{{ role_path }}/files/device-configuration/bullit.nix"
-      dest: /etc/nixos/device-configuration.nix
-  when:
-    - ansible_product_name == "Virtual Machine"
-    - ansible_system_vendor == "Microsoft Corporation"
-
-- block:
-  - name: Configure 'Gigabyte BRIX BSI5' Hardware
-    copy:
-      src: "{{ role_path }}/files/hardware-configuration/gb-bsi5-6200.nix"
-      dest: /etc/nixos/hardware-configuration.nix
-  - name: Configure 'Gigabyte BRIX BSI5' Device
-    copy:
-      src: "{{ role_path }}/files/device-configuration/habiki.nix"
-      dest: /etc/nixos/device-configuration.nix
-  when:
-    - ansible_product_name == "GB-BSi5-6200"
-
-- block:
-  - name: Configure 'Raspberry Pi 4 Model B' Hardware
-    copy:
-      src: "{{ role_path }}/files/hardware-configuration/raspberry-pi-4.nix"
-      dest: /etc/nixos/hardware-configuration.nix
-  - name: Configure 'Raspberry Pi 4 Model B' Device
-    copy:
-      src: "{{ role_path }}/files/device-configuration/fyne.nix"
-      dest: /etc/nixos/device-configuration.nix
-  when:
-    - ansible_product_name == "Raspberry Pi 4 Model B"
+- name: Configure Device
+  become: true
+  copy:
+    src: "{{ role_path }}/files/device-configuration/{{ nixos_device_configuration }}.nix"
+    dest: /etc/nixos/device-configuration.nix
 
 - name: Set ownership and permissions /etc/nixos
   become: true

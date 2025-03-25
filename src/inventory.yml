@@ -1,10 +1,12 @@
 all:
   hosts:
-    localhost:
+    bullit:
       ansible_connection: local
       nixos_architecture: x86
       nixos_install_version: 24.11
       nixos_current_version: 24.11
+      nixos_device_configuration: "bullit.nix"
+      nixos_hardware_configuration: "hyperv-virtual-machine.nix"
     woodford:
       ansible_connection: ssh
       ansible_user: scetrov
@@ -12,6 +14,8 @@ all:
       nixos_architecture: x86
       nixos_install_version: 24.11
       nixos_current_version: 24.11
+      nixos_device_configuration: "woodford.nix"
+      nixos_hardware_configuration: "blade-15-advanced-early-2020-RZ09-033.nix"
     fyne:
       ansible_connection: ssh
       ansible_user: scetrov
@@ -20,6 +24,8 @@ all:
       nixos_install_version: 25.05
       nixos_current_version: 24.11
       ansible_product_name: "Raspberry Pi 4B"
+      nixos_device_configuration: "fyne.nix"
+      nixos_hardware_configuration: "raspberry-pi-4.nix"
     habiki:
       ansible_connection: ssh
       ansible_user: scetrov
@@ -27,3 +33,5 @@ all:
       nixos_architecture: x86
       nixos_install_version: 24.11
       nixos_current_version: 24.11
+      nixos_device_configuration: "habiki.nix"
+      nixos_hardware_configuration: "gb-bsi5-6200.nix"
