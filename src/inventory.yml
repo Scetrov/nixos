@@ -16,7 +16,7 @@ all:
       ansible_connection: ssh
       ansible_user: scetrov
       ansible_host: 10.229.1.10
-      nix_architecture: aarch64 
+      nixos_architecture: aarch64 
       nixos_install_version: 25.05
       nixos_current_version: 24.11
     habiki:
