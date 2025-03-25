@@ -3,6 +3,8 @@
 {
   imports = [
     "${fetchTarball "https://github.com/NixOS/nixos-hardware/tarball/master"}/raspberry-pi/4"
+    ./modules/home-wifi.nix
+    ./modules/local-networking.nix
   ];
 
   networking = {
