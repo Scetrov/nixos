@@ -26,6 +26,7 @@ in
         "bullit" = { id = "4AFWIQD-ZRNKCFV-HJLVAWH-RLWZC5I-XHVDDKR-3RXPNDV-7MWYEVW-XFZCTQ5"; };
         "molasses" = { id = "QYQEVGE-EXSWWA3-SDME3KG-I5KMUBI-SE346WH-XUBAX4Q-KGZFRZF-HVKYCQ3"; };
         "razer" = { id = "VCQZ5XZ-WK6HKND-BL6S3AU-2HCUFSH-RG6MLJE-K2KHOZO-BBLWOZX-AUZPZAE"; };
+        "fyne" = { id = "7Z3NTU5-25WE7D3-AUFPYE4-BYT4GWZ-BCB7ZL7-BBQF5IB-JQ2FZCD-XJMTEQX"; };
       };
       folders = {
         "passwords" = {
