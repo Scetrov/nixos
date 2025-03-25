@@ -5,12 +5,10 @@
     "${fetchTarball "https://github.com/NixOS/nixos-hardware/tarball/master"}/raspberry-pi/4"
   ];
 
-  networking.hostname = "fyne";
-
   networking = {
     wireless.enable = false;
     networkmanager.enable = true;
-    hostName = "bullit";
+    hostName = "fyne";
     defaultGateway = "10.229.0.1";
     interfaces.eth0.ipv4.addresses = [
       {
