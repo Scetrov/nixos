@@ -1,7 +1,7 @@
 - name: Add NixOS channels
   become: true
   loop:
-    - { name: "NixOS 24.11", url: "https://nixos.org/channels/nixos-24.11", channel: "nixos" }
+    - { name: "NixOS {{ nixos_current_version }}", url: "https://nixos.org/channels/nixos-{{ nixos_current_version }}", channel: "nixos" }
     - { name: "Nix Unstable", url: "https://nixos.org/channels/nixos-unstable", channel: "nixos-unstable" }
     - { name: "Nix Packages Unstable", url: "https://nixos.org/channels/nixpkgs-unstable", channel: "nixpkgs" }
     - { name: "Age Nix", url: "https://github.com/ryantm/agenix/archive/main.tar.gz", channel: "agenix" }

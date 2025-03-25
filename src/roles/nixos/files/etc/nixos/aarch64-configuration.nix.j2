@@ -1,0 +1,23 @@
+{ config, lib, pkgs, ... }:
+
+{
+  imports = [
+    ./device-configuration.nix
+    ./hardware-configuration.nix
+    ./modules/audio.nix
+    ./modules/locale.nix
+    ./modules/maintenance.nix
+    ./modules/pkgs.nix
+    ./modules/podman.nix
+    ./modules/programs.nix
+    ./modules/security.nix
+    ./modules/user-scetrov.nix
+    ./modules/zsh.nix
+    <agenix/modules/age.nix>
+  ];
+
+  boot.loader.grub.enable = false;
+  boot.loader.generic-extlinux-compatible.enable = true;
+
+  system.stateVersion = "{{ nixos_install_version }}";
+}

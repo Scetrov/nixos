@@ -5,6 +5,8 @@
     "${fetchTarball "https://github.com/NixOS/nixos-hardware/tarball/master"}/raspberry-pi/4"
   ];
 
+  networking.hostname = "fyne";
+
   networking = {
     wireless.enable = false;
     networkmanager.enable = true;
