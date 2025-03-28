@@ -45,6 +45,7 @@ in
       unstable.ghostty
       unstable.hugo
       unstable.oh-my-posh
+      unstable.git-secrets
       usbutils
     ];
   };
