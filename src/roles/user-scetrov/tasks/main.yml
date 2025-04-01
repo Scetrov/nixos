@@ -117,3 +117,12 @@
     mode: '0600'
   loop:
     - NixOS.keyx
+
+- name: Write VirusTotal API key to ~/.vt.toml
+  copy:
+    dest: "/home/{{ username }}/.vt.toml"
+    content: |
+      apikey="{{ vt_api_key }}"
+    owner: "{{ username }}"
+    group: "{{ user_group }}"
+    mode: '0600'
