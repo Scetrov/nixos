@@ -7,8 +7,8 @@
 - name: Include NixOS rebuild tasks
   ansible.builtin.include_tasks: rebuild.yml
 
-- name: Include NixOS garbage collection tasks
-  ansible.builtin.include_tasks: gc.yml
+# - name: Include NixOS garbage collection tasks
+#   ansible.builtin.include_tasks: gc.yml
 
 - name: Include Podman Restarts
   ansible.builtin.include_tasks: podman.yml
