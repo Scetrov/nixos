@@ -126,3 +126,19 @@
     owner: "{{ username }}"
     group: "{{ user_group }}"
     mode: '0600'
+
+- name: Ensure NetworkManager .certs folder exists
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.cert/nm-openvpn"
+    state: directory
+    mode: '0700'
+    owner: "{{ username }}"
+    group: "{{ user_group }}"
+
+- name: Copy NetworkManager .certs
+  ansible.builtin.copy:
+    src: "{{ role_path }}/files/network-manager/.cert/nm-openvpn/"
+    dest: "/home/{{ username }}/.cert/nm-openvpn/"
+    owner: "{{ username }}"
+    group: "{{ user_group }}"
+    mode: '0600'
