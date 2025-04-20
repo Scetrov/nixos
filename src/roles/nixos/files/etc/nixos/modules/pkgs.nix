@@ -14,6 +14,8 @@ in {
     nixos-generators
     nodejs_18
     nodejs_18.pkgs.pnpm
+    networkmanager-openvpn
+    openvpn
     (python3.withPackages (ps: with ps; [ cryptography ]))
     wget
     (pkgs.callPackage <agenix/pkgs/agenix.nix> {})
