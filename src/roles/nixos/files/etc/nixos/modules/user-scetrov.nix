@@ -32,6 +32,7 @@ in
       fzf
       git
       go
+      hugo
       lsb-release
       nixfmt-rfc-style
       nmap
@@ -43,9 +44,8 @@ in
       unstable.dotnetCorePackages.sdk_9_0-bin
       unstable.foundry
       unstable.ghostty
-      unstable.hugo
-      unstable.oh-my-posh
       unstable.gitleaks
+      unstable.oh-my-posh
       usbutils
     ];
   };
