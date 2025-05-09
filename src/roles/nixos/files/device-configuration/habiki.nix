@@ -9,10 +9,7 @@
     ./modules/prometheus.nix
     ./modules/traefik.nix
     ./modules/user-scetrov-syncthing.nix
-  ];
-
-  environment.systemPackages = [
-    pkgs.filebrowser
+    ./modules/user-scetrov-filebrowser.nix
   ];
 
   networking = {
