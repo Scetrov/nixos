@@ -6,10 +6,6 @@ let
   unstable = import <nixos-unstable> { config = baseconfig; };
 in
 {
-  environment.systemPackages = [
-    unstable.filebrowser
-  ];
-
   services.syncthing = {
     enable = true;
     user = "scetrov";

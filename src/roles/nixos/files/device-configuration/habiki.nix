@@ -11,6 +11,10 @@
     ./modules/user-scetrov-syncthing.nix
   ];
 
+  environment.systemPackages = [
+    pkgs.filebrowser
+  ];
+
   networking = {
     wireless.enable = false;
     networkmanager.enable = true;
