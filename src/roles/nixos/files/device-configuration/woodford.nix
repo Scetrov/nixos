@@ -3,7 +3,6 @@
 {
   imports = [
     ./modules/cloudflared-woodford.nix
-    ./modules/dnscrypt-proxy.nix
     ./modules/home-wifi.nix
     ./modules/local-networking.nix
     ./modules/prism-launcher.nix

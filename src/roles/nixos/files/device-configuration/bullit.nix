@@ -2,7 +2,6 @@
 
 {
   imports = [
-    ./modules/dnscrypt-proxy.nix
     ./modules/home-wifi.nix
     ./modules/local-networking.nix
     ./modules/user-scetrov-gui.nix

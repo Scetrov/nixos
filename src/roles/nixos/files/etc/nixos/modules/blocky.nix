@@ -4,6 +4,14 @@
   networking.firewall.allowedTCPPorts = [ 53 4000 ];
   networking.firewall.allowedUDPPorts = [ 53 ];
 
+  networking = {
+    nameservers = [
+      "127.0.0.1" # blocky
+      "::1"
+    ];
+    networkmanager.dns = "none";
+  };
+
   services.blocky = {
     enable = true;
     settings = {
