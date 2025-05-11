@@ -23,6 +23,10 @@
         address = "10.229.10.2";
         prefixLength = 16;
       }
+      {
+        address = "10.229.53.2";
+        prefixLength = 16;
+      }
     ];
   };
 }
