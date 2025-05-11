@@ -1,10 +1,15 @@
 { config, lib, ... }:
 
 {
-  networking.firewall.allowedTCPPorts = [ 53 4000 ];
-  networking.firewall.allowedUDPPorts = [ 53 ];
+  options.blocky.bindAddr = lib.mkOption {
+    type = lib.types.str;
+    default = "0.0.0.0:53";
+    description = "Bind address for the DNS server.";
+  };
 
-  networking = {
+  config.networking = {
+    firewall.allowedTCPPorts = [ 53 4000 ];
+    firewall.allowedUDPPorts = [ 53 ];
     nameservers = [
       "127.0.0.1" # blocky
       "::1"
@@ -12,13 +17,7 @@
     networkmanager.dns = "none";
   };
 
-  options.blocky.bindAddr = mkOption {
-    type = types.str;
-    default = "0.0.0.0:53";
-    description = "Bind address for the DNS server.";
-  };
-
-  services.blocky = {
+  config.services.blocky = {
     enable = true;
     settings = {
       ports.dns = config.blocky.bindAddr;

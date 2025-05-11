@@ -9,6 +9,7 @@ in {
   environment.systemPackages = with pkgs; [
     ansible
     bat
+    dig
     gcc
     niv
     nixos-generators
