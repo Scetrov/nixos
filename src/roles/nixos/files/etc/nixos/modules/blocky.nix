@@ -48,9 +48,15 @@
         };
         clientGroupsBlock = {
           default = [
-            "adult"
+            "abuse"
+            "drugs"
+            "fraud"
+            "gambling"
             "malware"
             "phishing"
+            "piracy"
+            "porn"
+            "scam"
           ];
         };
       };
