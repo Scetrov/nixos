@@ -1,6 +1,9 @@
 { config, ... }:
 
 {
+  networking.firewall.allowedTCPPorts = [ 53 4000 ];
+  networking.firewall.allowedUDPPorts = [ 53 ];
+
   services.blocky = {
     enable = true;
     settings = {
