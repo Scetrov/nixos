@@ -21,6 +21,7 @@
         "prometheus.net.scetrov.live"
         "json-rpc.sepolia.scetrov.live"
         "json-rpc.pyrope.scetrov.live"
+        "immich.net.scetrov.live"
       ];
       "10.229.10.10" = [
         "bullit"
