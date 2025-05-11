@@ -12,10 +12,16 @@
     networkmanager.dns = "none";
   };
 
+  options.blocky.bindAddr = mkOption {
+    type = types.str;
+    default = "0.0.0.0:53";
+    description = "Bind address for the DNS server.";
+  };
+
   services.blocky = {
     enable = true;
     settings = {
-      ports.dns = "0.0.0.0:53";
+      ports.dns = config.blocky.bindAddr;
       ports.http = "127.0.0.1:4000";
       upstreams.groups.default = [
         "https://one.one.one.one/dns-query" # Cloudflare

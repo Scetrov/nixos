@@ -12,6 +12,8 @@
     ./modules/user-scetrov-filebrowser.nix
     ./modules/user-scetrov-syncthing.nix
   ];
+  
+  blocky.bindAddr = "10.229.53.2:53";
 
   networking = {
     wireless.enable = false;
