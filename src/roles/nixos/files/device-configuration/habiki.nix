@@ -3,14 +3,15 @@
 {
   imports = [
     ./modules/acme.nix
+    ./modules/blocky.nix
     ./modules/dnscrypt-proxy.nix
     ./modules/grafana.nix
+    ./modules/immich.nix
     ./modules/local-networking.nix
     ./modules/prometheus.nix
     ./modules/traefik.nix
-    ./modules/immich.nix
-    ./modules/user-scetrov-syncthing.nix
     ./modules/user-scetrov-filebrowser.nix
+    ./modules/user-scetrov-syncthing.nix
   ];
 
   networking = {

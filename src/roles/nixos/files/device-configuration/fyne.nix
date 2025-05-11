@@ -3,8 +3,9 @@
 {
   imports = [
     "${fetchTarball "https://github.com/NixOS/nixos-hardware/tarball/master"}/raspberry-pi/4"
-    ./modules/local-networking.nix
+    ./modules/blocky.nix
     ./modules/bootstrap-dns.nix
+    ./modules/local-networking.nix
     ./modules/user-scetrov-syncthing.nix
   ];
 
