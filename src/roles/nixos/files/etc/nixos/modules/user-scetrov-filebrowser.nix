@@ -19,4 +19,5 @@ in
   # and set the permissions to 0600
 
   # configure filebrowser to run in Podmen as scetrov and bind mount the config, database and ~/Sync
+  # add traefik labels to the Podman container
 }
