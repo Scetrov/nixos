@@ -7,8 +7,8 @@
   services.blocky = {
     enable = true;
     settings = {
-      ports.dns = 53;
-      ports.http = 4000;
+      ports.dns = "0.0.0.0:53";
+      ports.http = "127.0.0.1:4000";
       upstreams.groups.default = [
         "https://one.one.one.one/dns-query" # Cloudflare
         "https://dns.google/dns-query" # Google
@@ -22,7 +22,7 @@
         ];
       };
       blocking = {
-        blackLists = {
+        denyLists = {
           abuse = [ "https://blocklistproject.github.io/Lists/abuse.txt" ];
           drugs = [ "https://blocklistproject.github.io/Lists/drugs.txt" ];
           fraud = [ "https://blocklistproject.github.io/Lists/fraud.txt" ];
