@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 
 {
   networking.firewall.allowedTCPPorts = [ 53 4000 ];
