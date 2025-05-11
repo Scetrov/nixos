@@ -35,7 +35,7 @@
         ];
       };
       blocking = {
-        blockType = "block.slaterfamily.name";
+        blockType = "10.229.53.1";
         denylists = {
           abuse = [ "https://blocklistproject.github.io/Lists/abuse.txt" ];
           drugs = [ "https://blocklistproject.github.io/Lists/drugs.txt" ];
