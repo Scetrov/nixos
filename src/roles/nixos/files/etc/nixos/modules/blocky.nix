@@ -30,7 +30,7 @@
         ];
       };
       blocking = {
-        denyLists = {
+        denylists = {
           abuse = [ "https://blocklistproject.github.io/Lists/abuse.txt" ];
           drugs = [ "https://blocklistproject.github.io/Lists/drugs.txt" ];
           fraud = [ "https://blocklistproject.github.io/Lists/fraud.txt" ];
