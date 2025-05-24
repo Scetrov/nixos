@@ -10,7 +10,7 @@ in
     packages = with pkgs; [
       charles
       discord
-      fira-code-nerdfont
+      nerd-fonts.fira-code
       unstable.insomnia
       unstable.brave
       unstable.dotnet-ef
@@ -21,7 +21,6 @@ in
       unstable.sqlitestudio
       unstable.syncthingtray
       unstable.vscode-fhs
-      yubioath-flutter
     ];
   };
 }
