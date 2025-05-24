@@ -13,8 +13,8 @@ in {
     gcc
     niv
     nixos-generators
-    nodejs_18
-    nodejs_18.pkgs.pnpm
+    nodejs_20
+    nodejs_20.pkgs.pnpm
     networkmanager-openvpn
     openvpn
     (python3.withPackages (ps: with ps; [ cryptography ]))

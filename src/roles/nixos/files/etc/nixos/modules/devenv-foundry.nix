@@ -6,7 +6,7 @@ in {
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    nodejs_18
-    nodejs_18.pkgs.pnpm
+    nodejs_20
+    nodejs_20.pkgs.pnpm
   ];
 }
