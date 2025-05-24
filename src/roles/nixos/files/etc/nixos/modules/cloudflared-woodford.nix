@@ -3,7 +3,7 @@ let
   baseconfig = { allowUnfree = true; };
   unstable = import <nixos-unstable> { config = baseconfig; };
 in {
-  users.cloudflared = {
+  users.users.cloudflared = {
     isSystemUser = true;
     group = "cloudflared";
     description = "Cloudflared user for running tunnels";
