@@ -3,6 +3,8 @@
 {
   networking = {
     nameservers = [
+      "10.229.53.1" # Fyne
+      "10.229.53.2" # Habiki
       "1.1.1.1" # Cloudflare
       "8.8.8.8" # Google
     ];
