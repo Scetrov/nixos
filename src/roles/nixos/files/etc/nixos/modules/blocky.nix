@@ -11,8 +11,8 @@
     firewall.allowedTCPPorts = [ 53 4000 ];
     firewall.allowedUDPPorts = [ 53 ];
     nameservers = [
-      "127.0.0.1" # blocky
-      "::1"
+      "10.229.53.1" # blocky
+      "10.229.53.2" # blocky
     ];
     networkmanager.dns = "none";
   };
