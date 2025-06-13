@@ -29,6 +29,7 @@ in
     packages = with pkgs; [
       btop
       curl
+      exiftool
       fzf
       git
       go
@@ -46,6 +47,7 @@ in
       unstable.ghostty
       unstable.gitleaks
       unstable.oh-my-posh
+      unzip
       usbutils
     ];
   };
