@@ -16,6 +16,9 @@ in
       unstable.dotnet-ef
       unstable.framesh
       unstable.jetbrains.rider
+      (unstable.jetbrains.rider.override {
+        jdk = pkgs.openjdk21;
+      })
       unstable.keepassxc
       unstable.obsidian
       unstable.sqlitestudio
