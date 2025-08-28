@@ -1,10 +1,16 @@
-{ pkgs, modulesPath, lib, ...  }:
+{
+  pkgs,
+  modulesPath,
+  lib,
+  ...
+}:
 {
   imports = [
     ./hardware-configuration.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
 
   networking = {
@@ -12,7 +18,7 @@
     wireless.enable = false;
     hostName = "{{ new_hostname }}";
   };
-  
+
   environment.etc."NetworkManager/system-connections/simian.collingwood.nmconnection" = {
     text = ''
       [connection]
@@ -41,7 +47,7 @@
     '';
     mode = "0400";
   };
-  
+
   services.openssh = {
     enable = true;
   };
@@ -61,7 +67,7 @@
       "{{ ssh_bastion_key }}"
     ];
   };
-  
+
   security.sudo.wheelNeedsPassword = false;
 
   environment.systemPackages = with pkgs; [
@@ -75,4 +81,3 @@
 
   system.stateVersion = "24.11";
 }
-
