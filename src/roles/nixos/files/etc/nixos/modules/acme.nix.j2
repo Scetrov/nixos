@@ -2,7 +2,7 @@
 
 {
   age.secrets.cloudflare_dns_zone_api_key.file = /root/secrets/cloudflare_dns_zone_api_key.age;
-  age.secrets.cloudflare_email.file = /root/secrets/cloudflare_dns_zone_api_key.age;
+  age.secrets.cloudflare_email.file = /root/secrets/cloudflare_email.age;
 
   security.acme.acceptTerms = true;
   security.acme.defaults.email = "{{ lets_encrypt_email }}";
@@ -20,7 +20,6 @@
     dnsPropagationCheck = true;
     extraLegoFlags = [
       "--dns.resolvers=1.1.1.1"
-      "--dns.timeout=120s"
       "--dns.propagation-timeout=5m"
       "--dns.polling-interval=5s"
     ];
