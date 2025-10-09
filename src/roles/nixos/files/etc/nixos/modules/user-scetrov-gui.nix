@@ -10,15 +10,12 @@ in
     packages = with pkgs; [
       charles
       discord
+      jetbrains.rider
       nerd-fonts.fira-code
-      unstable.insomnia
       unstable.brave
       unstable.dotnet-ef
       unstable.framesh
-      #unstable.jetbrains.rider
-      #(unstable.jetbrains.rider.override {
-      #  jdk = pkgs.openjdk21;
-      #})
+      unstable.insomnia
       unstable.keepassxc
       unstable.obsidian
       unstable.sqlitestudio
