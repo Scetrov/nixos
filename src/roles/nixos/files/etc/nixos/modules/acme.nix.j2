@@ -18,5 +18,11 @@
       "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.age.secrets.cloudflare_dns_zone_api_key.path;
     };
     dnsPropagationCheck = true;
+    extraLegoFlags = [
+      "--dns.resolvers=1.1.1.1"
+      "--dns.timeout=120s"
+      "--dns.propagation-timeout=5m"
+      "--dns.polling-interval=5s"
+    ];
   };
 }
