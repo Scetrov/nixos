@@ -44,7 +44,7 @@ in
       unstable.chezmoi
       unstable.devenv
       unstable.dotnetCorePackages.sdk_9_0-bin
-      unstable.foundry
+      # unstable.foundry
       unstable.ghostty
       unstable.gitleaks
       unstable.oh-my-posh
