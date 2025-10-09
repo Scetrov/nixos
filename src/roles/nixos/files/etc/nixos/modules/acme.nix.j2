@@ -18,9 +18,13 @@
       "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.age.secrets.cloudflare_dns_zone_api_key.path;
     };
     dnsPropagationCheck = true;
+    # Use a fixed wait to allow Cloudflare to publish TXT records, query the
+    # specified recursive resolver (with port), and increase DNS query timeout.
     extraLegoFlags = [
-      "--dns.propagation-disable-ans=true"
-      "--dns.resolvers=1.1.1.1"
+      "--dns.propagation-wait=5m"
+      "--dns.resolvers=1.1.1.1:53"
+      "--dns-timeout=120"
+      "--dns.propagation-rns=true"
     ];
   };
 }
