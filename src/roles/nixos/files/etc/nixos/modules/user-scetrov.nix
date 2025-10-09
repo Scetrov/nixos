@@ -29,6 +29,7 @@ in
     packages = with pkgs; [
       btop
       curl
+      dive
       exiftool
       fzf
       git
