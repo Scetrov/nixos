@@ -19,9 +19,8 @@
     };
     dnsPropagationCheck = true;
     extraLegoFlags = [
+      "--dns.propagation-disable-ans=true"
       "--dns.resolvers=1.1.1.1"
-      "--dns.propagation-timeout=5m"
-      "--dns.polling-interval=5s"
     ];
   };
 }
