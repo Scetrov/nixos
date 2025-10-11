@@ -44,13 +44,13 @@ in
   # Required for rootless mappings
   users.users.scetrov.subUidRanges = [
     {
-      startUid = 100001;
+      startUid = 100000;
       count = 65536;
     }
   ];
   users.users.scetrov.subGidRanges = [
     {
-      startGid = 100001;
+      startGid = 100000;
       count = 65536;
     }
   ];
