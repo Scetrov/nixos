@@ -27,13 +27,13 @@ in
     ];
     subUidRanges = [
       {
-        count = 65534;
+        count = 65536;
         startUid = 100001;
       }
     ];
     subGidRanges = [
       {
-        count = 65534;
+        count = 65536;
         startGid = 100001;
       }
     ];
