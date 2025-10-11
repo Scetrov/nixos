@@ -34,7 +34,7 @@ in
     subGidRanges = [
       {
         count = 65534;
-        startUid = 100001;
+        startGid = 100001;
       }
     ];
     shell = pkgs.zsh;
@@ -46,6 +46,7 @@ in
       foundry
       fzf
       git
+      gnumake
       go
       hugo
       lsb-release
