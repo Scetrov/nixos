@@ -45,7 +45,7 @@ in
       tmux
       unstable.chezmoi
       unstable.devenv
-      unstable.dotnetCorePackages.sdk_9_0-bin
+      unstable.dotnetCorePackages.sdk_10_0-bin
       unstable.ghostty
       unstable.gitleaks
       unstable.oh-my-posh
