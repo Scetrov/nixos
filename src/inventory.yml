@@ -4,7 +4,7 @@ all:
       ansible_connection: local
       nixos_architecture: x86
       nixos_install_version: 24.11
-      nixos_current_version: 25.05
+      nixos_current_version: 25.11
       nixos_device_configuration: "bullit.nix"
       nixos_hardware_configuration: "hyperv-virtual-machine.nix"
     woodford:
