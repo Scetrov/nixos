@@ -5,7 +5,7 @@ let
   };
   unstable = import <nixos-unstable> { config = baseconfig; };
 
-  vscode-fhs-devcontainers = pkgs.buildFHSUserEnv {
+  vscode-fhs-devcontainers = pkgs.buildFHSEnv {
     name = "vscode-fhs-devcontainers";
     targetPkgs =
       p: with p; [
