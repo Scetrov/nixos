@@ -3,6 +3,6 @@
 {
   services.synergy.server = {
     enable = true;
-    startOnBoot = true;
+    autoStart = true;
   };
 }

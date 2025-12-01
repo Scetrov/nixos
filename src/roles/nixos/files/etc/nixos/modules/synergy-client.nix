@@ -4,6 +4,6 @@
   services.synergy.client = {
     enable = true;
     serverAddress = "bullit";
-    startOnBoot = true;
+    autoStart = true;
   };
 }
