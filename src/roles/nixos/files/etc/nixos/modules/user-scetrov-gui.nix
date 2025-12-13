@@ -57,13 +57,16 @@ in
 
   users.users.scetrov = {
     packages = with pkgs; [
-      unstable.vscode
-      vscode-fhs-devcontainers
       charles
       discord
       jetbrains.rider
       nerd-fonts.fira-code
+      unstable.antigravity
       unstable.brave
+      unstable.claude-code
+      unstable.code-cursor
+      unstable.codex
+      unstable.cursor-cli
       unstable.dotnet-ef
       unstable.framesh
       unstable.insomnia
@@ -71,6 +74,8 @@ in
       unstable.obsidian
       unstable.sqlitestudio
       unstable.syncthingtray
+      unstable.vscode
+      vscode-fhs-devcontainers
     ];
   };
 
