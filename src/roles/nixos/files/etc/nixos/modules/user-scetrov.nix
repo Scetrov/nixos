@@ -34,6 +34,7 @@ in
       foundry
       fzf
       git
+      gh
       gnumake
       go
       hugo
