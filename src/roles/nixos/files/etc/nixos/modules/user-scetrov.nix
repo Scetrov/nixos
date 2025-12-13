@@ -35,6 +35,7 @@ in
       fzf
       git
       gh
+      jq
       gnumake
       go
       hugo
