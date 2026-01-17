@@ -61,6 +61,7 @@ in
       discord
       jetbrains.rider
       nerd-fonts.fira-code
+      sqlite3
       unstable.antigravity
       unstable.brave
       unstable.claude-code
