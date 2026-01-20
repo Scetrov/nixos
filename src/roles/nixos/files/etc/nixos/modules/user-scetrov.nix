@@ -51,6 +51,7 @@ in
       unstable.ghostty
       unstable.gitleaks
       unstable.oh-my-posh
+      unstable.pre-commit
       unzip
       usbutils
     ];
