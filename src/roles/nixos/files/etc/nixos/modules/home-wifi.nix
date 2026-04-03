@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 
 {
   age.secrets.wireless_pskraw.file = /root/secrets/wireless_pskraw.age;
