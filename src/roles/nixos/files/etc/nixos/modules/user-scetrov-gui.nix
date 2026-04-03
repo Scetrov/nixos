@@ -64,7 +64,6 @@ in
       sqlite
       unstable.antigravity
       unstable.brave
-      unstable.claude-code
       unstable.code-cursor
       unstable.codex
       unstable.cursor-cli
