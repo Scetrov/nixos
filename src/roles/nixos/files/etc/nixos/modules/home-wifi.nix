@@ -7,6 +7,7 @@
   networking = {
     networkmanager = {
       enable = true;
+      plugins = [ pkgs.networkmanager-openvpn ];
       ensureProfiles = {
         environmentFiles = [
           config.age.secrets.wireless_pskraw.path

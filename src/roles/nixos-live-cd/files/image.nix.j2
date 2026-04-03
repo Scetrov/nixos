@@ -10,7 +10,10 @@
   ];
 
   networking = {
-    networkmanager.enable = true;
+    networkmanager = {
+      enable = true;
+      plugins = [ pkgs.networkmanager-openvpn ];
+    };
     wireless.enable = false;
     hostName = "nixup";
   };
