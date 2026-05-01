@@ -64,7 +64,7 @@ EOF
         ${pkgs.podman}/bin/podman run --rm \
           --network=podman \
           --env-file=/var/lib/oncall/oncall.env \
-          -v /var/lib/oncall:/var/lib/oncall \
+          -v /var/lib/oncall:/var/lib/oncall:U \
           docker.io/grafana/oncall:latest \
           sh -ceu 'python manage.py migrate --noinput && python manage.py collectstatic --noinput'
       '';
@@ -95,7 +95,7 @@ EOF
       environmentFiles = [ "/var/lib/oncall/oncall.env" ];
       extraOptions = [ "--network=podman" ];
       ports = [ "127.0.0.1:18080:8080" ];
-      volumes = [ "/var/lib/oncall:/var/lib/oncall" ];
+      volumes = [ "/var/lib/oncall:/var/lib/oncall:U" ];
     };
 
     oncall-celery = {
@@ -104,7 +104,7 @@ EOF
       cmd = [ "sh" "-ceu" "./celery_with_exporter.sh" ];
       environmentFiles = [ "/var/lib/oncall/oncall.env" ];
       extraOptions = [ "--network=podman" ];
-      volumes = [ "/var/lib/oncall:/var/lib/oncall" ];
+      volumes = [ "/var/lib/oncall:/var/lib/oncall:U" ];
     };
   };
 }
