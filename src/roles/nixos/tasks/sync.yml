@@ -22,18 +22,17 @@
     src: "{{ role_path }}/files/etc/nixos/{{ nixos_architecture }}-configuration.nix.j2"
     dest: /etc/nixos/configuration.nix
 
-- name: Synchronize container configuration to /etc
+- name: Remove legacy Traefik configuration directory
   become: true
-  synchronize:
-    src: "{{ role_path }}/files/etc/{{ item }}/"
-    dest: "/etc/{{ item }}"
-    recursive: true
-    delete: true
-  loop:
-    - prometheus
-    - traefik
-  loop_control:
-    label: "{{ item }}"
+  file:
+    path: /etc/traefik
+    state: absent
+
+- name: Remove legacy Prometheus configuration directory
+  become: true
+  file:
+    path: /etc/prometheus
+    state: absent
 
 - name: Find all .nix.j2 files
   delegate_to: localhost

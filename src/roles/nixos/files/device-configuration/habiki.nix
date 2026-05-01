@@ -3,12 +3,19 @@
 {
   imports = [
     ./modules/acme.nix
+    ./modules/alloy.nix
     ./modules/blocky.nix
+    ./modules/caddy.nix
     ./modules/grafana.nix
     ./modules/immich.nix
+    ./modules/k6.nix
     ./modules/local-networking.nix
+    ./modules/loki.nix
+    ./modules/mimir.nix
+    ./modules/oncall.nix
+    ./modules/pyroscope.nix
     ./modules/prometheus.nix
-    ./modules/traefik.nix
+    ./modules/tempo.nix
     ./modules/user-scetrov-filebrowser.nix
     ./modules/user-scetrov-syncthing.nix
   ];

@@ -1,45 +1,103 @@
-{ config, lib, ... }:
+{ ... }:
 
 {
-  environment.etc.prometheus-config = {
-    source = ../../prometheus/prometheus.yml;
-    target = "prometheus/prometheus.yml";
-  };
-
   services.prometheus = {
-    exporters = {
-      node = {
-        enable = true;
-        listenAddress = "0.0.0.0";
-        enabledCollectors = [ "systemd" ];
-        port = 9100;
-      };
+    enable = true;
+    listenAddress = "127.0.0.1";
+    port = 9090;
+    retentionTime = "15d";
+    webExternalUrl = "https://metrics.net.scetrov.live/prometheus";
+    exporters.node = {
+      enable = true;
+      enabledCollectors = [ "systemd" ];
+      listenAddress = "127.0.0.1";
+      port = 9100;
     };
-  };
-
-  virtualisation = {
-    oci-containers.containers = {
-      prometheus = {
-        image = "prom/prometheus";
-        autoStart = true;
-        volumes = [
-          "/etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
-          "prometheus-data:/prometheus:rw"
-        ];
-        labels = { 
-          "traefik.enable" = "true";
-
-          # HTTPS RPC
-          "traefik.http.routers.prometheus.rule" = "Host(`prometheus.net.scetrov.live`)";
-          "traefik.http.routers.prometheus.tls" = "true";
-          "traefik.http.routers.prometheus.entrypoints" = "websecure";
-          "traefik.http.routers.prometheus.service" = "prometheus-service";
-          "traefik.http.services.prometheus-service.loadbalancer.server.port" = "9090";
-        };
-        extraOptions = [
-          "--add-host=host.podman.internal:host-gateway"
-        ];
+    globalConfig = {
+      external_labels = {
+        cluster = "net";
+        host = "habiki";
       };
+      scrape_interval = "15s";
     };
+    remoteWrite = [
+      {
+        url = "http://127.0.0.1:8080/api/v1/push";
+      }
+    ];
+    scrapeConfigs = [
+      {
+        job_name = "prometheus";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:9090" ];
+          }
+        ];
+      }
+      {
+        job_name = "node";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:9100" ];
+          }
+        ];
+      }
+      {
+        job_name = "blocky";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:4000" ];
+          }
+        ];
+      }
+      {
+        job_name = "grafana";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:3000" ];
+          }
+        ];
+      }
+      {
+        job_name = "loki";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:3100" ];
+          }
+        ];
+      }
+      {
+        job_name = "tempo";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:3200" ];
+          }
+        ];
+      }
+      {
+        job_name = "mimir";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:8080" ];
+          }
+        ];
+      }
+      {
+        job_name = "pyroscope";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:4040" ];
+          }
+        ];
+      }
+      {
+        job_name = "alloy";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:12345" ];
+          }
+        ];
+      }
+    ];
   };
 }

@@ -26,9 +26,7 @@
       "10.229.10.2" = [
         "habiki"
         "habiki.net.scetrov.live"
-        "traefik.net.scetrov.live"
-        "grafana.net.scetrov.live"
-        "prometheus.net.scetrov.live"
+        "metrics.net.scetrov.live"
         "json-rpc.sepolia.scetrov.live"
         "json-rpc.pyrope.scetrov.live"
         "immich.net.scetrov.live"
