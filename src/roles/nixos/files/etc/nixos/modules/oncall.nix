@@ -1,6 +1,10 @@
 { pkgs, ... }:
 
 {
+  systemd.tmpfiles.rules = [
+    "d /var/lib/oncall 0750 root root - -"
+  ];
+
   systemd.services.oncall-bootstrap = {
     description = "Prepare Grafana OnCall runtime environment";
     wantedBy = [ "multi-user.target" ];
