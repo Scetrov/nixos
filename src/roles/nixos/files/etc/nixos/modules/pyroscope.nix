@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 let
-  settingsFile = pkgs.formats.yaml { }.generate "pyroscope.yaml" {
+  settingsFile = (pkgs.formats.yaml { }).generate "pyroscope.yaml" {
     target = "all";
     multitenancy_enabled = false;
     analytics.reporting_enabled = false;
