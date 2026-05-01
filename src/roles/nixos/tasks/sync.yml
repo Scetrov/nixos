@@ -30,7 +30,6 @@
     recursive: true
     delete: true
   loop:
-    - ethereum
     - prometheus
     - traefik
   loop_control:
