@@ -6,6 +6,7 @@ let
     multitenancy_enabled = false;
     analytics.reporting_enabled = false;
     api."base-url" = "https://metrics.net.scetrov.live/pyroscope";
+    memberlist.bind_port = 7948;
     server = {
       http_listen_address = "127.0.0.1";
       http_listen_port = 4040;
