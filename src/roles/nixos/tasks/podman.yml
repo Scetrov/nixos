@@ -1,22 +1,36 @@
-- name: Get list of running Podman containers
+- name: Get list of active Podman systemd services
   become: true
-  ansible.builtin.command: podman ps -q
-  register: running_containers
+  ansible.builtin.command:
+    argv:
+      - systemctl
+      - list-units
+      - --type=service
+      - --state=active
+      - --plain
+      - --no-legend
+      - podman-*.service
+  register: podman_services
   changed_when: false
 
-- name: Restart each container
+- name: Restart each Podman systemd service
   become: true
-  ansible.builtin.command: podman restart {{ item }}
-  loop: "{{ running_containers.stdout_lines }}"
-  when: running_containers.stdout != ""
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: restarted
+  loop: >-
+    {{
+      podman_services.stdout_lines
+      | map('regex_replace', '^([^[:space:]]+).*$','\\1')
+      | list
+    }}
+  when: podman_services.stdout != ""
   register: restart_results
-  changed_when: restart_results.rc == 0
   loop_control:
     label: "{{ item }}"
 
 - name: Show restart results
   become: true
   ansible.builtin.debug:
-    msg: "Restarted container {{ item.item }} with status: {{ item.rc }}"
+    msg: "Restarted service {{ item.item }} with changed={{ item.changed }}"
   loop: "{{ restart_results.results }}"
   when: restart_results.results is defined
