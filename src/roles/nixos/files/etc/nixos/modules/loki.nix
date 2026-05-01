@@ -13,6 +13,7 @@
         ring.kvstore.store = "inmemory";
       };
       compactor = {
+        delete_request_store = "filesystem";
         retention_enabled = true;
         working_directory = "/var/lib/loki/compactor";
       };
