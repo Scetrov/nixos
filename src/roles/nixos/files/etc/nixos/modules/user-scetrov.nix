@@ -28,6 +28,7 @@ in
     shell = pkgs.zsh;
     packages = with pkgs; [
       btop
+      clang
       curl
       dive
       exiftool
@@ -39,9 +40,11 @@ in
       gnumake
       go
       hugo
+      llvmPackages.libclang
       lsb-release
       nixfmt-rfc-style
       nmap
+      pkg-config
       powershell
       rustup
       tmux
@@ -55,5 +58,9 @@ in
       unzip
       usbutils
     ];
+  };
+
+  environment.sessionVariables = {
+    LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
   };
 }
