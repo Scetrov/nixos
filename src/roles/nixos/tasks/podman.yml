@@ -15,22 +15,17 @@
 - name: Restart each Podman systemd service
   become: true
   ansible.builtin.systemd:
-    name: "{{ item }}"
+    name: "{{ item.split()[0] }}"
     state: restarted
-  loop: >-
-    {{
-      podman_services.stdout_lines
-      | map('regex_replace', '^([^[:space:]]+).*$','\\1')
-      | list
-    }}
+  loop: "{{ podman_services.stdout_lines }}"
   when: podman_services.stdout != ""
   register: restart_results
   loop_control:
-    label: "{{ item }}"
+    label: "{{ item.split()[0] }}"
 
 - name: Show restart results
   become: true
   ansible.builtin.debug:
-    msg: "Restarted service {{ item.item }} with changed={{ item.changed }}"
+    msg: "Restarted service {{ item.item.split()[0] }} with changed={{ item.changed }}"
   loop: "{{ restart_results.results }}"
   when: restart_results.results is defined
