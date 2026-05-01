@@ -1,3 +1,6 @@
+- name: Include NixOS pre-flight tasks
+  ansible.builtin.include_tasks: preflight.yml
+
 - name: Include Nix Channel tasks
   ansible.builtin.include_tasks: channel.yml
 

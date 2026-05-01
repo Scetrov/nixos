@@ -1,0 +1,22 @@
+- name: Find local Nix files for syntax validation
+  ansible.builtin.find:
+    paths: "{{ role_path }}/files"
+    patterns: "*.nix"
+    recurse: true
+    file_type: file
+  delegate_to: localhost
+  run_once: true
+  register: local_nix_files
+
+- name: Parse-check local Nix files before deployment
+  ansible.builtin.command:
+    argv:
+      - nix-instantiate
+      - --parse
+      - "{{ item.path }}"
+  delegate_to: localhost
+  run_once: true
+  changed_when: false
+  loop: "{{ local_nix_files.files | sort(attribute='path') }}"
+  loop_control:
+    label: "{{ item.path }}"
