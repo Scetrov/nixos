@@ -15,6 +15,8 @@ in
   "ssh_bastion_key.age".publicKeys = users ++ systems;
   "wireless_pskraw.age".publicKeys = users ++ systems;
   "wireless_ssid.age".publicKeys = users ++ systems;
+  "authentik_postgresql_password.age".publicKeys = users ++ systems;
+  "authentik_secret_key.age".publicKeys = users ++ systems;
   "cloudflare_dns_zone_api_key.age".publicKeys = users ++ systems;
   "cloudflare_email.age".publicKeys = users ++ systems;
   "syncthing_gui_password.age".publicKeys = users ++ systems;

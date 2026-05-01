@@ -3,6 +3,7 @@
 {
   imports = [
     ./modules/acme.nix
+    ./modules/authentik.nix
     ./modules/alloy.nix
     ./modules/blocky.nix
     ./modules/caddy.nix
@@ -19,6 +20,8 @@
     ./modules/user-scetrov-filebrowser.nix
     ./modules/user-scetrov-syncthing.nix
   ];
+
+  scetrov.services.authentik.enable = true;
   
   blocky.bindAddr = "10.229.53.2:53";
 

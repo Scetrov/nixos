@@ -4,6 +4,8 @@
 - name: Include Nix Channel tasks
   ansible.builtin.include_tasks: channel.yml
 
+# sync.yml recursively deploys files/etc/nixos/, so new modules such as
+# modules/authentik.nix are copied without adding another include task here.
 - name: Include NixOS sync tasks
   ansible.builtin.include_tasks: sync.yml
 
