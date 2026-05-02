@@ -289,7 +289,6 @@ in
 
         "$systemctl" stop postgresql.service >/dev/null 2>&1 || true
         rm -rf /var/lib/postgresql
-''}
 
         "$systemctl" reset-failed \
           podman-authentik-server.service \
@@ -298,6 +297,7 @@ in
           postgresql.service \
           >/dev/null 2>&1 || true
       '';
+    };
     })
   ];
 }
