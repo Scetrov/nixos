@@ -49,9 +49,11 @@ lib.mkIf config.services.grafana.enable {
           reverse_proxy 127.0.0.1:18080
         }
 
-        handle {
+        handle /grafana* {
           reverse_proxy 127.0.0.1:3000
         }
+
+        redir / /grafana
       '';
     };
   };

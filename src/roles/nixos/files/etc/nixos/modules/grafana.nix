@@ -1,6 +1,9 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
+  age.secrets.grafana_authentik_client_id.file = /root/secrets/grafana_authentik_client_id.age;
+  age.secrets.grafana_authentik_client_secret.file = /root/secrets/grafana_authentik_client_secret.age;
+
   services.grafana = {
     enable = true;
     declarativePlugins = with pkgs.grafanaPlugins; [
@@ -25,7 +28,6 @@
         enable_gzip = true;
         http_addr = "127.0.0.1";
         http_port = 3000;
-        root_url = "https://metrics.net.scetrov.live/";
       };
       users = {
         allow_sign_up = false;
@@ -96,5 +98,25 @@
         ];
       };
     };
+  };
+
+  systemd.services.grafana = {
+    environment = {
+      GF_AUTH_GENERIC_OAUTH_ENABLED = "true";
+      GF_AUTH_GENERIC_OAUTH_NAME = "authentik";
+      GF_AUTH_GENERIC_OAUTH_SCOPES = "openid profile email";
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL = "https://identity.net.scetrov.live/application/o/authorize/";
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL = "https://identity.net.scetrov.live/application/o/token/";
+      GF_AUTH_GENERIC_OAUTH_API_URL = "https://identity.net.scetrov.live/application/o/userinfo/";
+      GF_AUTH_SIGNOUT_REDIRECT_URL = "https://identity.net.scetrov.live/application/o/grafana/end-session/";
+      GF_AUTH_OAUTH_AUTO_LOGIN = "true";
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH = "contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'";
+      GF_SERVER_ROOT_URL = "https://metrics.net.scetrov.live/grafana";
+      GF_SERVER_SERVE_FROM_SUB_PATH = "true";
+    };
+    serviceConfig.EnvironmentFile = [
+      config.age.secrets.grafana_authentik_client_id.path
+      config.age.secrets.grafana_authentik_client_secret.path
+    ];
   };
 }

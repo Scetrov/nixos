@@ -1,6 +1,8 @@
 { config, pkgs, ... }:
 
 {
+  boot.blacklistedKernelModules = [ "algif_aead" ];
+
   security.sudo.wheelNeedsPassword = false;
 
   services.openssh = {

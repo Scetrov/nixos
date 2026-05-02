@@ -19,5 +19,7 @@ in
   "authentik_secret_key.age".publicKeys = users ++ systems;
   "cloudflare_dns_zone_api_key.age".publicKeys = users ++ systems;
   "cloudflare_email.age".publicKeys = users ++ systems;
+  "grafana_authentik_client_id.age".publicKeys = users ++ systems;
+  "grafana_authentik_client_secret.age".publicKeys = users ++ systems;
   "syncthing_gui_password.age".publicKeys = users ++ systems;
 }
