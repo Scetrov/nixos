@@ -22,7 +22,7 @@
   retries: 60
   delay: 5
 
-- name: Wait for Authentik API info endpoint
+- name: Wait for Authentik API endpoint
   delegate_to: localhost
   run_once: true
   ansible.builtin.uri:
