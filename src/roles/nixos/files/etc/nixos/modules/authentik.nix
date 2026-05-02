@@ -128,7 +128,7 @@ in
         file = /root/secrets/authentik_postgresql_password.age;
         owner = "root";
         group = "root";
-        mode = "0400";
+        mode = "0444";
       };
 
       age.secrets.authentik_admin_user = {
@@ -206,7 +206,7 @@ in
           extraOptions = [
             "--memory=${cfg.postgresqlMemoryLimit}"
             "--cpus=${cfg.postgresqlCpuLimit}"
-            "--health-cmd=pg_isready -U authentik -d authentik"
+            "--health-cmd=CMD-SHELL pg_isready -U authentik -d authentik"
             "--health-interval=10s"
             "--health-timeout=5s"
             "--health-retries=3"
