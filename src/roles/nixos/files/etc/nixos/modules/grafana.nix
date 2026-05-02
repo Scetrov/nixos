@@ -104,13 +104,13 @@
     environment = {
       GF_AUTH_GENERIC_OAUTH_ENABLED = "true";
       GF_AUTH_GENERIC_OAUTH_NAME = "authentik";
-      GF_AUTH_GENERIC_OAUTH_SCOPES = "openid profile email";
+      GF_AUTH_GENERIC_OAUTH_SCOPES = "openid profile email entitlements";
       GF_AUTH_GENERIC_OAUTH_AUTH_URL = "https://identity.net.scetrov.live/application/o/authorize/";
       GF_AUTH_GENERIC_OAUTH_TOKEN_URL = "https://identity.net.scetrov.live/application/o/token/";
       GF_AUTH_GENERIC_OAUTH_API_URL = "https://identity.net.scetrov.live/application/o/userinfo/";
       GF_AUTH_SIGNOUT_REDIRECT_URL = "https://identity.net.scetrov.live/application/o/grafana/end-session/";
       GF_AUTH_OAUTH_AUTO_LOGIN = "true";
-      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH = "contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'";
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH = "contains(entitlements[*], 'Grafana Admins') && 'Admin' || contains(entitlements[*], 'Grafana Editors') && 'Editor' || 'Viewer'";
       GF_SERVER_ROOT_URL = "https://metrics.net.scetrov.live/grafana";
       GF_SERVER_SERVE_FROM_SUB_PATH = "true";
     };
