@@ -42,7 +42,7 @@ def read_secret(name: str, env_var: str) -> str:
 
 env_path = Path(os.environ["AUTHENTIK_ENV_FILE"])
 entries = {
-    "AUTHENTIK_POSTGRESQL__HOST": "host.containers.internal",
+    "AUTHENTIK_POSTGRESQL__HOST": "postgresql",
     "AUTHENTIK_POSTGRESQL__NAME": "authentik",
     "AUTHENTIK_POSTGRESQL__USER": "authentik",
     "AUTHENTIK_POSTGRESQL__PORT": "5432",
@@ -82,6 +82,36 @@ in
       type = lib.types.str;
       default = "ghcr.io/goauthentik/server:2025.10";
       description = "Container image used for the Authentik server and worker.";
+    };
+
+    postgresqlPort = lib.mkOption {
+      type = lib.types.port;
+      default = 5433;
+      description = "Host port for PostgreSQL container (maps to 5432 inside container).";
+    };
+
+    postgresqlImage = lib.mkOption {
+      type = lib.types.str;
+      default = "postgres:16-alpine";
+      description = "Container image used for PostgreSQL.";
+    };
+
+    postgresqlDataDir = lib.mkOption {
+      type = lib.types.path;
+      default = "${stateDir}/postgresql-data";
+      description = "Directory for PostgreSQL data persistence.";
+    };
+
+    postgresqlMemoryLimit = lib.mkOption {
+      type = lib.types.str;
+      default = "2g";
+      description = "Memory limit for PostgreSQL container.";
+    };
+
+    postgresqlCpuLimit = lib.mkOption {
+      type = lib.types.str;
+      default = "1.0";
+      description = "CPU limit for PostgreSQL container (in cores).";
     };
   };
 
@@ -142,66 +172,69 @@ in
         "d ${stateDir} 0750 root root - -"
         "d ${dataDir} 0750 root root - -"
         "d ${templatesDir} 0750 root root - -"
+        "d ${cfg.postgresqlDataDir} 0700 root root - -"
       ];
 
-      systemd.services.authentik-postgresql-init = {
-        description = "Prepare PostgreSQL for Authentik";
-        after = [ "postgresql.target" ];
-        requires = [ "postgresql.target" ];
-        before = [
-          "podman-authentik-server.service"
-          "podman-authentik-worker.service"
-        ];
-        wantedBy = [ "multi-user.target" ];
-        path = [ config.services.postgresql.package pkgs.gnugrep ];
+      systemd.services.authentik-prepare-env = {
+        description = "Prepare Authentik environment file";
+        unitConfig.DefaultDependencies = false;
         serviceConfig = {
           Type = "oneshot";
-          RemainAfterExit = true;
-          User = "postgres";
-          Group = "postgres";
-          LoadCredential = [ "db_password:${config.age.secrets.authentik_postgresql_password.path}" ];
+          ExecStart = authentikPrepareEnvScript;
         };
-        script = ''
-          set -euo pipefail
-
-          db_password="$(<"$CREDENTIALS_DIRECTORY/db_password")"
-          db_password="''${db_password//\'/\'\'}"
-
-          psql -tAc "SELECT 1 FROM pg_roles WHERE rolname = 'authentik'" | grep -q 1 || \
-            psql -tAc 'CREATE ROLE "authentik" LOGIN'
-          psql -tAc "ALTER ROLE \"authentik\" WITH LOGIN PASSWORD '$db_password'"
-          psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'authentik'" | grep -q 1 || \
-            psql -tAc 'CREATE DATABASE "authentik" OWNER "authentik"'
-          psql -tAc 'ALTER DATABASE "authentik" OWNER TO "authentik"'
-          psql -tAc 'GRANT ALL PRIVILEGES ON DATABASE "authentik" TO "authentik"'
-          psql -d authentik -tAc 'ALTER SCHEMA public OWNER TO "authentik"'
-          psql -d authentik -tAc 'GRANT ALL ON SCHEMA public TO "authentik"'
-        '';
       };
 
       systemd.services.podman-authentik-server = {
-        after = [ "authentik-postgresql-init.service" ];
-        requires = [ "authentik-postgresql-init.service" ];
-        serviceConfig.ExecStartPre = [ authentikPrepareEnvScript ];
+        after = [ "podman-postgresql.service" ];
+        requires = [ "podman-postgresql.service" "authentik-prepare-env.service" ];
       };
 
       systemd.services.podman-authentik-worker = {
-        after = [ "authentik-postgresql-init.service" ];
-        requires = [ "authentik-postgresql-init.service" ];
-        serviceConfig.ExecStartPre = [ authentikPrepareEnvScript ];
+        after = [ "podman-postgresql.service" ];
+        requires = [ "podman-postgresql.service" "authentik-prepare-env.service" ];
       };
 
       virtualisation.oci-containers.containers = {
+        postgresql = {
+          image = cfg.postgresqlImage;
+          autoStart = true;
+          environment = {
+            POSTGRES_USER = "authentik";
+            POSTGRES_PASSWORD_FILE = "${config.age.secrets.authentik_postgresql_password.path}";
+            POSTGRES_DB = "authentik";
+          };
+          extraOptions = [
+            "--memory=${cfg.postgresqlMemoryLimit}"
+            "--cpus=${cfg.postgresqlCpuLimit}"
+          ];
+          ports = [ "${toString cfg.postgresqlPort}:5432" ];
+          volumes = [
+            "${cfg.postgresqlDataDir}:/var/lib/postgresql/data:U"
+            "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
+          ];
+          healthcheck = {
+            test = [ "CMD-SHELL" "pg_isready -U authentik -d authentik" ];
+            interval = "10s";
+            timeout = "5s";
+            retries = 3;
+            startPeriod = "30s";
+          };
+        };
+
         authentik-server = {
           image = cfg.image;
           autoStart = true;
           cmd = [ "server" ];
           environmentFiles = [ authentikEnvFile ];
-          extraOptions = [ "--network=podman" "--shm-size=512m" ];
+          extraOptions = [ "--shm-size=512m" ];
           ports = [ "127.0.0.1:${toString cfg.port}:9000" ];
           volumes = [
             "${dataDir}:/data:U"
             "${templatesDir}:/templates:U"
+            "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
+            "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
+            "${config.age.secrets.authentik_admin_password.path}:${config.age.secrets.authentik_admin_password.path}:ro"
+            "${config.age.secrets.authentik_bootstrap_token.path}:${config.age.secrets.authentik_bootstrap_token.path}:ro"
           ];
         };
 
@@ -210,31 +243,16 @@ in
           autoStart = true;
           cmd = [ "worker" ];
           environmentFiles = [ authentikEnvFile ];
-          extraOptions = [ "--network=podman" "--shm-size=512m" ];
+          extraOptions = [ "--shm-size=512m" ];
           volumes = [
             "${dataDir}:/data:U"
             "${templatesDir}:/templates:U"
+            "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
+            "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
+            "${config.age.secrets.authentik_admin_password.path}:${config.age.secrets.authentik_admin_password.path}:ro"
+            "${config.age.secrets.authentik_bootstrap_token.path}:${config.age.secrets.authentik_bootstrap_token.path}:ro"
           ];
         };
-      };
-
-      services.postgresql = {
-        enable = true;
-        enableTCPIP = true;
-        authentication = lib.mkBefore ''
-          host authentik authentik 10.88.0.0/16 scram-sha-256
-        '';
-        ensureDatabases = [ "authentik" ];
-        ensureUsers = [
-          {
-            name = "authentik";
-            ensureDBOwnership = true;
-            ensureClauses = {
-              login = true;
-            };
-          }
-        ];
-        settings.listen_addresses = lib.mkDefault "127.0.0.1,10.88.0.1";
       };
 
       services.caddy = {
@@ -260,41 +278,25 @@ in
 
         systemctl=${config.systemd.package}/bin/systemctl
         podman=${pkgs.podman}/bin/podman
-        psql=${pkgs.postgresql}/bin/psql
 
         "$systemctl" stop \
           podman-authentik-server.service \
           podman-authentik-worker.service \
-          authentik-postgresql-init.service \
+          podman-postgresql.service \
+          authentik-prepare-env.service \
           || true
 
-        "$podman" rm -f authentik-server authentik-worker >/dev/null 2>&1 || true
-        "$podman" image rm ${lib.escapeShellArg cfg.image} >/dev/null 2>&1 || true
+        "$podman" rm -f authentik-server authentik-worker postgresql >/dev/null 2>&1 || true
+        "$podman" image rm ${lib.escapeShellArg cfg.image} ${lib.escapeShellArg cfg.postgresqlImage} >/dev/null 2>&1 || true
 
         rm -rf ${lib.escapeShellArg stateDir}
         rm -f ${escapedSecretFiles}
 
-        # Always clean up Authentik database/role when disabled
-        if "$systemctl" is-active --quiet postgresql.service; then
-          runuser -u postgres -- "$psql" -d postgres -v ON_ERROR_STOP=1 \
-            -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'authentik' AND pid <> pg_backend_pid();" \
-            >/dev/null
-          runuser -u postgres -- "$psql" -d postgres -v ON_ERROR_STOP=1 \
-            -c 'DROP DATABASE IF EXISTS "authentik";' \
-            >/dev/null
-          runuser -u postgres -- "$psql" -d postgres -v ON_ERROR_STOP=1 \
-            -c 'DROP ROLE IF EXISTS "authentik";' \
-            >/dev/null
-        fi
-
-        "$systemctl" stop postgresql.service >/dev/null 2>&1 || true
-        rm -rf /var/lib/postgresql
-
         "$systemctl" reset-failed \
           podman-authentik-server.service \
           podman-authentik-worker.service \
-          authentik-postgresql-init.service \
-          postgresql.service \
+          podman-postgresql.service \
+          authentik-prepare-env.service \
           >/dev/null 2>&1 || true
       '';
     })
