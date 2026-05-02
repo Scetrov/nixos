@@ -42,7 +42,7 @@ def read_secret(name: str, env_var: str) -> str:
 
 env_path = Path(os.environ["AUTHENTIK_ENV_FILE"])
 entries = {
-    "AUTHENTIK_POSTGRESQL__HOST": "postgresql",
+    "AUTHENTIK_POSTGRESQL__HOST": "authentik-postgresql",
     "AUTHENTIK_POSTGRESQL__NAME": "authentik",
     "AUTHENTIK_POSTGRESQL__USER": "authentik",
     "AUTHENTIK_POSTGRESQL__PORT": "5432",
@@ -87,7 +87,7 @@ in
     postgresqlPort = lib.mkOption {
       type = lib.types.port;
       default = 5433;
-      description = "Host port for PostgreSQL container (maps to 5432 inside container).";
+      description = "Host port for Authentik PostgreSQL container (maps to 5432 inside container).";
     };
 
     postgresqlImage = lib.mkOption {
@@ -195,7 +195,7 @@ in
       };
 
       virtualisation.oci-containers.containers = {
-        postgresql = {
+        authentik-postgresql = {
           image = cfg.postgresqlImage;
           autoStart = true;
           environment = {
@@ -206,19 +206,17 @@ in
           extraOptions = [
             "--memory=${cfg.postgresqlMemoryLimit}"
             "--cpus=${cfg.postgresqlCpuLimit}"
+            "--health-cmd=pg_isready -U authentik -d authentik"
+            "--health-interval=10s"
+            "--health-timeout=5s"
+            "--health-retries=3"
+            "--health-start-period=30s"
           ];
           ports = [ "${toString cfg.postgresqlPort}:5432" ];
           volumes = [
             "${cfg.postgresqlDataDir}:/var/lib/postgresql/data:U"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
           ];
-          healthcheck = {
-            test = [ "CMD-SHELL" "pg_isready -U authentik -d authentik" ];
-            interval = "10s";
-            timeout = "5s";
-            retries = 3;
-            startPeriod = "30s";
-          };
         };
 
         authentik-server = {
@@ -268,9 +266,6 @@ in
     })
 
     (lib.mkIf (!cfg.enable) {
-      # Disable PostgreSQL if only Authentik was using it
-      services.postgresql.enable = lib.mkDefault false;
-      
       system.activationScripts.authentikCleanup.text = let
         escapedSecretFiles = lib.concatMapStringsSep " " lib.escapeShellArg authentikSecretFiles;
       in ''
@@ -282,11 +277,11 @@ in
         "$systemctl" stop \
           podman-authentik-server.service \
           podman-authentik-worker.service \
-          podman-postgresql.service \
+          podman-authentik-postgresql.service \
           authentik-prepare-env.service \
           || true
 
-        "$podman" rm -f authentik-server authentik-worker postgresql >/dev/null 2>&1 || true
+        "$podman" rm -f authentik-server authentik-worker authentik-postgresql >/dev/null 2>&1 || true
         "$podman" image rm ${lib.escapeShellArg cfg.image} ${lib.escapeShellArg cfg.postgresqlImage} >/dev/null 2>&1 || true
 
         rm -rf ${lib.escapeShellArg stateDir}
@@ -295,7 +290,7 @@ in
         "$systemctl" reset-failed \
           podman-authentik-server.service \
           podman-authentik-worker.service \
-          podman-postgresql.service \
+          podman-authentik-postgresql.service \
           authentik-prepare-env.service \
           >/dev/null 2>&1 || true
       '';
