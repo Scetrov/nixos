@@ -27,8 +27,7 @@
         "habiki"
         "habiki.net.scetrov.live"
         "metrics.net.scetrov.live"
-        "json-rpc.sepolia.scetrov.live"
-        "json-rpc.pyrope.scetrov.live"
+        "identity.net.scetrov.live"
         "immich.net.scetrov.live"
       ];
       "10.229.10.10" = [
