@@ -250,6 +250,9 @@ in
     })
 
     (lib.mkIf (!cfg.enable) {
+      # Disable PostgreSQL if only Authentik was using it
+      services.postgresql.enable = lib.mkDefault false;
+      
       system.activationScripts.authentikCleanup.text = let
         escapedSecretFiles = lib.concatMapStringsSep " " lib.escapeShellArg authentikSecretFiles;
       in ''
@@ -271,7 +274,7 @@ in
         rm -rf ${lib.escapeShellArg stateDir}
         rm -f ${escapedSecretFiles}
 
-${lib.optionalString (!config.services.postgresql.enable) ''
+        # Always clean up Authentik database/role when disabled
         if "$systemctl" is-active --quiet postgresql.service; then
           runuser -u postgres -- "$psql" -d postgres -v ON_ERROR_STOP=1 \
             -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'authentik' AND pid <> pg_backend_pid();" \
