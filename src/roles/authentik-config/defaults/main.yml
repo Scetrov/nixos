@@ -1,0 +1,36 @@
+authentik_config_url: "https://identity.net.scetrov.live"
+authentik_config_ready_url: "{{ authentik_config_url }}/-/health/ready/"
+authentik_config_info_url: "{{ authentik_config_url }}/api/v3/core/info/"
+authentik_config_api_base_url: "{{ authentik_config_url }}/api/v3"
+authentik_config_validate_certs: true
+
+authentik_config_bootstrap_token: "{{ authentik_bootstrap_token }}"
+authentik_config_admin_username: "{{ authentik_admin_user }}"
+authentik_config_admin_password: "{{ authentik_password }}"
+authentik_config_bootstrap_username: "akadmin"
+authentik_config_admin_group_name: "authentik Admins"
+
+authentik_config_grafana_provider_name: "Grafana"
+authentik_config_grafana_application_name: "Grafana"
+authentik_config_grafana_application_slug: "grafana"
+authentik_config_grafana_launch_url: "https://metrics.net.scetrov.live/grafana"
+authentik_config_grafana_redirect_uri: "https://metrics.net.scetrov.live/grafana/login/generic_oauth"
+authentik_config_grafana_logout_uri: "https://metrics.net.scetrov.live/grafana/logout"
+authentik_config_grafana_client_id: "{{ grafana_authentik_client_id }}"
+authentik_config_grafana_client_secret: "{{ grafana_authentik_client_secret }}"
+
+authentik_config_authorization_flow_slug: "default-provider-authorization-implicit-consent"
+authentik_config_invalidation_flow_slug: "default-provider-invalidation"
+authentik_config_scope_mappings:
+  openid:
+    scope_name: "openid"
+    managed: "goauthentik.io/providers/oauth2/scope-openid"
+  profile:
+    scope_name: "profile"
+    managed: "goauthentik.io/providers/oauth2/scope-profile"
+  email:
+    scope_name: "email"
+    managed: "goauthentik.io/providers/oauth2/scope-email"
+  entitlements:
+    scope_name: "entitlements"
+    managed: "goauthentik.io/providers/oauth2/scope-entitlements"

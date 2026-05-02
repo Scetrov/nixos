@@ -1,0 +1,15 @@
+galaxy_info:
+  author: Richard Slater
+  description: Ansible role for configuring Authentik through its HTTP API
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms:
+    - name: GenericLinux
+      versions:
+        - all
+  galaxy_tags:
+    - authentik
+    - oidc
+    - grafana
+
+dependencies: []

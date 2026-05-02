@@ -1,0 +1,499 @@
+- name: Assert Authentik configuration variables are defined
+  ansible.builtin.assert:
+    that:
+      - authentik_config_url | length > 0
+      - authentik_config_bootstrap_token | length > 0
+      - authentik_config_admin_username | length > 0
+      - authentik_config_admin_password | length > 0
+      - authentik_config_grafana_client_id | length > 0
+      - authentik_config_grafana_client_secret | length > 0
+    quiet: true
+
+- name: Wait for Authentik readiness endpoint
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.uri:
+    url: "{{ authentik_config_ready_url }}"
+    method: GET
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code: 200
+  register: authentik_config_ready
+  until: authentik_config_ready.status == 200
+  retries: 60
+  delay: 5
+
+- name: Wait for Authentik API info endpoint
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.uri:
+    url: "{{ authentik_config_info_url }}"
+    method: GET
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code: 200
+  register: authentik_config_info
+  until: authentik_config_info.status == 200
+  retries: 60
+  delay: 5
+
+- name: Configure Authentik through the API
+  delegate_to: localhost
+  run_once: true
+  no_log: true
+  block:
+    - name: Look up the Authentik admin user
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/users/?username={{ authentik_config_admin_username | urlencode }}&page_size=100"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      register: authentik_admin_user_lookup
+
+    - name: Create the Authentik admin user when missing
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/users/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          username: "{{ authentik_config_admin_username }}"
+          name: "{{ authentik_config_admin_username }}"
+          is_active: true
+          groups: []
+          roles: []
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 201
+      when: authentik_admin_user_lookup.json.results | length == 0
+      register: authentik_admin_user_create
+
+    - name: Update the Authentik admin user when present
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/users/{{ authentik_admin_user_lookup.json.results[0].pk }}/"
+        method: PATCH
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          name: "{{ authentik_config_admin_username }}"
+          is_active: true
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 202
+      when: authentik_admin_user_lookup.json.results | length > 0
+
+    - name: Persist the Authentik admin user primary key
+      ansible.builtin.set_fact:
+        authentik_config_admin_user_pk: "{{ authentik_admin_user_create.json.pk | default(authentik_admin_user_lookup.json.results[0].pk) }}"
+
+    - name: Set the Authentik admin password
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/users/{{ authentik_config_admin_user_pk }}/set_password/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          password: "{{ authentik_config_admin_password }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 204
+
+    - name: Look up the Authentik admin group
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/groups/?name={{ authentik_config_admin_group_name | urlencode }}&page_size=100"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      register: authentik_admin_group_lookup
+
+    - name: Create the Authentik admin group when missing
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/groups/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          name: "{{ authentik_config_admin_group_name }}"
+          is_superuser: true
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 201
+      when: authentik_admin_group_lookup.json.results | length == 0
+      register: authentik_admin_group_create
+
+    - name: Update the Authentik admin group when present
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/groups/{{ authentik_admin_group_lookup.json.results[0].pk }}/"
+        method: PATCH
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          is_superuser: true
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 202
+      when: authentik_admin_group_lookup.json.results | length > 0
+
+    - name: Persist the Authentik admin group primary key
+      ansible.builtin.set_fact:
+        authentik_config_admin_group_pk: "{{ authentik_admin_group_create.json.pk | default(authentik_admin_group_lookup.json.results[0].pk) }}"
+
+    - name: Read Authentik admin group membership
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/groups/{{ authentik_config_admin_group_pk }}/?include_users=true"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      register: authentik_admin_group_members
+
+    - name: Add the Authentik admin user to the admin group when needed
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/groups/{{ authentik_config_admin_group_pk }}/add_user/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          pk: "{{ authentik_config_admin_user_pk | int }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 201
+          - 204
+      when: >-
+        not (
+          authentik_admin_group_members.json.users_obj | default([])
+          | selectattr('pk', 'equalto', authentik_config_admin_user_pk | int)
+          | list
+          | length > 0
+        )
+
+    - name: Look up the default bootstrap user
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/users/?username={{ authentik_config_bootstrap_username | urlencode }}&page_size=100"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      when: authentik_config_admin_username != authentik_config_bootstrap_username
+      register: authentik_bootstrap_user_lookup
+
+    - name: Disable the default bootstrap user when a custom admin is used
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/users/{{ authentik_bootstrap_user_lookup.json.results[0].pk }}/"
+        method: PATCH
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          is_active: false
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 202
+      when:
+        - authentik_config_admin_username != authentik_config_bootstrap_username
+        - authentik_bootstrap_user_lookup.json.results | length > 0
+        - authentik_bootstrap_user_lookup.json.results[0].pk != (authentik_config_admin_user_pk | int)
+
+    - name: Read the Grafana authorization flow
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/flows/instances/{{ authentik_config_authorization_flow_slug }}/"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      register: authentik_grafana_authorization_flow
+
+    - name: Read the Grafana invalidation flow
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/flows/instances/{{ authentik_config_invalidation_flow_slug }}/"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      register: authentik_grafana_invalidation_flow
+
+    - name: Look up required Authentik OAuth scope mappings
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/propertymappings/provider/scope/?scope_name={{ item.value.scope_name | urlencode }}&page_size=100"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      loop: "{{ authentik_config_scope_mappings | dict2items }}"
+      register: authentik_scope_mapping_queries
+
+    - name: Persist Authentik OAuth scope mapping identifiers
+      ansible.builtin.set_fact:
+        authentik_config_scope_mapping_ids: >-
+          {{
+            authentik_config_scope_mapping_ids | default({}) | combine(
+              {
+                item.item.key: (
+                  item.json.results
+                  | selectattr('managed', 'equalto', item.item.value.managed)
+                  | map(attribute='pk')
+                  | list
+                  | first
+                )
+              }
+            )
+          }}
+      loop: "{{ authentik_scope_mapping_queries.results }}"
+
+    - name: Assert required Authentik OAuth scope mappings were found
+      ansible.builtin.assert:
+        that:
+          - authentik_config_scope_mapping_ids.openid is not none
+          - authentik_config_scope_mapping_ids.profile is not none
+          - authentik_config_scope_mapping_ids.email is not none
+          - authentik_config_scope_mapping_ids.entitlements is not none
+        quiet: true
+
+    - name: Look up the Grafana OAuth2 provider
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/providers/oauth2/?client_id={{ authentik_config_grafana_client_id | urlencode }}&page_size=100"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      register: authentik_grafana_provider_lookup
+
+    - name: Create the Grafana OAuth2 provider when missing
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/providers/oauth2/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          name: "{{ authentik_config_grafana_provider_name }}"
+          authorization_flow: "{{ authentik_grafana_authorization_flow.json.pk }}"
+          invalidation_flow: "{{ authentik_grafana_invalidation_flow.json.pk }}"
+          client_type: confidential
+          grant_types:
+            - authorization_code
+          client_id: "{{ authentik_config_grafana_client_id }}"
+          client_secret: "{{ authentik_config_grafana_client_secret }}"
+          property_mappings:
+            - "{{ authentik_config_scope_mapping_ids.openid }}"
+            - "{{ authentik_config_scope_mapping_ids.profile }}"
+            - "{{ authentik_config_scope_mapping_ids.email }}"
+            - "{{ authentik_config_scope_mapping_ids.entitlements }}"
+          redirect_uris:
+            - matching_mode: strict
+              url: "{{ authentik_config_grafana_redirect_uri }}"
+          logout_uri: "{{ authentik_config_grafana_logout_uri }}"
+          logout_method: frontchannel
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 201
+      when: authentik_grafana_provider_lookup.json.results | length == 0
+      register: authentik_grafana_provider_create
+
+    - name: Update the Grafana OAuth2 provider when present
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/providers/oauth2/{{ authentik_grafana_provider_lookup.json.results[0].pk }}/"
+        method: PATCH
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          name: "{{ authentik_config_grafana_provider_name }}"
+          authorization_flow: "{{ authentik_grafana_authorization_flow.json.pk }}"
+          invalidation_flow: "{{ authentik_grafana_invalidation_flow.json.pk }}"
+          client_type: confidential
+          grant_types:
+            - authorization_code
+          client_id: "{{ authentik_config_grafana_client_id }}"
+          client_secret: "{{ authentik_config_grafana_client_secret }}"
+          property_mappings:
+            - "{{ authentik_config_scope_mapping_ids.openid }}"
+            - "{{ authentik_config_scope_mapping_ids.profile }}"
+            - "{{ authentik_config_scope_mapping_ids.email }}"
+            - "{{ authentik_config_scope_mapping_ids.entitlements }}"
+          redirect_uris:
+            - matching_mode: strict
+              url: "{{ authentik_config_grafana_redirect_uri }}"
+          logout_uri: "{{ authentik_config_grafana_logout_uri }}"
+          logout_method: frontchannel
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 202
+      when: authentik_grafana_provider_lookup.json.results | length > 0
+
+    - name: Persist the Grafana OAuth2 provider primary key
+      ansible.builtin.set_fact:
+        authentik_config_grafana_provider_pk: "{{ authentik_grafana_provider_create.json.pk | default(authentik_grafana_provider_lookup.json.results[0].pk) }}"
+
+    - name: Look up the Grafana application
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/applications/?slug={{ authentik_config_grafana_application_slug | urlencode }}&page_size=100"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      register: authentik_grafana_application_lookup
+
+    - name: Create the Grafana application when missing
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/applications/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          name: "{{ authentik_config_grafana_application_name }}"
+          slug: "{{ authentik_config_grafana_application_slug }}"
+          provider: "{{ authentik_config_grafana_provider_pk | int }}"
+          meta_launch_url: "{{ authentik_config_grafana_launch_url }}"
+          open_in_new_tab: false
+          meta_hide: false
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 201
+      when: authentik_grafana_application_lookup.json.results | length == 0
+      register: authentik_grafana_application_create
+
+    - name: Update the Grafana application when present
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/applications/{{ authentik_grafana_application_lookup.json.results[0].pk }}/"
+        method: PATCH
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          name: "{{ authentik_config_grafana_application_name }}"
+          slug: "{{ authentik_config_grafana_application_slug }}"
+          provider: "{{ authentik_config_grafana_provider_pk | int }}"
+          meta_launch_url: "{{ authentik_config_grafana_launch_url }}"
+          open_in_new_tab: false
+          meta_hide: false
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 202
+      when: authentik_grafana_application_lookup.json.results | length > 0
+
+    - name: Persist the Grafana application primary key
+      ansible.builtin.set_fact:
+        authentik_config_grafana_application_pk: "{{ authentik_grafana_application_create.json.pk | default(authentik_grafana_application_lookup.json.results[0].pk) }}"
+
+    - name: Look up the Grafana Admin entitlement
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/application_entitlements/?app={{ authentik_config_grafana_application_pk | urlencode }}&name={{ 'Grafana Admins' | urlencode }}&page_size=100"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      register: authentik_grafana_admin_entitlement_lookup
+
+    - name: Create the Grafana Admin entitlement when missing
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/application_entitlements/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          name: "Grafana Admins"
+          app: "{{ authentik_config_grafana_application_pk }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 201
+      when: authentik_grafana_admin_entitlement_lookup.json.results | length == 0
+      register: authentik_grafana_admin_entitlement_create
+
+    - name: Persist the Grafana Admin entitlement identifier
+      ansible.builtin.set_fact:
+        authentik_config_grafana_admin_entitlement_pk: "{{ authentik_grafana_admin_entitlement_create.json.pbm_uuid | default(authentik_grafana_admin_entitlement_lookup.json.results[0].pbm_uuid) }}"
+
+    - name: Look up remaining Grafana entitlements
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/application_entitlements/?app={{ authentik_config_grafana_application_pk | urlencode }}&name={{ item | urlencode }}&page_size=100"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      loop:
+        - "Grafana Editors"
+        - "Grafana Viewers"
+      register: authentik_grafana_remaining_entitlements
+
+    - name: Create missing Grafana entitlements
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/application_entitlements/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          name: "{{ item.item }}"
+          app: "{{ authentik_config_grafana_application_pk }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 201
+      loop: "{{ authentik_grafana_remaining_entitlements.results }}"
+      when: item.json.results | length == 0
+
+    - name: Read existing Authentik policy bindings
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/policies/bindings/?page_size=500"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      register: authentik_policy_bindings
+
+    - name: Bind the Authentik admin user to the Grafana Admin entitlement
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/policies/bindings/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+        body_format: json
+        body:
+          target: "{{ authentik_config_grafana_admin_entitlement_pk }}"
+          user: "{{ authentik_config_admin_user_pk | int }}"
+          order: 0
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 201
+      when: >-
+        not (
+          authentik_policy_bindings.json.results | default([])
+          | selectattr('target', 'equalto', authentik_config_grafana_admin_entitlement_pk)
+          | selectattr('user', 'equalto', authentik_config_admin_user_pk | int)
+          | list
+          | length > 0
+        )

@@ -10,4 +10,5 @@
   roles:
     - secrets
     - nixos
+    - authentik-config
     - user-scetrov
