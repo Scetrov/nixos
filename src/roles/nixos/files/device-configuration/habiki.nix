@@ -21,7 +21,7 @@
     ./modules/user-scetrov-syncthing.nix
   ];
 
-  scetrov.services.authentik.enable = true;
+  scetrov.services.authentik.enable = false;
   
   blocky.bindAddr = "10.229.53.2:53";
 
