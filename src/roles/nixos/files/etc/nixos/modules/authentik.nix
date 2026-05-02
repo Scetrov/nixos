@@ -6,6 +6,11 @@ let
   dataDir = "${stateDir}/data";
   templatesDir = "${stateDir}/templates";
   authentikEnvFile = "${stateDir}/authentik.env";
+  authentikAdminUserRuntimePath = "/run/agenix/authentik_admin_user";
+  authentikPasswordRuntimePath = "/run/agenix/authentik_password";
+  authentikBootstrapTokenRuntimePath = "/run/agenix/authentik_bootstrap_token";
+  grafanaClientIdRuntimePath = "/run/agenix/grafana_authentik_client_id";
+  grafanaClientSecretRuntimePath = "/run/agenix/grafana_authentik_client_secret";
   grafanaApplicationSlug = "grafana";
   grafanaRedirectUri = "https://metrics.net.scetrov.live/grafana/login/generic_oauth";
   grafanaLogoutUri = "https://metrics.net.scetrov.live/grafana/logout";
@@ -162,33 +167,83 @@ in
     systemd.services.authentik-provision = {
       description = "Provision Authentik users and Grafana OIDC integration";
       wantedBy = [ "multi-user.target" ];
+      wants = [
+        "network-online.target"
+      ];
       after = [
         "authentik-bootstrap.service"
+        "authentik-server.service"
         "podman-authentik-server.service"
-        "podman-authentik-worker.service"
+        "network-online.target"
       ];
       requires = [
         "authentik-bootstrap.service"
         "podman-authentik-server.service"
-        "podman-authentik-worker.service"
       ];
       path = [ pkgs.coreutils pkgs.curl pkgs.jq ];
       serviceConfig = {
         Type = "oneshot";
         Restart = "on-failure";
-        RestartSec = "5s";
+        RestartSec = "10s";
+        TimeoutStartSec = "15min";
       };
       script = ''
         set -euo pipefail
 
         api_base="http://127.0.0.1:${toString cfg.port}/api/v3"
-        admin_username="$(${pkgs.coreutils}/bin/tr -d '\n' < ${config.age.secrets.authentik_admin_user.path})"
-        admin_password="$(${pkgs.coreutils}/bin/tr -d '\n' < ${config.age.secrets.authentik_password.path})"
-        bootstrap_token="$(${pkgs.coreutils}/bin/tr -d '\n' < ${config.age.secrets.authentik_bootstrap_token.path})"
-        grafana_client_id="$(${pkgs.coreutils}/bin/tr -d '\n' < ${config.age.secrets.grafana_authentik_client_id.path})"
-        grafana_client_secret="$(${pkgs.coreutils}/bin/tr -d '\n' < ${config.age.secrets.grafana_authentik_client_secret.path})"
+        info_url="$api_base/core/info/"
+
+        read_secret() {
+          ${pkgs.coreutils}/bin/tr -d '\n' < "$1"
+        }
+
+        read_env_secret() {
+          local file="$1"
+          local key="$2"
+          local value
+
+          value="$(read_secret "$file")"
+          case "$value" in
+            "$key="*)
+              printf '%s' "''${value#*=}"
+              ;;
+            *)
+              echo "Secret file $file does not contain $key" >&2
+              return 1
+              ;;
+          esac
+        }
+
+        admin_username="$(read_secret ${authentikAdminUserRuntimePath})"
+        admin_password="$(read_secret ${authentikPasswordRuntimePath})"
+        bootstrap_token="$(read_secret ${authentikBootstrapTokenRuntimePath})"
+        grafana_client_id="$(read_env_secret ${grafanaClientIdRuntimePath} GF_AUTH_GENERIC_OAUTH_CLIENT_ID)"
+        grafana_client_secret="$(read_env_secret ${grafanaClientSecretRuntimePath} GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET)"
 
         auth_header="Authorization: Bearer $bootstrap_token"
+
+        wait_for_api() {
+          local attempt http_code
+
+          for attempt in $(${pkgs.coreutils}/bin/seq 1 120); do
+            http_code="$(${pkgs.curl}/bin/curl \
+              --silent \
+              --show-error \
+              --output /dev/null \
+              --write-out '%{http_code}' \
+              "$info_url" || true)"
+
+            if [ "$http_code" = "200" ]; then
+              return 0
+            fi
+
+            echo "Waiting for Authentik API at $info_url (attempt $attempt/120, status $http_code)" >&2
+            ${pkgs.coreutils}/bin/sleep 2
+          done
+
+          echo "Authentik API did not become healthy at $info_url" >&2
+          return 1
+        }
 
         api() {
           local method="$1"
@@ -281,7 +336,7 @@ in
 
         ensure_group() {
           local group_uuid
-          group_uuid="$(list_first "/core/groups/?name=authentik%20Admins&page_size=100" '.results[0].pk // empty')"
+          group_uuid="$(list_first "/core/groups/?name=$(urlencode "authentik Admins")&page_size=100" '.results[0].pk // empty')"
           if [ -z "$group_uuid" ]; then
             group_uuid="$(api POST "/core/groups/" '{"name":"authentik Admins","is_superuser":true}' | ${pkgs.jq}/bin/jq -r '.pk')"
           else
@@ -382,7 +437,7 @@ in
             --arg name "Grafana" \
             --arg slug "${grafanaApplicationSlug}" \
             --arg meta_launch_url "https://metrics.net.scetrov.live/grafana" \
-            --arg provider "$provider_id" \
+            --argjson provider "$provider_id" \
             '{
               name: $name,
               slug: $slug,
@@ -428,12 +483,7 @@ in
           fi
         }
 
-        for _ in $(${pkgs.coreutils}/bin/seq 1 120); do
-          if ${pkgs.curl}/bin/curl --silent --show-error --fail --output /dev/null --header "$auth_header" "$api_base/core/users/me/"; then
-            break
-          fi
-          ${pkgs.coreutils}/bin/sleep 2
-        done
+        wait_for_api
 
         admin_user_pk="$(ensure_user)"
         admin_group_uuid="$(ensure_group)"

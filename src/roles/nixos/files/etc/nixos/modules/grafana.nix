@@ -115,8 +115,8 @@
       GF_SERVER_SERVE_FROM_SUB_PATH = "true";
     };
     serviceConfig.EnvironmentFile = [
-      config.age.secrets.grafana_authentik_client_id.path
-      config.age.secrets.grafana_authentik_client_secret.path
+      "/run/agenix/grafana_authentik_client_id"
+      "/run/agenix/grafana_authentik_client_secret"
     ];
   };
 }
