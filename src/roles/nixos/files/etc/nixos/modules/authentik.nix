@@ -206,7 +206,7 @@ in
           extraOptions = [
             "--memory=${cfg.postgresqlMemoryLimit}"
             "--cpus=${cfg.postgresqlCpuLimit}"
-            "--health-cmd=sh -c 'pg_isready -U authentik -d authentik'"
+            "--health-cmd=sh -c \"pg_isready -U authentik -d authentik\""
             "--health-interval=10s"
             "--health-timeout=5s"
             "--health-retries=3"
