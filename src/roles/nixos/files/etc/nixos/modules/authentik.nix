@@ -11,23 +11,46 @@ let
 
     ${pkgs.coreutils}/bin/install -d -m 0750 ${stateDir} ${dataDir} ${templatesDir}
 
-    secret_key="$(${pkgs.coreutils}/bin/tr -d '\n' < ${config.age.secrets.authentik_secret_key.path})"
-    db_password="$(${pkgs.coreutils}/bin/tr -d '\n' < ${config.age.secrets.authentik_postgresql_password.path})"
-    bootstrap_password="$(${pkgs.coreutils}/bin/tr -d '\n' < ${config.age.secrets.authentik_password.path})"
-    bootstrap_token="$(${pkgs.coreutils}/bin/tr -d '\n' < ${config.age.secrets.authentik_bootstrap_token.path})"
+    export AUTHENTIK_ENV_FILE=${authentikEnvFile}
+    export AUTHENTIK_SECRET_KEY_FILE=${config.age.secrets.authentik_secret_key.path}
+    export AUTHENTIK_POSTGRESQL_PASSWORD_FILE=${config.age.secrets.authentik_postgresql_password.path}
+    export AUTHENTIK_BOOTSTRAP_PASSWORD_FILE=${config.age.secrets.authentik_admin_password.path}
+    export AUTHENTIK_BOOTSTRAP_TOKEN_FILE=${config.age.secrets.authentik_bootstrap_token.path}
 
-    umask 077
-    : > ${authentikEnvFile}
-    ${pkgs.coreutils}/bin/chmod 0600 ${authentikEnvFile}
+    ${pkgs.python3}/bin/python3 <<'PY'
+import os
+import tempfile
+from pathlib import Path
 
-    ${pkgs.coreutils}/bin/printf '%s\n' 'AUTHENTIK_POSTGRESQL__HOST=host.containers.internal' >> ${authentikEnvFile}
-    ${pkgs.coreutils}/bin/printf '%s\n' 'AUTHENTIK_POSTGRESQL__NAME=authentik' >> ${authentikEnvFile}
-    ${pkgs.coreutils}/bin/printf '%s\n' 'AUTHENTIK_POSTGRESQL__USER=authentik' >> ${authentikEnvFile}
-    ${pkgs.coreutils}/bin/printf '%s\n' 'AUTHENTIK_POSTGRESQL__PORT=5432' >> ${authentikEnvFile}
-    ${pkgs.coreutils}/bin/printf 'AUTHENTIK_POSTGRESQL__PASSWORD=%s\n' "$db_password" >> ${authentikEnvFile}
-    ${pkgs.coreutils}/bin/printf 'AUTHENTIK_BOOTSTRAP_PASSWORD=%s\n' "$bootstrap_password" >> ${authentikEnvFile}
-    ${pkgs.coreutils}/bin/printf 'AUTHENTIK_BOOTSTRAP_TOKEN=%s\n' "$bootstrap_token" >> ${authentikEnvFile}
-    ${pkgs.coreutils}/bin/printf 'AUTHENTIK_SECRET_KEY=%s\n' "$secret_key" >> ${authentikEnvFile}
+
+def read_secret(name: str, env_var: str) -> str:
+    value = Path(os.environ[env_var]).read_text()
+    value = value.rstrip("\r\n")
+    if "\n" in value or "\r" in value:
+        raise SystemExit(f"{name} contains embedded newlines, which are not supported in Podman environment files")
+    return value
+
+
+env_path = Path(os.environ["AUTHENTIK_ENV_FILE"])
+entries = {
+    "AUTHENTIK_POSTGRESQL__HOST": "host.containers.internal",
+    "AUTHENTIK_POSTGRESQL__NAME": "authentik",
+    "AUTHENTIK_POSTGRESQL__USER": "authentik",
+    "AUTHENTIK_POSTGRESQL__PORT": "5432",
+    "AUTHENTIK_POSTGRESQL__PASSWORD": read_secret("AUTHENTIK_POSTGRESQL__PASSWORD", "AUTHENTIK_POSTGRESQL_PASSWORD_FILE"),
+    "AUTHENTIK_BOOTSTRAP_PASSWORD": read_secret("AUTHENTIK_BOOTSTRAP_PASSWORD", "AUTHENTIK_BOOTSTRAP_PASSWORD_FILE"),
+    "AUTHENTIK_BOOTSTRAP_TOKEN": read_secret("AUTHENTIK_BOOTSTRAP_TOKEN", "AUTHENTIK_BOOTSTRAP_TOKEN_FILE"),
+    "AUTHENTIK_SECRET_KEY": read_secret("AUTHENTIK_SECRET_KEY", "AUTHENTIK_SECRET_KEY_FILE"),
+}
+
+with tempfile.NamedTemporaryFile("w", dir=env_path.parent, delete=False, encoding="utf-8") as handle:
+    for key, value in entries.items():
+        handle.write(f"{key}={value}\n")
+    temp_path = Path(handle.name)
+
+temp_path.chmod(0o600)
+temp_path.replace(env_path)
+PY
   '';
 in
 {
@@ -75,8 +98,8 @@ in
       mode = "0400";
     };
 
-    age.secrets.authentik_password = {
-      file = /root/secrets/authentik_password.age;
+    age.secrets.authentik_admin_password = {
+      file = /root/secrets/authentik_admin_password.age;
       owner = "root";
       group = "root";
       mode = "0400";
@@ -137,6 +160,12 @@ in
         psql -tAc "SELECT 1 FROM pg_roles WHERE rolname = 'authentik'" | grep -q 1 || \
           psql -tAc 'CREATE ROLE "authentik" LOGIN'
         psql -tAc "ALTER ROLE \"authentik\" WITH LOGIN PASSWORD '$db_password'"
+        psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'authentik'" | grep -q 1 || \
+          psql -tAc 'CREATE DATABASE "authentik" OWNER "authentik"'
+        psql -tAc 'ALTER DATABASE "authentik" OWNER TO "authentik"'
+        psql -tAc 'GRANT ALL PRIVILEGES ON DATABASE "authentik" TO "authentik"'
+        psql -d authentik -tAc 'ALTER SCHEMA public OWNER TO "authentik"'
+        psql -d authentik -tAc 'GRANT ALL ON SCHEMA public TO "authentik"'
       '';
     };
 

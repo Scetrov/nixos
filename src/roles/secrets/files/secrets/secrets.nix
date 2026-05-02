@@ -12,7 +12,7 @@ in
 {
   "authentik_admin_user.age".publicKeys = users ++ systems;
   "authentik_bootstrap_token.age".publicKeys = users ++ systems;
-  "authentik_password.age".publicKeys = users ++ systems;
+  "authentik_admin_password.age".publicKeys = users ++ systems;
   "user_password_hashed.age".publicKeys = users ++ systems;
   "ssh_hsm_key.age".publicKeys = users ++ systems;
   "ssh_bastion_key.age".publicKeys = users ++ systems;

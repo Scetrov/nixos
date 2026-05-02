@@ -6,7 +6,7 @@ authentik_config_validate_certs: true
 
 authentik_config_bootstrap_token: "{{ authentik_bootstrap_token }}"
 authentik_config_admin_username: "{{ authentik_admin_user }}"
-authentik_config_admin_password: "{{ authentik_password }}"
+authentik_config_admin_password: "{{ authentik_admin_password }}"
 authentik_config_bootstrap_username: "akadmin"
 authentik_config_admin_group_name: "authentik Admins"
 

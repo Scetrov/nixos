@@ -35,12 +35,12 @@
   retries: 60
   delay: 5
 
-- name: Validate Authentik API token
+- name: Probe Authentik API token across required endpoints
   delegate_to: localhost
   run_once: true
   no_log: true
   ansible.builtin.uri:
-    url: "{{ authentik_config_api_base_url }}/core/users/?page_size=1"
+    url: "{{ item.url }}"
     method: GET
     headers:
       Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
@@ -49,22 +49,59 @@
       - 200
       - 401
       - 403
-  register: authentik_api_token_check
+      - 404
+  loop:
+    - name: users
+      url: "{{ authentik_config_api_base_url }}/core/users/?page_size=1"
+    - name: groups
+      url: "{{ authentik_config_api_base_url }}/core/groups/?page_size=1"
+    - name: authorization flow
+      url: "{{ authentik_config_api_base_url }}/flows/instances/{{ authentik_config_authorization_flow_slug }}/"
+    - name: invalidation flow
+      url: "{{ authentik_config_api_base_url }}/flows/instances/{{ authentik_config_invalidation_flow_slug }}/"
+    - name: policy bindings
+      url: "{{ authentik_config_api_base_url }}/policies/bindings/?page_size=1"
+  register: authentik_api_token_probes
 
-- name: Fail when the Authentik API token is invalid
+- name: Persist the first failing Authentik API token probe
   delegate_to: localhost
   run_once: true
+  ansible.builtin.set_fact:
+    authentik_api_token_failure: >-
+      {{
+        (authentik_api_token_probes.results | rejectattr('status', 'equalto', 200) | list | first)
+        | default({})
+      }}
+
+- name: Fail when the Authentik API token cannot reach required endpoints
+  delegate_to: localhost
+  run_once: true
+  vars:
+    authentik_api_token_failure_body: >-
+      {{
+        authentik_api_token_failure.json
+        if authentik_api_token_failure.json is defined
+        else authentik_api_token_failure.content
+          | default(authentik_api_token_failure.msg | default('No response body returned.'))
+      }}
+    authentik_api_token_failure_body_text: "{{ authentik_api_token_failure_body | string | lower }}"
   ansible.builtin.fail:
     msg: >-
-      Authentik rejected authentik_bootstrap_token for API access.
-      Update authentik_bootstrap_token to a current Authentik API token for an admin or service account,
-      then rerun the secrets, nixos, and authentik-config roles so both the controller and host use the same value.
-  when: authentik_api_token_check.status != 200
+      Authentik API token preflight failed on {{ authentik_api_token_failure.item.name | default('an unknown endpoint') }}
+      ({{ authentik_api_token_failure.url | default('unknown URL') }}) with HTTP {{ authentik_api_token_failure.status | default('unknown') }}.
+      {% if authentik_api_token_failure.status | default(0) == 401 or 'token invalid/expired' in authentik_api_token_failure_body_text or 'invalid/expired' in authentik_api_token_failure_body_text %}
+      The token is invalid or expired.
+      {% elif authentik_api_token_failure.status | default(0) == 403 %}
+      The token can authenticate but lacks permission for this API surface.
+      {% elif authentik_api_token_failure.status | default(0) == 404 %}
+      Authentik is reachable, but the expected resource was not found.
+      {% endif %}
+      Response: {{ authentik_api_token_failure_body | string | trim | truncate(600, True) }}
+  when: authentik_api_token_failure != {}
 
 - name: Configure Authentik through the API
   delegate_to: localhost
   run_once: true
-  no_log: true
   block:
     - name: Look up the Authentik admin user
       ansible.builtin.uri:
@@ -117,6 +154,7 @@
         authentik_config_admin_user_pk: "{{ authentik_admin_user_create.json.pk | default(authentik_admin_user_lookup.json.results[0].pk) }}"
 
     - name: Set the Authentik admin password
+      no_log: true
       ansible.builtin.uri:
         url: "{{ authentik_config_api_base_url }}/core/users/{{ authentik_config_admin_user_pk }}/set_password/"
         method: POST
@@ -306,6 +344,7 @@
       register: authentik_grafana_provider_lookup
 
     - name: Create the Grafana OAuth2 provider when missing
+      no_log: true
       ansible.builtin.uri:
         url: "{{ authentik_config_api_base_url }}/providers/oauth2/"
         method: POST
@@ -339,6 +378,7 @@
       register: authentik_grafana_provider_create
 
     - name: Update the Grafana OAuth2 provider when present
+      no_log: true
       ansible.builtin.uri:
         url: "{{ authentik_config_api_base_url }}/providers/oauth2/{{ authentik_grafana_provider_lookup.json.results[0].pk }}/"
         method: PATCH
@@ -523,3 +563,21 @@
           | list
           | length > 0
         )
+  rescue:
+    - name: Persist failed Authentik API response
+      ansible.builtin.set_fact:
+        authentik_config_failed_response: >-
+          {{
+            ansible_failed_result.json
+            if ansible_failed_result.json is defined
+            else ansible_failed_result.content
+              | default(ansible_failed_result.msg | default('No response body returned.'))
+          }}
+
+    - name: Fail with Authentik API diagnostic context
+      ansible.builtin.fail:
+        msg: >-
+          Authentik API request failed during {{ ansible_failed_task.name }}.
+          Endpoint: {{ ansible_failed_result.url | default('unknown URL') }}.
+          Status: {{ ansible_failed_result.status | default('unknown') }}.
+          Response: {{ authentik_config_failed_response | string | trim | truncate(600, True) }}
