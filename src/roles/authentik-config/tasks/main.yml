@@ -35,6 +35,32 @@
   retries: 60
   delay: 5
 
+- name: Validate Authentik API token
+  delegate_to: localhost
+  run_once: true
+  no_log: true
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/core/users/?page_size=1"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code:
+      - 200
+      - 401
+      - 403
+  register: authentik_api_token_check
+
+- name: Fail when the Authentik API token is invalid
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.fail:
+    msg: >-
+      Authentik rejected authentik_bootstrap_token for API access.
+      Update authentik_bootstrap_token to a current Authentik API token for an admin or service account,
+      then rerun the secrets, nixos, and authentik-config roles so both the controller and host use the same value.
+  when: authentik_api_token_check.status != 200
+
 - name: Configure Authentik through the API
   delegate_to: localhost
   run_once: true
