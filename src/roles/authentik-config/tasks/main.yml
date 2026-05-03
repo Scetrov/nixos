@@ -11,7 +11,6 @@
 
 - name: Wait for Authentik readiness endpoint
   delegate_to: localhost
-  run_once: true
   ansible.builtin.uri:
     url: "{{ authentik_config_ready_url }}"
     method: GET
@@ -26,7 +25,6 @@
 
 - name: Wait for Authentik API endpoint
   delegate_to: localhost
-  run_once: true
   ansible.builtin.uri:
     url: "{{ authentik_config_info_url }}"
     method: GET
@@ -41,7 +39,6 @@
 
 - name: Probe Authentik API token across required endpoints
   delegate_to: localhost
-  run_once: true
   no_log: true
   ansible.builtin.uri:
     url: "{{ item.url }}"
@@ -69,7 +66,6 @@
 
 - name: Persist the first failing Authentik API token probe
   delegate_to: localhost
-  run_once: true
   ansible.builtin.set_fact:
     authentik_api_token_failure: >-
       {{
@@ -79,7 +75,6 @@
 
 - name: Fail when the Authentik API token cannot reach required endpoints
   delegate_to: localhost
-  run_once: true
   vars:
     authentik_api_token_failure_body: >-
       {{
@@ -105,7 +100,6 @@
 
 - name: Configure Authentik through the API
   delegate_to: localhost
-  run_once: true
   block:
     - name: Look up the Authentik admin user
       ansible.builtin.uri:
