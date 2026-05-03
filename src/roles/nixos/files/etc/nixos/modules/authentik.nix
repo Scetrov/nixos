@@ -23,7 +23,6 @@ let
     export AUTHENTIK_ENV_FILE=${authentikEnvFile}
     export AUTHENTIK_SECRET_KEY_FILE=${config.age.secrets.authentik_secret_key.path}
     export AUTHENTIK_POSTGRESQL_PASSWORD_FILE=${config.age.secrets.authentik_postgresql_password.path}
-    export AUTHENTIK_BOOTSTRAP_USERNAME_FILE=${config.age.secrets.authentik_admin_user.path}
     export AUTHENTIK_BOOTSTRAP_PASSWORD_FILE=${config.age.secrets.authentik_admin_password.path}
     export AUTHENTIK_BOOTSTRAP_TOKEN_FILE=${config.age.secrets.authentik_bootstrap_token.path}
 
@@ -48,7 +47,6 @@ entries = {
     "AUTHENTIK_POSTGRESQL__USER": "authentik",
     "AUTHENTIK_POSTGRESQL__PORT": "5432",
     "AUTHENTIK_POSTGRESQL__PASSWORD": read_secret("AUTHENTIK_POSTGRESQL__PASSWORD", "AUTHENTIK_POSTGRESQL_PASSWORD_FILE"),
-    "AUTHENTIK_BOOTSTRAP_USERNAME": read_secret("AUTHENTIK_BOOTSTRAP_USERNAME", "AUTHENTIK_BOOTSTRAP_USERNAME_FILE"),
     "AUTHENTIK_BOOTSTRAP_PASSWORD": read_secret("AUTHENTIK_BOOTSTRAP_PASSWORD", "AUTHENTIK_BOOTSTRAP_PASSWORD_FILE"),
     "AUTHENTIK_BOOTSTRAP_TOKEN": read_secret("AUTHENTIK_BOOTSTRAP_TOKEN", "AUTHENTIK_BOOTSTRAP_TOKEN_FILE"),
     "AUTHENTIK_SECRET_KEY": read_secret("AUTHENTIK_SECRET_KEY", "AUTHENTIK_SECRET_KEY_FILE"),
