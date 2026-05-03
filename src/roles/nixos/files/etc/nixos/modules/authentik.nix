@@ -184,26 +184,38 @@ in
         };
       };
 
+      systemd.services.authentik-network = {
+        description = "Create authentik Podman network";
+        before = [
+          "podman-authentik-postgresql.service"
+          "podman-authentik-server.service"
+          "podman-authentik-worker.service"
+        ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.podman}/bin/podman network create --ignore authentik";
+          ExecStop = "${pkgs.podman}/bin/podman network rm -f authentik";
+        };
+      };
+
       systemd.services.podman-authentik-server = {
-        after = [ "podman-postgresql.service" ];
-        requires = [ "podman-postgresql.service" "authentik-prepare-env.service" ];
+        after = [ "podman-authentik-postgresql.service" "authentik-network.service" ];
+        requires = [ "podman-authentik-postgresql.service" "authentik-prepare-env.service" "authentik-network.service" ];
       };
 
       systemd.services.podman-authentik-worker = {
-        after = [ "podman-postgresql.service" ];
-        requires = [ "podman-postgresql.service" "authentik-prepare-env.service" ];
+        after = [ "podman-authentik-postgresql.service" "authentik-network.service" ];
+        requires = [ "podman-authentik-postgresql.service" "authentik-prepare-env.service" "authentik-network.service" ];
       };
 
       virtualisation.oci-containers.containers = {
         authentik-postgresql = {
           image = cfg.postgresqlImage;
           autoStart = true;
-          environment = {
-            POSTGRES_USER = "authentik";
-            POSTGRES_PASSWORD_FILE = "${config.age.secrets.authentik_postgresql_password.path}";
-            POSTGRES_DB = "authentik";
-          };
           extraOptions = [
+            "--network=authentik"
             "--memory=${cfg.postgresqlMemoryLimit}"
             "--cpus=${cfg.postgresqlCpuLimit}"
             "--health-cmd=sh -c \"pg_isready -U authentik -d authentik\""
@@ -212,6 +224,11 @@ in
             "--health-retries=3"
             "--health-start-period=30s"
           ];
+          environment = {
+            POSTGRES_USER = "authentik";
+            POSTGRES_PASSWORD_FILE = "${config.age.secrets.authentik_postgresql_password.path}";
+            POSTGRES_DB = "authentik";
+          };
           ports = [ "${toString cfg.postgresqlPort}:5432" ];
           volumes = [
             "${cfg.postgresqlDataDir}:/var/lib/postgresql/data:U"
@@ -224,7 +241,7 @@ in
           autoStart = true;
           cmd = [ "server" ];
           environmentFiles = [ authentikEnvFile ];
-          extraOptions = [ "--shm-size=512m" ];
+          extraOptions = [ "--shm-size=512m" "--network=authentik" ];
           ports = [ "127.0.0.1:${toString cfg.port}:9000" ];
           volumes = [
             "${dataDir}:/data:U"
@@ -241,7 +258,7 @@ in
           autoStart = true;
           cmd = [ "worker" ];
           environmentFiles = [ authentikEnvFile ];
-          extraOptions = [ "--shm-size=512m" ];
+          extraOptions = [ "--shm-size=512m" "--network=authentik" ];
           volumes = [
             "${dataDir}:/data:U"
             "${templatesDir}:/templates:U"
