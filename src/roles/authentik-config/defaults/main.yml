@@ -20,7 +20,7 @@ authentik_config_grafana_client_id: "{{ grafana_authentik_client_id }}"
 authentik_config_grafana_client_secret: "{{ grafana_authentik_client_secret }}"
 
 authentik_config_authorization_flow_slug: "default-provider-authorization-implicit-consent"
-authentik_config_invalidation_flow_slug: "default-provider-invalidation"
+authentik_config_invalidation_flow_slug: "default-provider-invalidation-flow"
 authentik_config_scope_mappings:
   openid:
     scope_name: "openid"
