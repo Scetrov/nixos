@@ -10,11 +10,15 @@ let
     "/root/secrets/authentik_admin_user.age"
     "/root/secrets/authentik_admin_password.age"
     "/root/secrets/authentik_bootstrap_token.age"
+    "/root/secrets/authentik_api_token.age"
     "/root/secrets/authentik_postgresql_password.age"
     "/root/secrets/authentik_secret_key.age"
     "/root/secrets/grafana_authentik_client_id.age"
     "/root/secrets/grafana_authentik_client_secret.age"
   ];
+  ansibleBootstrapBlueprintSrc = ./../../../blueprints/authentik/ansible-bootstrap.yaml;
+  ansibleBootstrapBlueprintDst = "${templatesDir}/ansible-bootstrap.yaml";
+
   authentikPrepareEnvScript = pkgs.writeShellScript "authentik-prepare-env" ''
     set -euo pipefail
 
@@ -25,7 +29,9 @@ let
     export AUTHENTIK_POSTGRESQL_PASSWORD_FILE=${config.age.secrets.authentik_postgresql_password.path}
     export AUTHENTIK_BOOTSTRAP_PASSWORD_FILE=${config.age.secrets.authentik_admin_password.path}
     export AUTHENTIK_BOOTSTRAP_TOKEN_FILE=${config.age.secrets.authentik_bootstrap_token.path}
+    export AUTHENTIK_API_TOKEN_FILE=${config.age.secrets.authentik_api_token.path}
 
+    # --- Write the environment file ---
     ${pkgs.python3}/bin/python3 <<'PY'
 import os
 import tempfile
@@ -60,6 +66,14 @@ with tempfile.NamedTemporaryFile("w", dir=env_path.parent, delete=False, encodin
 temp_path.chmod(0o600)
 temp_path.replace(env_path)
 PY
+
+    # --- Inject the API token into the Blueprint ---
+    AUTHENTIK_API_TOKEN=$(${pkgs.coreutils}/bin/cat "$AUTHENTIK_API_TOKEN_FILE" | ${pkgs.coreutils}/bin/tr -d '\r\n')
+    ${pkgs.gnused}/bin/sed \
+      -e "s|__AUTHENTIK_API_TOKEN__|${AUTHENTIK_API_TOKEN}|g" \
+      "${ansibleBootstrapBlueprintSrc}" \
+      > "${ansibleBootstrapBlueprintDst}"
+    ${pkgs.coreutils}/bin/chmod 0640 "${ansibleBootstrapBlueprintDst}"
   '';
 in
 {
@@ -152,6 +166,13 @@ in
         mode = "0400";
       };
 
+      age.secrets.authentik_api_token = {
+        file = /root/secrets/authentik_api_token.age;
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+
       age.secrets.grafana_authentik_client_id = {
         file = /root/secrets/grafana_authentik_client_id.age;
         owner = "root";
@@ -176,10 +197,12 @@ in
       ];
 
       systemd.services.authentik-prepare-env = {
-        description = "Prepare Authentik environment file";
+        description = "Prepare Authentik environment file and Blueprints";
         unitConfig.DefaultDependencies = false;
+        wantedBy = [ "multi-user.target" ];
         serviceConfig = {
           Type = "oneshot";
+          RemainAfterExit = true;
           ExecStart = authentikPrepareEnvScript;
         };
       };
@@ -201,12 +224,12 @@ in
       };
 
       systemd.services.podman-authentik-server = {
-        after = [ "podman-authentik-postgresql.service" "authentik-network.service" ];
+        after = [ "podman-authentik-postgresql.service" "authentik-network.service" "authentik-prepare-env.service" ];
         requires = [ "podman-authentik-postgresql.service" "authentik-prepare-env.service" "authentik-network.service" ];
       };
 
       systemd.services.podman-authentik-worker = {
-        after = [ "podman-authentik-postgresql.service" "authentik-network.service" ];
+        after = [ "podman-authentik-postgresql.service" "authentik-network.service" "authentik-prepare-env.service" ];
         requires = [ "podman-authentik-postgresql.service" "authentik-prepare-env.service" "authentik-network.service" ];
       };
 
@@ -249,6 +272,7 @@ in
             "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
             "${config.age.secrets.authentik_admin_password.path}:${config.age.secrets.authentik_admin_password.path}:ro"
+            "${config.age.secrets.authentik_api_token.path}:${config.age.secrets.authentik_api_token.path}:ro"
             "${config.age.secrets.authentik_bootstrap_token.path}:${config.age.secrets.authentik_bootstrap_token.path}:ro"
           ];
         };
@@ -265,6 +289,7 @@ in
             "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
             "${config.age.secrets.authentik_admin_password.path}:${config.age.secrets.authentik_admin_password.path}:ro"
+            "${config.age.secrets.authentik_api_token.path}:${config.age.secrets.authentik_api_token.path}:ro"
             "${config.age.secrets.authentik_bootstrap_token.path}:${config.age.secrets.authentik_bootstrap_token.path}:ro"
           ];
         };
