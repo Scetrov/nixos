@@ -113,27 +113,7 @@
         status_code: 200
       register: authentik_admin_user_lookup
 
-    - name: Create the Authentik admin user when missing
-      ansible.builtin.uri:
-        url: "{{ authentik_config_api_base_url }}/core/users/"
-        method: POST
-        headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
-        body_format: json
-        body:
-          username: "{{ authentik_config_admin_username }}"
-          name: "{{ authentik_config_admin_username }}"
-          is_active: true
-          groups: []
-          roles: []
-        validate_certs: "{{ authentik_config_validate_certs }}"
-        status_code:
-          - 200
-          - 201
-      when: authentik_admin_user_lookup.json.results | length == 0
-      register: authentik_admin_user_create
-
-    - name: Update the Authentik admin user when present
+    - name: Ensure the Authentik admin user is active and has the correct name
       ansible.builtin.uri:
         url: "{{ authentik_config_api_base_url }}/core/users/{{ authentik_admin_user_lookup.json.results[0].pk }}/"
         method: PATCH
@@ -147,11 +127,10 @@
         status_code:
           - 200
           - 202
-      when: authentik_admin_user_lookup.json.results | length > 0
 
     - name: Persist the Authentik admin user primary key
       ansible.builtin.set_fact:
-        authentik_config_admin_user_pk: "{{ authentik_admin_user_create.json.pk | default(authentik_admin_user_lookup.json.results[0].pk) }}"
+        authentik_config_admin_user_pk: "{{ authentik_admin_user_lookup.json.results[0].pk }}"
 
     - name: Set the Authentik admin password
       no_log: true
@@ -245,35 +224,6 @@
           | list
           | length > 0
         )
-
-    - name: Look up the default bootstrap user
-      ansible.builtin.uri:
-        url: "{{ authentik_config_api_base_url }}/core/users/?username={{ authentik_config_bootstrap_username | urlencode }}&page_size=100"
-        method: GET
-        headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
-        validate_certs: "{{ authentik_config_validate_certs }}"
-        status_code: 200
-      when: authentik_config_admin_username != authentik_config_bootstrap_username
-      register: authentik_bootstrap_user_lookup
-
-    - name: Disable the default bootstrap user when a custom admin is used
-      ansible.builtin.uri:
-        url: "{{ authentik_config_api_base_url }}/core/users/{{ authentik_bootstrap_user_lookup.json.results[0].pk }}/"
-        method: PATCH
-        headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
-        body_format: json
-        body:
-          is_active: false
-        validate_certs: "{{ authentik_config_validate_certs }}"
-        status_code:
-          - 200
-          - 202
-      when:
-        - authentik_config_admin_username != authentik_config_bootstrap_username
-        - authentik_bootstrap_user_lookup.json.results | length > 0
-        - authentik_bootstrap_user_lookup.json.results[0].pk != (authentik_config_admin_user_pk | int)
 
     - name: Read the Grafana authorization flow
       ansible.builtin.uri:
