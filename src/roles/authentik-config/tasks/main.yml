@@ -18,7 +18,9 @@
     validate_certs: "{{ authentik_config_validate_certs }}"
     status_code: 200
   register: authentik_config_ready
-  until: authentik_config_ready.status == 200
+  until: >-
+    authentik_config_ready.status == 200
+    and 'taking too long' not in (authentik_config_ready.content | default('') | lower)
   retries: 60
   delay: 5
 
@@ -31,7 +33,9 @@
     validate_certs: "{{ authentik_config_validate_certs }}"
     status_code: 200
   register: authentik_config_info
-  until: authentik_config_info.status == 200
+  until: >-
+    authentik_config_info.status == 200
+    and (authentik_config_info.json is mapping)
   retries: 60
   delay: 5
 
