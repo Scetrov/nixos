@@ -105,12 +105,31 @@
 - name: Configure Authentik through the API
   delegate_to: localhost
   block:
+    - name: Authenticate as the admin user to obtain an API token
+      no_log: true
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/auth/token/"
+        method: POST
+        body_format: json
+        body:
+          username: "{{ authentik_config_admin_username }}"
+          password: "{{ authentik_config_admin_password }}"
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 201
+      register: authentik_admin_auth
+
+    - name: Persist the admin API token for all subsequent requests
+      ansible.builtin.set_fact:
+        authentik_config_auth_token: "{{ authentik_admin_auth.json.key }}"
+
     - name: Look up the Authentik admin user
       ansible.builtin.uri:
         url: "{{ authentik_config_api_base_url }}/core/users/?username={{ authentik_config_admin_username | urlencode }}&page_size=100"
         method: GET
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         validate_certs: "{{ authentik_config_validate_certs }}"
         status_code: 200
       register: authentik_admin_user_lookup
@@ -120,7 +139,7 @@
         url: "{{ authentik_config_api_base_url }}/core/users/"
         method: POST
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         body_format: json
         body:
           username: "{{ authentik_config_admin_username }}"
@@ -140,7 +159,7 @@
         url: "{{ authentik_config_api_base_url }}/core/users/{{ authentik_admin_user_lookup.json.results[0].pk }}/"
         method: PATCH
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         body_format: json
         body:
           name: "{{ authentik_config_admin_username }}"
@@ -161,7 +180,7 @@
         url: "{{ authentik_config_api_base_url }}/core/users/{{ authentik_config_admin_user_pk }}/set_password/"
         method: POST
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         body_format: json
         body:
           password: "{{ authentik_config_admin_password }}"
@@ -175,7 +194,7 @@
         url: "{{ authentik_config_api_base_url }}/core/groups/?name={{ authentik_config_admin_group_name | urlencode }}&page_size=100"
         method: GET
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         validate_certs: "{{ authentik_config_validate_certs }}"
         status_code: 200
       register: authentik_admin_group_lookup
@@ -185,7 +204,7 @@
         url: "{{ authentik_config_api_base_url }}/core/groups/"
         method: POST
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         body_format: json
         body:
           name: "{{ authentik_config_admin_group_name }}"
@@ -202,7 +221,7 @@
         url: "{{ authentik_config_api_base_url }}/core/groups/{{ authentik_admin_group_lookup.json.results[0].pk }}/"
         method: PATCH
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         body_format: json
         body:
           is_superuser: true
@@ -221,7 +240,7 @@
         url: "{{ authentik_config_api_base_url }}/core/groups/{{ authentik_config_admin_group_pk }}/?include_users=true"
         method: GET
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         validate_certs: "{{ authentik_config_validate_certs }}"
         status_code: 200
       register: authentik_admin_group_members
@@ -231,7 +250,7 @@
         url: "{{ authentik_config_api_base_url }}/core/groups/{{ authentik_config_admin_group_pk }}/add_user/"
         method: POST
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         body_format: json
         body:
           pk: "{{ authentik_config_admin_user_pk | int }}"
@@ -253,7 +272,7 @@
         url: "{{ authentik_config_api_base_url }}/core/users/?username={{ authentik_config_bootstrap_username | urlencode }}&page_size=100"
         method: GET
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         validate_certs: "{{ authentik_config_validate_certs }}"
         status_code: 200
       when: authentik_config_admin_username != authentik_config_bootstrap_username
@@ -264,7 +283,7 @@
         url: "{{ authentik_config_api_base_url }}/core/users/{{ authentik_bootstrap_user_lookup.json.results[0].pk }}/"
         method: PATCH
         headers:
-          Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         body_format: json
         body:
           is_active: false
@@ -277,31 +296,12 @@
         - authentik_bootstrap_user_lookup.json.results | length > 0
         - authentik_bootstrap_user_lookup.json.results[0].pk != (authentik_config_admin_user_pk | int)
 
-    - name: Authenticate as the new admin user to obtain a fresh API token
-      no_log: true
-      ansible.builtin.uri:
-        url: "{{ authentik_config_api_base_url }}/auth/token/"
-        method: POST
-        body_format: json
-        body:
-          username: "{{ authentik_config_admin_username }}"
-          password: "{{ authentik_config_admin_password }}"
-        validate_certs: "{{ authentik_config_validate_certs }}"
-        status_code:
-          - 200
-          - 201
-      register: authentik_admin_auth
-
-    - name: Persist the admin API token for subsequent requests
-      ansible.builtin.set_fact:
-        authentik_config_api_token: "{{ authentik_admin_auth.json.key }}"
-
     - name: Look up whether a long-lived API token already exists
       ansible.builtin.uri:
         url: "{{ authentik_config_api_base_url }}/core/token/?user={{ authentik_config_admin_user_pk | urlencode }}&page_size=100"
         method: GET
         headers:
-          Authorization: "Bearer {{ authentik_config_api_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         validate_certs: "{{ authentik_config_validate_certs }}"
         status_code: 200
       register: authentik_api_token_lookup
@@ -312,7 +312,7 @@
         url: "{{ authentik_config_api_base_url }}/core/token/"
         method: POST
         headers:
-          Authorization: "Bearer {{ authentik_config_api_token }}"
+          Authorization: "Bearer {{ authentik_config_auth_token }}"
         body_format: json
         body:
           name: "ansible-admin-api-token"
@@ -324,16 +324,10 @@
       when: authentik_api_token_lookup.json.results | length == 0
       register: authentik_api_token_create
 
-    - name: Persist the long-lived API token key
+    - name: Upgrade to the long-lived API token when created
       ansible.builtin.set_fact:
-        authentik_config_api_token: >-
-          {{ authentik_api_token_create.json.key | default(authentik_config_api_token) }}
+        authentik_config_auth_token: "{{ authentik_api_token_create.json.key }}"
       when: authentik_api_token_create is changed
-
-    - name: Set the long-lived API token as the primary authentication token
-      ansible.builtin.set_fact:
-        authentik_config_auth_token: >-
-          {{ authentik_api_token_lookup.json.results[0].key if authentik_api_token_lookup.json.results | length > 0 else authentik_config_api_token }}
 
     - name: Read the Grafana authorization flow
       ansible.builtin.uri:
