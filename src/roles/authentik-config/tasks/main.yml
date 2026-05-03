@@ -64,12 +64,15 @@
       url: "{{ authentik_config_api_base_url }}/policies/bindings/?page_size=1"
   register: authentik_api_token_probes
 
-- name: Persist the first failing Authentik API token probe
+- name: Persist the first unauthenticated Authentik API token probe
   delegate_to: localhost
   ansible.builtin.set_fact:
     authentik_api_token_failure: >-
       {{
-        (authentik_api_token_probes.results | rejectattr('status', 'equalto', 200) | list | first)
+        (authentik_api_token_probes.results
+         | rejectattr('status', 'in', [200, 403, 404])
+         | list
+         | first)
         | default({})
       }}
 
@@ -95,6 +98,7 @@
       {% elif authentik_api_token_failure.status | default(0) == 404 %}
       Authentik is reachable, but the expected resource was not found.
       {% endif %}
+      If this was a 403, the bootstrap token lacks fine-grained API permissions; a long-lived admin token will be provisioned automatically.
       Response: {{ authentik_api_token_failure_body | string | trim | truncate(600, True) }}
   when: authentik_api_token_failure != {}
 
