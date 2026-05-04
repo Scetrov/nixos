@@ -5,6 +5,7 @@ let
   stateDir = "/var/lib/authentik";
   dataDir = "${stateDir}/data";
   templatesDir = "${stateDir}/templates";
+  postgresqlDataDir = "${stateDir}/postgresql-data";
   authentikEnvFile = "${stateDir}/authentik.env";
   authentikSecretFiles = [
     "/root/secrets/authentik_admin_user.age"
@@ -16,8 +17,10 @@ let
     "/root/secrets/grafana_authentik_client_id.age"
     "/root/secrets/grafana_authentik_client_secret.age"
   ];
-  ansibleBootstrapBlueprintSrc = ./../../../blueprints/authentik/ansible-bootstrap.yaml;
-  ansibleBootstrapBlueprintDst = "${templatesDir}/ansible-bootstrap.yaml";
+
+  # Blueprint written directly in the shell script (heredoc below).
+  # No source-file path resolution needed — avoids Nix store issues.
+  serviceAccountBlueprintDst = "${templatesDir}/00-service-account-api.yaml";
 
   authentikPrepareEnvScript = pkgs.writeShellScript "authentik-prepare-env" ''
     set -euo pipefail
@@ -67,13 +70,34 @@ temp_path.chmod(0o600)
 temp_path.replace(env_path)
 PY
 
-    # --- Inject the API token into the Blueprint ---
+    # --- Write the service-account Blueprint with API token injected ---
     AUTHENTIK_API_TOKEN=$(${pkgs.coreutils}/bin/cat "$AUTHENTIK_API_TOKEN_FILE" | ${pkgs.coreutils}/bin/tr -d '\r\n')
-    ${pkgs.gnused}/bin/sed \
-      -e "s|__AUTHENTIK_API_TOKEN__|''${AUTHENTIK_API_TOKEN}|g" \
-      "${ansibleBootstrapBlueprintSrc}" \
-      > "${ansibleBootstrapBlueprintDst}"
-    ${pkgs.coreutils}/bin/chmod 0640 "${ansibleBootstrapBlueprintDst}"
+    ${pkgs.coreutils}/bin/cat <<BLUEPRINT_EOF > "${serviceAccountBlueprintDst}"
+version: 1
+metadata:
+  name: service-account-api
+entries:
+  - model: authentik_core.user
+    id: service-account-api-user
+    ident: ak-service-account-api
+    attrs:
+      username: api-automation
+      name: API Automation
+      is_active: true
+      type: service_account
+    groups:
+      - !Ident goauthentik.io/groups:authentik-admins
+  - model: authentik_core.token
+    id: service-account-api-token
+    ident: ak-api-token-automation
+    attrs:
+      intent: api
+      expires: null
+      key: __AUTHENTIK_API_TOKEN__
+    user: !Ref service-account-api-user
+BLUEPRINT_EOF
+    ${pkgs.gnused}/bin/sed -i "s|__AUTHENTIK_API_TOKEN__|''${AUTHENTIK_API_TOKEN}|g" "${serviceAccountBlueprintDst}"
+    ${pkgs.coreutils}/bin/chmod 0640 "${serviceAccountBlueprintDst}"
   '';
 in
 {
@@ -98,22 +122,16 @@ in
       description = "Container image used for the Authentik server and worker.";
     };
 
-    postgresqlPort = lib.mkOption {
-      type = lib.types.port;
-      default = 5433;
-      description = "Host port for Authentik PostgreSQL container (maps to 5432 inside container).";
-    };
-
     postgresqlImage = lib.mkOption {
       type = lib.types.str;
       default = "postgres:16-alpine";
       description = "Container image used for PostgreSQL.";
     };
 
-    postgresqlDataDir = lib.mkOption {
-      type = lib.types.path;
-      default = "${stateDir}/postgresql-data";
-      description = "Directory for PostgreSQL data persistence.";
+    postgresqlPort = lib.mkOption {
+      type = lib.types.port;
+      default = 5433;
+      description = "Host port for Authentik PostgreSQL container (maps to 5432 inside container).";
     };
 
     postgresqlMemoryLimit = lib.mkOption {
@@ -193,7 +211,7 @@ in
         "d ${stateDir} 0750 root root - -"
         "d ${dataDir} 0750 root root - -"
         "d ${templatesDir} 0750 root root - -"
-        "d ${cfg.postgresqlDataDir} 0700 root root - -"
+        "d ${postgresqlDataDir} 0700 root root - -"
       ];
 
       systemd.services.authentik-prepare-env = {
@@ -254,7 +272,7 @@ in
           };
           ports = [ "${toString cfg.postgresqlPort}:5432" ];
           volumes = [
-            "${cfg.postgresqlDataDir}:/var/lib/postgresql/data:U"
+            "${postgresqlDataDir}:/var/lib/postgresql/data:U"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
           ];
         };
