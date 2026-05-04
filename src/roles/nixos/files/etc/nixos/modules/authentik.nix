@@ -70,7 +70,7 @@ PY
     # --- Inject the API token into the Blueprint ---
     AUTHENTIK_API_TOKEN=$(${pkgs.coreutils}/bin/cat "$AUTHENTIK_API_TOKEN_FILE" | ${pkgs.coreutils}/bin/tr -d '\r\n')
     ${pkgs.gnused}/bin/sed \
-      -e "s|__AUTHENTIK_API_TOKEN__|${AUTHENTIK_API_TOKEN}|g" \
+      -e "s|__AUTHENTIK_API_TOKEN__|''${AUTHENTIK_API_TOKEN}|g" \
       "${ansibleBootstrapBlueprintSrc}" \
       > "${ansibleBootstrapBlueprintDst}"
     ${pkgs.coreutils}/bin/chmod 0640 "${ansibleBootstrapBlueprintDst}"
