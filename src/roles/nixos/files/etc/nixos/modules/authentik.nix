@@ -93,7 +93,7 @@ entries:
     attrs:
       intent: api
       expires: null
-      key: ${AUTHENTIK_API_TOKEN}
+      key: ''${AUTHENTIK_API_TOKEN}
     user: !Ref service-account-api-user
 BLUEPRINT_EOF
     ${pkgs.coreutils}/bin/chmod 0640 "${serviceAccountBlueprintDst}"
