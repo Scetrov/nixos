@@ -18,8 +18,9 @@ let
     "/root/secrets/grafana_authentik_client_secret.age"
   ];
 
-  serviceAccountBlueprintDst = "${templatesDir}/00-service-account-api.yaml";
-
+  # The service-account Blueprint is deployed by the authentik-config Ansible role
+  # (pre_task) via a Jinja2 template, before the NixOS rebuild and podman restart.
+  # No inline heredoc here — secrets never pass through the Nix store.
   authentikPrepareEnvScript = pkgs.writeShellScript "authentik-prepare-env" ''
     set -euo pipefail
 
@@ -30,7 +31,6 @@ let
     export AUTHENTIK_POSTGRESQL_PASSWORD_FILE=${config.age.secrets.authentik_postgresql_password.path}
     export AUTHENTIK_BOOTSTRAP_PASSWORD_FILE=${config.age.secrets.authentik_admin_password.path}
     export AUTHENTIK_BOOTSTRAP_TOKEN_FILE=${config.age.secrets.authentik_bootstrap_token.path}
-    export AUTHENTIK_API_TOKEN_FILE=${config.age.secrets.authentik_api_token.path}
 
     # --- Write the environment file ---
     ${pkgs.python3}/bin/python3 <<'PY'
@@ -67,36 +67,6 @@ with tempfile.NamedTemporaryFile("w", dir=env_path.parent, delete=False, encodin
 temp_path.chmod(0o600)
 temp_path.replace(env_path)
 PY
-
-    # --- Write the service-account Blueprint ---
-    # The shell variable AUTHENTIK_API_TOKEN is read from the decrypted secret
-    # and injected into the Blueprint YAML.
-    AUTHENTIK_API_TOKEN=$(${pkgs.coreutils}/bin/cat "$AUTHENTIK_API_TOKEN_FILE" | ${pkgs.coreutils}/bin/tr -d '\r\n')
-    ${pkgs.coreutils}/bin/cat > "${serviceAccountBlueprintDst}" <<BLUEPRINT_EOF
-version: 1
-metadata:
-  name: service-account-api
-entries:
-  - model: authentik_core.user
-    id: service-account-api-user
-    ident: ak-service-account-api
-    attrs:
-      username: api-automation
-      name: API Automation
-      is_active: true
-      type: service_account
-    groups:
-      - !Ident goauthentik.io/groups:authentik-admins
-  - model: authentik_core.token
-    id: service-account-api-token
-    ident: ak-api-token-automation
-    attrs:
-      intent: api
-      expires: null
-      key: ''${AUTHENTIK_API_TOKEN}
-    user: !Ref service-account-api-user
-BLUEPRINT_EOF
-    ${pkgs.coreutils}/bin/chmod 0640 "${serviceAccountBlueprintDst}"
   '';
 in
 {

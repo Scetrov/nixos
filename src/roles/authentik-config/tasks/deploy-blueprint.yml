@@ -1,0 +1,19 @@
+# Deploy the Authentik service-account Blueprint template to the remote host.
+# This must run AFTER secrets are decrypted and BEFORE podman containers restart.
+- name: Ensure Authentik templates directory exists
+  become: true
+  ansible.builtin.file:
+    path: /var/lib/authentik/templates
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Deploy service-account Blueprint
+  become: true
+  ansible.builtin.template:
+    src: blueprint-service-account.yaml.j2
+    dest: /var/lib/authentik/templates/00-service-account-api.yaml
+    owner: root
+    group: root
+    mode: "0640"
