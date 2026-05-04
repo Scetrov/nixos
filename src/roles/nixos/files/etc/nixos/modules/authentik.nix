@@ -18,14 +18,12 @@ let
     "/root/secrets/grafana_authentik_client_secret.age"
   ];
 
-  # Blueprint written directly in the shell script (heredoc below).
-  # No source-file path resolution needed — avoids Nix store issues.
   serviceAccountBlueprintDst = "${templatesDir}/00-service-account-api.yaml";
 
   authentikPrepareEnvScript = pkgs.writeShellScript "authentik-prepare-env" ''
     set -euo pipefail
 
-    ${pkgs.coreutils}/bin/install -d -m 0750 ${stateDir} ${dataDir} ${templatesDir}
+    ${pkgs.coreutils}/bin/install -d -m 0750 ${stateDir} ${dataDir} ${templatesDir} ${postgresqlDataDir} ${postgresqlDataDir}
 
     export AUTHENTIK_ENV_FILE=${authentikEnvFile}
     export AUTHENTIK_SECRET_KEY_FILE=${config.age.secrets.authentik_secret_key.path}
@@ -70,9 +68,11 @@ temp_path.chmod(0o600)
 temp_path.replace(env_path)
 PY
 
-    # --- Write the service-account Blueprint with API token injected ---
+    # --- Write the service-account Blueprint ---
+    # The shell variable AUTHENTIK_API_TOKEN is read from the decrypted secret
+    # and injected into the Blueprint YAML.
     AUTHENTIK_API_TOKEN=$(${pkgs.coreutils}/bin/cat "$AUTHENTIK_API_TOKEN_FILE" | ${pkgs.coreutils}/bin/tr -d '\r\n')
-    ${pkgs.coreutils}/bin/cat <<BLUEPRINT_EOF > "${serviceAccountBlueprintDst}"
+    ${pkgs.coreutils}/bin/cat > "${serviceAccountBlueprintDst}" <<BLUEPRINT_EOF
 version: 1
 metadata:
   name: service-account-api
@@ -93,10 +93,9 @@ entries:
     attrs:
       intent: api
       expires: null
-      key: __AUTHENTIK_API_TOKEN__
+      key: ${AUTHENTIK_API_TOKEN}
     user: !Ref service-account-api-user
 BLUEPRINT_EOF
-    ${pkgs.gnused}/bin/sed -i "s|__AUTHENTIK_API_TOKEN__|''${AUTHENTIK_API_TOKEN}|g" "${serviceAccountBlueprintDst}"
     ${pkgs.coreutils}/bin/chmod 0640 "${serviceAccountBlueprintDst}"
   '';
 in
@@ -239,6 +238,11 @@ in
           ExecStart = "${pkgs.podman}/bin/podman network create --ignore authentik";
           ExecStop = "${pkgs.podman}/bin/podman network rm -f authentik";
         };
+      };
+
+      systemd.services.podman-authentik-postgresql = {
+        after = [ "authentik-prepare-env.service" "authentik-network.service" ];
+        requires = [ "authentik-prepare-env.service" "authentik-network.service" ];
       };
 
       systemd.services.podman-authentik-server = {
