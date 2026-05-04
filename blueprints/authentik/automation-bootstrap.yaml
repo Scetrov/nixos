@@ -1,4 +1,4 @@
-# Blueprint: ansible-automation-service-account
+# Blueprint: automation-service-account
 #
 # Replaces the imperative Ansible bootstrap that relied on the short-lived
 # AUTHENTIK_BOOTSTRAP_TOKEN.
@@ -10,18 +10,18 @@
 #
 # The placeholder __AUTHENTIK_API_TOKEN__ is substituted with the
 # decrypted value of /root/secrets/authentik_api_token.age.
-# Ansible uses the same secret via the vault variable authentik_config_api_token.
+# Automation uses the same secret via the vault variable authentik_config_api_token.
 version: 1
 metadata:
-  name: ansible-automation-service-account
+  name: automation-service-account
 entries:
   # ── Service-account user ───────────────────────────────────────────────
   - model: authentik_core.user
-    id: ansible-automation-user
-    ident: ak-service-account-ansible-automation
+    id: automation-user
+    ident: ak-service-account-automation
     attrs:
-      username: ansible-automation
-      name: Ansible Automation
+      username: automation
+      name: Automation
       is_active: true
       type: service_account
     groups:
@@ -30,10 +30,10 @@ entries:
 
   # ── Non-expiring API token ────────────────────────────────────────────
   - model: authentik_core.token
-    id: ansible-automation-token
-    ident: ak-api-token-ansible-automation
+    id: automation-token
+    ident: ak-api-token-automation
     attrs:
       intent: api
       expires: null
       key: __AUTHENTIK_API_TOKEN__
-    user: !Ref ansible-automation-user
+    user: !Ref automation-user
