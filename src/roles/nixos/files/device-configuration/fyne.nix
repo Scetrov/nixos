@@ -9,6 +9,10 @@
     ./modules/user-scetrov-syncthing.nix
   ];
 
+  # nixos-hardware/master currently builds the Pi kernel via structuredExtraConfig,
+  # which can drift out of sync with the host's nixpkgs kernel builder.
+  boot.kernelPackages = pkgs.linuxPackages_rpi4;
+
   blocky.bindAddr = "10.229.53.1:53";
 
   networking = {
