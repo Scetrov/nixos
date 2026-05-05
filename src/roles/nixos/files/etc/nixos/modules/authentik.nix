@@ -233,11 +233,11 @@ in
             "--network=authentik"
             "--memory=${cfg.postgresqlMemoryLimit}"
             "--cpus=${cfg.postgresqlCpuLimit}"
-            "--health-cmd=sh -c \"pg_isready -U authentik -d authentik\""
-            "--health-interval=10s"
+            "--health-cmd=sh -c \"pg_isready -U authentik -d authentik || pgrep -x postgres > /dev/null\""
+            "--health-interval=15s"
             "--health-timeout=5s"
-            "--health-retries=3"
-            "--health-start-period=30s"
+            "--health-retries=5"
+            "--health-start-period=60s"
           ];
           environment = {
             POSTGRES_USER = "authentik";
