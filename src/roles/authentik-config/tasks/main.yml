@@ -61,7 +61,7 @@
           - authentik_config_bootstrap_token | length > 0
         quiet: true
 
-    - name: Verify bootstrap token still authenticates to the API
+    - name: Check whether the bootstrap token can repair the missing service-account token
       delegate_to: localhost
       ansible.builtin.uri:
         url: "{{ authentik_config_api_base_url }}/root/config/"
@@ -75,22 +75,27 @@
       changed_when: false
       no_log: true
 
-    - name: Assert bootstrap token is still usable
-      ansible.builtin.assert:
-        that:
-          - authentik_config_bootstrap_token_check.status | default(0) == 200
-        fail_msg: >-
-          The Authentik bootstrap token can no longer authenticate. It is only
-          valid on first startup, so if the long-lived service-account token is
-          missing after that point you need another admin API credential or a
-          fresh first-boot bootstrap.
-
     - name: Import the service-account blueprint with the bootstrap token
+      when: authentik_config_bootstrap_token_check.status | default(0) == 200
       ansible.builtin.include_tasks: deploy-blueprint.yml
       vars:
         authentik_config_blueprint_api_token: "{{ authentik_config_bootstrap_token }}"
         authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
         authentik_config_blueprint_template: "{{ authentik_config_service_account_blueprint_template }}"
+
+    - name: Fail when neither the long-lived token nor the bootstrap token can authenticate
+      when: authentik_config_bootstrap_token_check.status | default(0) != 200
+      ansible.builtin.fail:
+        msg: >-
+          Authentik rejected the configured long-lived API token with HTTP
+          {{ authentik_config_service_account_token_check.status | default('unknown') }}.
+          The bootstrap token repair path is no longer available because Authentik
+          rejected the bootstrap token with HTTP
+          {{ authentik_config_bootstrap_token_check.status | default('unknown') }}.
+          This role only uses the bootstrap token on first startup to create the
+          long-lived service-account token; after that, update
+          authentik_api_token to match the existing Authentik token or recreate
+          the first-boot bootstrap state.
 
 - name: Verify API token through Blueprint service account
   delegate_to: localhost
