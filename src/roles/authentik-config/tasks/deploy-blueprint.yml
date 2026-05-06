@@ -1,7 +1,9 @@
 - name: Assert blueprint import variables are defined
   ansible.builtin.assert:
     that:
-      - authentik_config_blueprint_api_token | length > 0
+      - >-
+        (authentik_config_blueprint_api_token | default('') | length > 0)
+        or (authentik_config_blueprint_cookie_header | default('') | length > 0)
       - authentik_config_blueprint_name | length > 0
       - authentik_config_blueprint_template | length > 0
     quiet: true
@@ -27,8 +29,22 @@
       ansible.builtin.uri:
         url: "{{ authentik_config_api_base_url }}/managed/blueprints/import/"
         method: POST
-        headers:
-          Authorization: "Bearer {{ authentik_config_blueprint_api_token }}"
+        headers: >-
+          {{
+            (
+              {"Authorization": "Bearer " ~ authentik_config_blueprint_api_token}
+              if (authentik_config_blueprint_api_token | default('') | length) > 0
+              else {}
+            )
+            | combine(
+              {
+                "Cookie": authentik_config_blueprint_cookie_header,
+                "X-CSRFToken": authentik_config_blueprint_csrf_token,
+              }
+              if (authentik_config_blueprint_cookie_header | default('') | length) > 0
+              else {}
+            )
+          }}
         body_format: form-multipart
         body:
           file:

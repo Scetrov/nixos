@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Authenticate to modern Authentik via flow-executor and return api_key + pk."""
+"""Authenticate to Authentik via flow-executor and return session auth details."""
 
 import http.cookiejar
 import json
@@ -8,6 +8,17 @@ import ssl
 import sys
 import urllib.error
 import urllib.request
+
+
+def find_cookie(cookie_jar, name):
+    for cookie in cookie_jar:
+        if cookie.name == name:
+            return cookie.value
+    return ""
+
+
+def build_cookie_header(cookie_jar):
+    return "; ".join(f"{cookie.name}={cookie.value}" for cookie in cookie_jar)
 
 def main():
     if len(sys.argv) != 4:
@@ -51,13 +62,21 @@ def main():
     resp = opener.open(req)
     body = json.loads(resp.read().decode())
 
-    api_key = body.get('api_key', '')
-    pk = body.get('pk', '')
-    if not api_key or not pk:
-        print(json.dumps({"error": "Missing api_key or pk in response", "keys": list(body.keys())}))
+    user = body.get('user', {})
+    csrf_token = find_cookie(cj, 'authentik_csrf') or find_cookie(cj, 'csrftoken')
+    cookie_header = build_cookie_header(cj)
+    if not cookie_header or not csrf_token or not user.get('pk'):
+        print(json.dumps({
+            "error": "Missing session cookies, CSRF token, or user payload in response",
+            "keys": list(body.keys()),
+        }))
         sys.exit(1)
 
-    print(json.dumps({"api_key": api_key, "pk": pk}))
+    print(json.dumps({
+        "cookie_header": cookie_header,
+        "csrf_token": csrf_token,
+        "user": user,
+    }))
 
 if __name__ == '__main__':
     try:
