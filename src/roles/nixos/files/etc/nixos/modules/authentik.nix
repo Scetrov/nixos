@@ -19,8 +19,9 @@ let
   ];
 
   # The authentik-config Ansible role now bootstraps custom blueprints over the
-  # Authentik API after the service is reachable. The templates directory still
-  # exists for optional file-based blueprints, and secrets stay out of the Nix store.
+  # Authentik API after the service is reachable. Keep Authentik's packaged
+  # /blueprints tree available, and mount optional local file-based blueprints
+  # under /blueprints/custom so they are discovered without shadowing defaults.
   authentikPrepareEnvScript = pkgs.writeShellScript "authentik-prepare-env" ''
     set -euo pipefail
 
@@ -53,7 +54,7 @@ entries = {
     "AUTHENTIK_POSTGRESQL__NAME": "authentik",
     "AUTHENTIK_POSTGRESQL__USER": "authentik",
     "AUTHENTIK_POSTGRESQL__PORT": "5432",
-    "AUTHENTIK_BLUEPRINTS_DIR": "/templates",
+    "AUTHENTIK_BLUEPRINTS_DIR": "/blueprints",
     "AUTHENTIK_POSTGRESQL__PASSWORD": read_secret("AUTHENTIK_POSTGRESQL__PASSWORD", "AUTHENTIK_POSTGRESQL_PASSWORD_FILE"),
     "AUTHENTIK_BOOTSTRAP_PASSWORD": read_secret("AUTHENTIK_BOOTSTRAP_PASSWORD", "AUTHENTIK_BOOTSTRAP_PASSWORD_FILE"),
     "AUTHENTIK_BOOTSTRAP_TOKEN": read_secret("AUTHENTIK_BOOTSTRAP_TOKEN", "AUTHENTIK_BOOTSTRAP_TOKEN_FILE"),
@@ -256,7 +257,7 @@ in
           ports = [ "127.0.0.1:${toString cfg.port}:9000" ];
           volumes = [
             "${dataDir}:/data:U"
-            "${templatesDir}:/templates:U"
+            "${templatesDir}:/blueprints/custom:U"
             "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
             "${config.age.secrets.authentik_admin_password.path}:${config.age.secrets.authentik_admin_password.path}:ro"
@@ -273,7 +274,7 @@ in
           extraOptions = [ "--shm-size=512m" "--network=authentik" ];
           volumes = [
             "${dataDir}:/data:U"
-            "${templatesDir}:/templates:U"
+            "${templatesDir}:/blueprints/custom:U"
             "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
             "${config.age.secrets.authentik_admin_password.path}:${config.age.secrets.authentik_admin_password.path}:ro"

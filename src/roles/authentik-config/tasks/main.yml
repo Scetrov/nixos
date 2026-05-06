@@ -37,10 +37,10 @@
   retries: 60
   delay: 5
 
-# ── Reconcile the known API bearer token via Blueprint import ───────────
-# Do not use /core/users/service_account/ here: that endpoint creates and
-# returns a generated APP_PASSWORD token, while this role needs Authentik's
-# API token key to match the vaulted authentik_api_token value exactly.
+# ── Reconcile the known API bearer token ─────────────────────────────────
+# Authentik's /core/users/service_account/ action is used only to create the
+# service-account user. The durable API token still needs blueprint
+# reconciliation so its key matches the vaulted authentik_api_token exactly.
 - name: Check whether the service-account token already works
   delegate_to: localhost
   ansible.builtin.uri:
@@ -75,11 +75,34 @@
 
     - name: Import the service-account blueprint with the bootstrap token
       when: authentik_config_bootstrap_token_check.status | default(0) == 200
-      ansible.builtin.include_tasks: deploy-blueprint.yml
-      vars:
-        authentik_config_blueprint_api_token: "{{ authentik_config_bootstrap_token }}"
-        authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
-        authentik_config_blueprint_template: "{{ authentik_config_service_account_blueprint_template }}"
+      block:
+        - name: Ensure the Authentik automation service account exists with the bootstrap token
+          delegate_to: localhost
+          ansible.builtin.uri:
+            url: "{{ authentik_config_api_base_url }}/core/users/service_account/"
+            method: POST
+            headers:
+              Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
+            body_format: json
+            body:
+              name: "{{ authentik_config_service_account_username }}"
+              create_group: false
+              expiring: false
+            validate_certs: "{{ authentik_config_validate_certs }}"
+            status_code:
+              - 200
+              - 400
+          register: authentik_config_service_account_bootstrap_create
+          failed_when: >-
+            authentik_config_service_account_bootstrap_create.status not in [200, 400]
+          changed_when: authentik_config_service_account_bootstrap_create.status == 200
+          no_log: true
+
+        - ansible.builtin.include_tasks: deploy-blueprint.yml
+          vars:
+            authentik_config_blueprint_api_token: "{{ authentik_config_bootstrap_token }}"
+            authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
+            authentik_config_blueprint_template: "{{ authentik_config_service_account_blueprint_template }}"
 
     - name: Recover the service-account token with the persisted admin account
       when: authentik_config_bootstrap_token_check.status | default(0) != 200
@@ -144,13 +167,37 @@
 
         - name: Import the service-account blueprint with the persisted Authentik admin session
           when: authentik_config_admin_login.rc == 0
-          ansible.builtin.include_tasks: deploy-blueprint.yml
-          vars:
-            authentik_config_blueprint_api_token: ""
-            authentik_config_blueprint_cookie_header: "{{ authentik_config_admin_session.cookie_header }}"
-            authentik_config_blueprint_csrf_token: "{{ authentik_config_admin_session.csrf_token }}"
-            authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
-            authentik_config_blueprint_template: "{{ authentik_config_service_account_blueprint_template }}"
+          block:
+            - name: Ensure the Authentik automation service account exists with the persisted admin session
+              delegate_to: localhost
+              ansible.builtin.uri:
+                url: "{{ authentik_config_api_base_url }}/core/users/service_account/"
+                method: POST
+                headers:
+                  Cookie: "{{ authentik_config_admin_session.cookie_header }}"
+                  X-CSRFToken: "{{ authentik_config_admin_session.csrf_token }}"
+                body_format: json
+                body:
+                  name: "{{ authentik_config_service_account_username }}"
+                  create_group: false
+                  expiring: false
+                validate_certs: "{{ authentik_config_validate_certs }}"
+                status_code:
+                  - 200
+                  - 400
+              register: authentik_config_service_account_session_create
+              failed_when: >-
+                authentik_config_service_account_session_create.status not in [200, 400]
+              changed_when: authentik_config_service_account_session_create.status == 200
+              no_log: true
+
+            - ansible.builtin.include_tasks: deploy-blueprint.yml
+              vars:
+                authentik_config_blueprint_api_token: ""
+                authentik_config_blueprint_cookie_header: "{{ authentik_config_admin_session.cookie_header }}"
+                authentik_config_blueprint_csrf_token: "{{ authentik_config_admin_session.csrf_token }}"
+                authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
+                authentik_config_blueprint_template: "{{ authentik_config_service_account_blueprint_template }}"
 
 - name: Verify API token through Blueprint service account
   delegate_to: localhost

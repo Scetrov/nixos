@@ -16,6 +16,21 @@
     suffix: ".yaml"
   register: authentik_config_blueprint_tempfile
 
+- name: Derive a temporary Authentik blueprint instance name
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    authentik_config_blueprint_instance_name: "ansible-{{ authentik_config_blueprint_name }}"
+
+- name: Derive the managed blueprint API execution target
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    authentik_config_blueprint_delegate_host: >-
+      {{ inventory_hostname if (authentik_config_blueprint_api_token | default('') | length) > 0 else 'localhost' }}
+    authentik_config_blueprint_api_base_url_effective: >-
+      {{ 'http://127.0.0.1:9000/api/v3' if (authentik_config_blueprint_api_token | default('') | length) > 0 else authentik_config_api_base_url }}
+    authentik_config_blueprint_validate_certs_effective: >-
+      {{ false if (authentik_config_blueprint_api_token | default('') | length) > 0 else authentik_config_validate_certs }}
+
 - name: Render and import the blueprint through the Authentik API
   delegate_to: localhost
   block:
@@ -25,13 +40,16 @@
         dest: "{{ authentik_config_blueprint_tempfile.path }}"
         mode: "0600"
 
-    # Blueprint import is the path that can create or update a token with a
-    # known key. The Authentik service-account convenience endpoint only
-    # returns a generated APP_PASSWORD token.
-    - name: Import and apply the blueprint once
+    - name: Read the rendered blueprint content from the controller
+      ansible.builtin.slurp:
+        src: "{{ authentik_config_blueprint_tempfile.path }}"
+      register: authentik_config_blueprint_rendered
+
+    - name: Look up any stale temporary blueprint instance
+      delegate_to: "{{ authentik_config_blueprint_delegate_host }}"
       ansible.builtin.uri:
-        url: "{{ authentik_config_api_base_url }}/managed/blueprints/import/"
-        method: POST
+        url: "{{ authentik_config_blueprint_api_base_url_effective }}/managed/blueprints/?name={{ authentik_config_blueprint_instance_name | urlencode }}&page_size=100"
+        method: GET
         headers: >-
           {{
             (
@@ -48,24 +66,314 @@
               else {}
             )
           }}
-        body_format: form-multipart
-        body:
-          file:
-            filename: "{{ authentik_config_blueprint_tempfile.path }}"
-            mime_type: application/x-yaml
-        validate_certs: "{{ authentik_config_validate_certs }}"
+        validate_certs: "{{ authentik_config_blueprint_validate_certs_effective }}"
         status_code: 200
-      register: authentik_config_blueprint_import
+      register: authentik_config_blueprint_existing
       no_log: true
 
-    - name: Assert the blueprint import succeeded
+    # Authentik 2025.10 no longer exposes the old one-shot multipart import
+    # action at /managed/blueprints/import/. Create a temporary blueprint
+    # instance with inline content, apply it once, then delete it so the
+    # rendered secret-bearing blueprint content is not left in the database.
+    - name: Remove any stale temporary blueprint instance before import
+      delegate_to: "{{ authentik_config_blueprint_delegate_host }}"
+      ansible.builtin.uri:
+        url: "{{ authentik_config_blueprint_api_base_url_effective }}/managed/blueprints/{{ item.pk | default(item.instance_uuid) }}/"
+        method: DELETE
+        headers: >-
+          {{
+            (
+              {"Authorization": "Bearer " ~ authentik_config_blueprint_api_token}
+              if (authentik_config_blueprint_api_token | default('') | length) > 0
+              else {}
+            )
+            | combine(
+              {
+                "Cookie": authentik_config_blueprint_cookie_header,
+                "X-CSRFToken": authentik_config_blueprint_csrf_token,
+              }
+              if (authentik_config_blueprint_cookie_header | default('') | length) > 0
+              else {}
+            )
+          }}
+        validate_certs: "{{ authentik_config_blueprint_validate_certs_effective }}"
+        status_code: 204
+      loop: "{{ authentik_config_blueprint_existing.json.results | default([]) }}"
+      no_log: true
+
+    - name: Create a temporary managed blueprint instance
+      when: (authentik_config_blueprint_api_token | default('') | length) > 0
+      delegate_to: "{{ authentik_config_blueprint_delegate_host }}"
+      ansible.builtin.command:
+        argv:
+          - curl
+          - --silent
+          - --show-error
+          - --output
+          - -
+          - --write-out
+          - "\nHTTP_STATUS:%{http_code}"
+          - --header
+          - "Content-Type: application/json"
+          - --header
+          - "Authorization: Bearer {{ authentik_config_blueprint_api_token }}"
+          - --request
+          - POST
+          - --data-binary
+          - "@-"
+          - "{{ authentik_config_blueprint_api_base_url_effective }}/managed/blueprints/"
+        stdin: >-
+          {{
+            {
+              'name': authentik_config_blueprint_instance_name,
+              'enabled': true,
+              'content': authentik_config_blueprint_rendered.content | b64decode,
+            }
+            | to_json
+          }}
+        stdin_add_newline: false
+      register: authentik_config_blueprint_instance_bearer
+      changed_when: true
+      no_log: true
+
+    - name: Create a temporary managed blueprint instance with an Authentik session
+      when: (authentik_config_blueprint_api_token | default('') | length) == 0
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - curl
+          - --silent
+          - --show-error
+          - --output
+          - -
+          - --write-out
+          - "\nHTTP_STATUS:%{http_code}"
+          - --header
+          - "Content-Type: application/json"
+          - --header
+          - "Cookie: {{ authentik_config_blueprint_cookie_header }}"
+          - --header
+          - "X-CSRFToken: {{ authentik_config_blueprint_csrf_token }}"
+          - --request
+          - POST
+          - --data-binary
+          - "@-"
+          - "{{ authentik_config_blueprint_api_base_url_effective }}/managed/blueprints/"
+        stdin: >-
+          {{
+            {
+              'name': authentik_config_blueprint_instance_name,
+              'enabled': true,
+              'content': authentik_config_blueprint_rendered.content | b64decode,
+            }
+            | to_json
+          }}
+        stdin_add_newline: false
+      register: authentik_config_blueprint_instance_session
+      changed_when: true
+      no_log: true
+
+    - name: Select the managed blueprint instance creation result
+      ansible.builtin.set_fact:
+        authentik_config_blueprint_instance_result: >-
+          {{
+            authentik_config_blueprint_instance_bearer
+            if (authentik_config_blueprint_instance_bearer is defined and not (authentik_config_blueprint_instance_bearer.skipped | default(false)))
+            else authentik_config_blueprint_instance_session
+          }}
+      no_log: true
+
+    - name: Parse the managed blueprint instance creation status
+      ansible.builtin.set_fact:
+        authentik_config_blueprint_instance_status: >-
+          {{ authentik_config_blueprint_instance_result.stdout | regex_replace('\r', '') | regex_search('HTTP_STATUS:(\d+)', '\1') | first | int }}
+      no_log: true
+
+    - name: Assert the managed blueprint instance was created
       ansible.builtin.assert:
         that:
-          - authentik_config_blueprint_import.json.success | default(false)
+          - authentik_config_blueprint_instance_status == 201
+        fail_msg: >-
+          Failed to create managed blueprint instance for {{ authentik_config_blueprint_name }}:
+          {{ authentik_config_blueprint_instance_result.stdout | regex_replace('\r', '') | split('\nHTTP_STATUS:') | first | trim }}
+
+    - name: Look up the created temporary managed blueprint instance
+      delegate_to: "{{ authentik_config_blueprint_delegate_host }}"
+      ansible.builtin.uri:
+        url: >-
+          {{ authentik_config_blueprint_api_base_url_effective }}/managed/blueprints/?name={{ authentik_config_blueprint_instance_name | urlencode }}&page_size=100
+        method: GET
+        headers: >-
+          {{
+            (
+              {"Authorization": "Bearer " ~ authentik_config_blueprint_api_token}
+              if (authentik_config_blueprint_api_token | default('') | length) > 0
+              else {}
+            )
+            | combine(
+              {
+                "Cookie": authentik_config_blueprint_cookie_header,
+                "X-CSRFToken": authentik_config_blueprint_csrf_token,
+              }
+              if (authentik_config_blueprint_cookie_header | default('') | length) > 0
+              else {}
+            )
+          }}
+        validate_certs: "{{ authentik_config_blueprint_validate_certs_effective }}"
+        status_code: 200
+      register: authentik_config_blueprint_created_lookup
+      no_log: true
+
+    - name: Select the created temporary managed blueprint instance
+      ansible.builtin.set_fact:
+        authentik_config_blueprint_instance_json: >-
+          {{ (authentik_config_blueprint_created_lookup.json.results | default([]) | first) }}
+      no_log: true
+
+    - name: Assert the created temporary managed blueprint instance was found
+      ansible.builtin.assert:
+        that:
+          - authentik_config_blueprint_instance_json is mapping
+          - authentik_config_blueprint_instance_json.pk is defined or authentik_config_blueprint_instance_json.instance_uuid is defined
+        fail_msg: >-
+          Managed blueprint instance {{ authentik_config_blueprint_instance_name }} was created but could not be reloaded.
+
+    - name: Apply the temporary managed blueprint instance once
+      when: (authentik_config_blueprint_api_token | default('') | length) > 0
+      delegate_to: "{{ authentik_config_blueprint_delegate_host }}"
+      ansible.builtin.command:
+        argv:
+          - curl
+          - --silent
+          - --show-error
+          - --output
+          - -
+          - --write-out
+          - "\nHTTP_STATUS:%{http_code}"
+          - --header
+          - "Authorization: Bearer {{ authentik_config_blueprint_api_token }}"
+          - --request
+          - POST
+          - "{{ authentik_config_blueprint_api_base_url_effective }}/managed/blueprints/{{ authentik_config_blueprint_instance_json.pk | default(authentik_config_blueprint_instance_json.instance_uuid) }}/apply/"
+      register: authentik_config_blueprint_apply_bearer
+      changed_when: true
+      no_log: true
+
+    - name: Apply the temporary managed blueprint instance once with an Authentik session
+      when: (authentik_config_blueprint_api_token | default('') | length) == 0
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - curl
+          - --silent
+          - --show-error
+          - --output
+          - -
+          - --write-out
+          - "\nHTTP_STATUS:%{http_code}"
+          - --header
+          - "Cookie: {{ authentik_config_blueprint_cookie_header }}"
+          - --header
+          - "X-CSRFToken: {{ authentik_config_blueprint_csrf_token }}"
+          - --request
+          - POST
+          - "{{ authentik_config_blueprint_api_base_url_effective }}/managed/blueprints/{{ authentik_config_blueprint_instance_json.pk | default(authentik_config_blueprint_instance_json.instance_uuid) }}/apply/"
+      register: authentik_config_blueprint_apply_session
+      changed_when: true
+      no_log: true
+
+    - name: Select the managed blueprint apply result
+      ansible.builtin.set_fact:
+        authentik_config_blueprint_apply_result: >-
+          {{
+            authentik_config_blueprint_apply_bearer
+            if (authentik_config_blueprint_apply_bearer is defined and not (authentik_config_blueprint_apply_bearer.skipped | default(false)))
+            else authentik_config_blueprint_apply_session
+          }}
+      no_log: true
+
+    - name: Parse the managed blueprint apply status
+      ansible.builtin.set_fact:
+        authentik_config_blueprint_apply_status: >-
+          {{ authentik_config_blueprint_apply_result.stdout | regex_replace('\r', '') | regex_search('HTTP_STATUS:(\d+)', '\1') | first | int }}
+      no_log: true
+
+    - name: Assert the blueprint apply succeeded
+      ansible.builtin.assert:
+        that:
+          - authentik_config_blueprint_apply_status in [200, 204]
         fail_msg: >-
           Failed to import Authentik blueprint {{ authentik_config_blueprint_name }}:
-          {{ authentik_config_blueprint_import.json.logs | default([]) | to_nice_json }}
+          {{ authentik_config_blueprint_apply_result.stdout | regex_replace('\r', '') | split('\nHTTP_STATUS:') | first | trim }}
+
+    - name: Reload the temporary managed blueprint instance after apply
+      delegate_to: "{{ authentik_config_blueprint_delegate_host }}"
+      ansible.builtin.uri:
+        url: >-
+          {{ authentik_config_blueprint_api_base_url_effective }}/managed/blueprints/{{ authentik_config_blueprint_instance_json.pk | default(authentik_config_blueprint_instance_json.instance_uuid) }}/
+        method: GET
+        headers: >-
+          {{
+            (
+              {"Authorization": "Bearer " ~ authentik_config_blueprint_api_token}
+              if (authentik_config_blueprint_api_token | default('') | length) > 0
+              else {}
+            )
+            | combine(
+              {
+                "Cookie": authentik_config_blueprint_cookie_header,
+                "X-CSRFToken": authentik_config_blueprint_csrf_token,
+              }
+              if (authentik_config_blueprint_cookie_header | default('') | length) > 0
+              else {}
+            )
+          }}
+        validate_certs: "{{ authentik_config_blueprint_validate_certs_effective }}"
+        status_code: 200
+      register: authentik_config_blueprint_instance_after_apply
+      no_log: true
+
+    - name: Assert the temporary managed blueprint instance finished successfully
+      ansible.builtin.assert:
+        that:
+          - authentik_config_blueprint_instance_after_apply.json.status | default('') == 'successful'
+          - (authentik_config_blueprint_instance_after_apply.json.managed_models | default([]) | length) > 0
+        fail_msg: >-
+          Authentik applied blueprint {{ authentik_config_blueprint_name }} without creating managed models.
+          status={{ authentik_config_blueprint_instance_after_apply.json.status | default('') }}
+          managed_models={{ authentik_config_blueprint_instance_after_apply.json.managed_models | default([]) }}
   always:
+    - name: Remove the temporary managed blueprint instance from Authentik
+      when:
+        - (authentik_config_blueprint_api_token | default('') | length) > 0
+        - authentik_config_blueprint_instance_json is defined
+        - authentik_config_blueprint_instance_json.pk is defined or authentik_config_blueprint_instance_json.instance_uuid is defined
+      delegate_to: "{{ authentik_config_blueprint_delegate_host | default('localhost') }}"
+      ansible.builtin.shell: |
+        set -euo pipefail
+        curl --silent --show-error --output /dev/null --write-out 'HTTP_STATUS:%{http_code}' \
+          --header 'Authorization: Bearer {{ authentik_config_blueprint_api_token }}' \
+          --request DELETE \
+          '{{ (authentik_config_blueprint_api_base_url_effective | default(authentik_config_api_base_url)) }}/managed/blueprints/{{ authentik_config_blueprint_instance_json.pk | default(authentik_config_blueprint_instance_json.instance_uuid) }}/'
+      changed_when: false
+      no_log: true
+
+    - name: Remove the temporary managed blueprint instance from Authentik with an Authentik session
+      when:
+        - (authentik_config_blueprint_api_token | default('') | length) == 0
+        - authentik_config_blueprint_instance_json is defined
+        - authentik_config_blueprint_instance_json.pk is defined or authentik_config_blueprint_instance_json.instance_uuid is defined
+      delegate_to: localhost
+      ansible.builtin.shell: |
+        set -euo pipefail
+        curl --silent --show-error --output /dev/null --write-out 'HTTP_STATUS:%{http_code}' \
+          --header 'Cookie: {{ authentik_config_blueprint_cookie_header }}' \
+          --header 'X-CSRFToken: {{ authentik_config_blueprint_csrf_token }}' \
+          --request DELETE \
+          '{{ (authentik_config_blueprint_api_base_url_effective | default(authentik_config_api_base_url)) }}/managed/blueprints/{{ authentik_config_blueprint_instance_json.pk | default(authentik_config_blueprint_instance_json.instance_uuid) }}/'
+      changed_when: false
+      no_log: true
+
     - name: Remove the temporary blueprint file from the controller
       ansible.builtin.file:
         path: "{{ authentik_config_blueprint_tempfile.path }}"
