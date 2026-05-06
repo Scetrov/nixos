@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 """Authenticate to modern Authentik via flow-executor and return api_key + pk."""
 
-import sys, json, urllib.request, urllib.parse, http.cookiejar
+import http.cookiejar
+import json
+import os
+import ssl
+import sys
+import urllib.error
+import urllib.request
 
 def main():
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         print("Usage: authentik_login.py <api_base_url> <username> <password>", file=sys.stderr)
         sys.exit(1)
 
@@ -13,10 +19,15 @@ def main():
     password = sys.argv[3]
     flow_url = f"{api_base}/flows/executor/default-authentication-flow/"
     me_url = f"{api_base}/core/users/me/"
+    insecure = os.environ.get("AUTHENTIK_LOGIN_INSECURE", "0") == "1"
+    ssl_context = ssl._create_unverified_context() if insecure else None
 
     # Set up cookie jar for session persistence
     cj = http.cookiejar.CookieJar()
-    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+    handlers = [urllib.request.HTTPCookieProcessor(cj)]
+    if ssl_context is not None:
+        handlers.append(urllib.request.HTTPSHandler(context=ssl_context))
+    opener = urllib.request.build_opener(*handlers)
 
     headers = {
         'Content-Type': 'application/json',
@@ -49,4 +60,12 @@ def main():
     print(json.dumps({"api_key": api_key, "pk": pk}))
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except urllib.error.HTTPError as exc:
+        response_body = exc.read().decode(errors="replace")
+        print(json.dumps({"error": f"HTTP {exc.code}", "body": response_body}), file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:  # noqa: BLE001
+        print(json.dumps({"error": str(exc)}), file=sys.stderr)
+        sys.exit(1)

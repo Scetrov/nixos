@@ -1,19 +1,54 @@
-# Deploy the Authentik service-account Blueprint template to the remote host.
-# This must run AFTER secrets are decrypted and BEFORE podman containers restart.
-- name: Ensure Authentik templates directory exists
-  become: true
-  ansible.builtin.file:
-    path: /var/lib/authentik/templates
-    state: directory
-    owner: root
-    group: root
-    mode: "0750"
+- name: Assert blueprint import variables are defined
+  ansible.builtin.assert:
+    that:
+      - authentik_config_blueprint_api_token | length > 0
+      - authentik_config_blueprint_name | length > 0
+      - authentik_config_blueprint_template | length > 0
+    quiet: true
 
-- name: Deploy service-account Blueprint
-  become: true
-  ansible.builtin.template:
-    src: blueprint-service-account.yaml.j2
-    dest: /var/lib/authentik/templates/00-service-account-api.yaml
-    owner: root
-    group: root
-    mode: "0640"
+- name: Create a temporary blueprint file on the controller
+  delegate_to: localhost
+  ansible.builtin.tempfile:
+    state: file
+    prefix: "authentik-blueprint-"
+    suffix: ".yaml"
+  register: authentik_config_blueprint_tempfile
+
+- name: Render and import the blueprint through the Authentik API
+  delegate_to: localhost
+  block:
+    - name: Render blueprint template on the controller
+      ansible.builtin.template:
+        src: "{{ authentik_config_blueprint_template }}"
+        dest: "{{ authentik_config_blueprint_tempfile.path }}"
+        mode: "0600"
+
+    - name: Import and apply the blueprint once
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/managed/blueprints/import/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_blueprint_api_token }}"
+        body_format: form-multipart
+        body:
+          file:
+            filename: "{{ authentik_config_blueprint_tempfile.path }}"
+            mime_type: application/x-yaml
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code: 200
+      register: authentik_config_blueprint_import
+      no_log: true
+
+    - name: Assert the blueprint import succeeded
+      ansible.builtin.assert:
+        that:
+          - authentik_config_blueprint_import.json.success | default(false)
+        fail_msg: >-
+          Failed to import Authentik blueprint {{ authentik_config_blueprint_name }}:
+          {{ authentik_config_blueprint_import.json.logs | default([]) | to_nice_json }}
+  always:
+    - name: Remove the temporary blueprint file from the controller
+      ansible.builtin.file:
+        path: "{{ authentik_config_blueprint_tempfile.path }}"
+        state: absent
+      when: authentik_config_blueprint_tempfile.path is defined

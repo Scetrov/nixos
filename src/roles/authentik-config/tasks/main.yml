@@ -37,7 +37,59 @@
   retries: 60
   delay: 5
 
-# ── Verify the Blueprint-provided API token works ───────────────────────
+# ── Bootstrap service-account token via Blueprint import ────────────────
+- name: Check whether the service-account token already works
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/root/config/"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code: 200
+  register: authentik_config_service_account_token_check
+  failed_when: false
+  changed_when: false
+  no_log: true
+
+- name: Bootstrap the service-account token when it is missing
+  when: authentik_config_service_account_token_check.status | default(0) != 200
+  block:
+    - name: Assert bootstrap administrator credentials are defined
+      ansible.builtin.assert:
+        that:
+          - authentik_config_bootstrap_username | length > 0
+          - authentik_config_bootstrap_password | length > 0
+          - authentik_config_login_script | length > 0
+        quiet: true
+
+    - name: Log in with the bootstrap administrator account
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - "{{ authentik_config_login_script }}"
+          - "{{ authentik_config_api_base_url }}"
+          - "{{ authentik_config_bootstrap_username }}"
+          - "{{ authentik_config_bootstrap_password }}"
+      environment:
+        AUTHENTIK_LOGIN_INSECURE: "{{ (not authentik_config_validate_certs) | ternary('1', '0') }}"
+      register: authentik_config_bootstrap_login_command
+      changed_when: false
+      no_log: true
+
+    - name: Persist the bootstrap administrator API token
+      delegate_to: localhost
+      ansible.builtin.set_fact:
+        authentik_config_bootstrap_api_token: "{{ (authentik_config_bootstrap_login_command.stdout | from_json).api_key }}"
+      no_log: true
+
+    - name: Import the service-account blueprint with bootstrap administrator access
+      ansible.builtin.include_tasks: deploy-blueprint.yml
+      vars:
+        authentik_config_blueprint_api_token: "{{ authentik_config_bootstrap_api_token }}"
+        authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
+        authentik_config_blueprint_template: "{{ authentik_config_service_account_blueprint_template }}"
+
 - name: Verify API token through Blueprint service account
   delegate_to: localhost
   ansible.builtin.uri:

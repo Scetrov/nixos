@@ -7,13 +7,6 @@
   hosts: all
   vars_files:
     - secrets.yml
-  pre_tasks:
-    - name: Deploy Authentik Blueprint template
-      ansible.builtin.import_role:
-        name: authentik-config
-        tasks_from: deploy-blueprint
-      when: authentik_config_enabled | default(false)
-
   roles:
     - secrets
     - nixos

@@ -18,9 +18,9 @@ let
     "/root/secrets/grafana_authentik_client_secret.age"
   ];
 
-  # The service-account Blueprint is deployed by the authentik-config Ansible role
-  # (pre_task) via a Jinja2 template, before the NixOS rebuild and podman restart.
-  # No inline heredoc here — secrets never pass through the Nix store.
+  # The authentik-config Ansible role now bootstraps custom blueprints over the
+  # Authentik API after the service is reachable. The templates directory still
+  # exists for optional file-based blueprints, and secrets stay out of the Nix store.
   authentikPrepareEnvScript = pkgs.writeShellScript "authentik-prepare-env" ''
     set -euo pipefail
 
