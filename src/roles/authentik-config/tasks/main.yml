@@ -398,7 +398,7 @@
 - name: Update the Grafana application when present
   delegate_to: localhost
   ansible.builtin.uri:
-    url: "{{ authentik_config_api_base_url }}/core/applications/{{ authentik_grafana_application_lookup.json.results[0].pk }}/"
+    url: "{{ authentik_config_api_base_url }}/core/applications/{{ authentik_grafana_application_lookup.json.results[0].slug | urlencode }}/"
     method: PATCH
     headers:
       Authorization: "Bearer {{ authentik_config_api_token }}"
