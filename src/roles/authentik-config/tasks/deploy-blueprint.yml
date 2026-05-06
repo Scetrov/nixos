@@ -25,6 +25,9 @@
         dest: "{{ authentik_config_blueprint_tempfile.path }}"
         mode: "0600"
 
+    # Blueprint import is the path that can create or update a token with a
+    # known key. The Authentik service-account convenience endpoint only
+    # returns a generated APP_PASSWORD token.
     - name: Import and apply the blueprint once
       ansible.builtin.uri:
         url: "{{ authentik_config_api_base_url }}/managed/blueprints/import/"

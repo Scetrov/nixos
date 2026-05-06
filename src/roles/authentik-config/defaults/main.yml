@@ -8,7 +8,9 @@ authentik_config_service_account_blueprint_name: "service-account-api"
 authentik_config_service_account_blueprint_template: "blueprint-service-account.yaml.j2"
 authentik_config_service_account_username: "api-automation"
 
-# Service-account token reconciled by the bootstrap blueprint import.
+# Source-of-truth bearer token for Authentik API automation. This role does
+# not use /core/users/service_account/ for steady-state auth because that
+# endpoint returns a generated APP_PASSWORD token, not this known API token.
 authentik_config_api_token: "{{ authentik_api_token }}"
 
 # Grafana OAuth2 provider configuration
