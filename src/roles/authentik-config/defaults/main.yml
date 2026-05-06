@@ -3,11 +3,10 @@ authentik_config_ready_url: "{{ authentik_config_url }}/-/health/ready/"
 authentik_config_info_url: "{{ authentik_config_url }}/api/v3/root/config/"
 authentik_config_api_base_url: "{{ authentik_config_url }}/api/v3"
 authentik_config_validate_certs: true
-authentik_config_bootstrap_username: "{{ authentik_admin_user }}"
-authentik_config_bootstrap_password: "{{ authentik_admin_password }}"
-authentik_config_login_script: "{{ role_path }}/files/authentik_login.py"
+authentik_config_bootstrap_token: "{{ authentik_bootstrap_token }}"
 authentik_config_service_account_blueprint_name: "service-account-api"
 authentik_config_service_account_blueprint_template: "blueprint-service-account.yaml.j2"
+authentik_config_service_account_username: "api-automation"
 
 # Service-account token reconciled by the bootstrap blueprint import.
 authentik_config_api_token: "{{ authentik_api_token }}"
