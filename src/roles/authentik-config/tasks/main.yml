@@ -41,7 +41,7 @@
 - name: Check whether the service-account token already works
   delegate_to: localhost
   ansible.builtin.uri:
-    url: "{{ authentik_config_api_base_url }}/root/config/"
+    url: "{{ authentik_config_api_base_url }}/core/users/me/"
     method: GET
     headers:
       Authorization: "Bearer {{ authentik_config_api_token }}"
@@ -64,7 +64,7 @@
     - name: Check whether the bootstrap token can repair the missing service-account token
       delegate_to: localhost
       ansible.builtin.uri:
-        url: "{{ authentik_config_api_base_url }}/root/config/"
+        url: "{{ authentik_config_api_base_url }}/core/users/me/"
         method: GET
         headers:
           Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
@@ -100,7 +100,7 @@
 - name: Verify API token through Blueprint service account
   delegate_to: localhost
   ansible.builtin.uri:
-    url: "{{ authentik_config_api_base_url }}/root/config/"
+    url: "{{ authentik_config_api_base_url }}/core/users/me/"
     method: GET
     headers:
       Authorization: "Bearer {{ authentik_config_api_token }}"
