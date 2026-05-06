@@ -7,6 +7,7 @@ authentik_config_bootstrap_token: "{{ authentik_bootstrap_token }}"
 authentik_config_service_account_blueprint_name: "service-account-api"
 authentik_config_service_account_blueprint_template: "blueprint-service-account.yaml.j2"
 authentik_config_service_account_username: "api-automation"
+authentik_config_admin_recovery_flow_slug: "default-authentication-flow"
 
 # Source-of-truth bearer token for Authentik API automation. This role does
 # not use /core/users/service_account/ for steady-state auth because that

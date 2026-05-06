@@ -100,6 +100,7 @@
               - "{{ authentik_config_api_base_url }}"
               - "{{ authentik_admin_user }}"
               - "{{ authentik_admin_password }}"
+              - "{{ authentik_config_admin_recovery_flow_slug }}"
           register: authentik_config_admin_login
           failed_when: false
           changed_when: false
