@@ -4,6 +4,18 @@ authentik_config_info_url: "{{ authentik_config_url }}/api/v3/root/config/"
 authentik_config_api_base_url: "{{ authentik_config_url }}/api/v3"
 authentik_config_validate_certs: true
 authentik_config_bootstrap_token: "{{ authentik_bootstrap_token }}"
+authentik_config_bootstrap_username: "akadmin"
+authentik_config_primary_admin_username: "{{ authentik_admin_user }}"
+authentik_config_primary_admin_password: "{{ authentik_admin_password }}"
+authentik_config_primary_admin_name: "Authentik Admin"
+authentik_config_primary_admin_email: >-
+  {{
+    authentik_admin_email
+    | default(authentik_admin_user if ('@' in authentik_admin_user) else '')
+  }}
+authentik_config_primary_admin_path: "users"
+authentik_config_primary_admin_blueprint_name: "primary-admin"
+authentik_config_primary_admin_blueprint_template: "blueprint-primary-admin.yaml.j2"
 authentik_config_service_account_blueprint_name: "service-account-api"
 authentik_config_service_account_blueprint_template: "blueprint-service-account.yaml.j2"
 authentik_config_service_account_username: "api-automation"

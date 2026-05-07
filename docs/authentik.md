@@ -59,14 +59,25 @@ Important paths:
 
 The NixOS module consumes these secrets and writes them into the Authentik env file:
 
-- `authentik_admin_user`
-- `authentik_admin_password`
+- `authentik_bootstrap_password`
+- `authentik_bootstrap_email`
 - `authentik_bootstrap_token`
 - `authentik_api_token`
 - `authentik_postgresql_password`
 - `authentik_secret_key`
 - `grafana_authentik_client_id`
 - `grafana_authentik_client_secret`
+
+The controller-side `authentik-config` role separately consumes these persisted
+recovery credentials:
+
+- `authentik_admin_user`
+- `authentik_admin_password`
+
+That split is intentional. Upstream Authentik bootstrap settings only seed the
+default `akadmin` account on first startup. The repo's managed human admin
+account is reconciled later over the API and must not be conflated with the
+bootstrap password/token path.
 
 ### Blueprint directory behavior
 
@@ -86,8 +97,10 @@ The normal deployment flow is:
 1. The `nixos` role installs or updates the NixOS system and Authentik containers.
 2. Authentik becomes reachable on `https://identity.net.scetrov.live`.
 3. The `authentik-config` role waits for readiness.
-4. The `authentik-config` role reconciles the automation service account and durable API token.
-5. The same role configures Grafana OAuth provider, application, and entitlements.
+4. The `authentik-config` role reconciles the managed human admin account.
+5. The same role reconciles the automation service account and durable API token.
+6. Once both are healthy, the same role disables the upstream bootstrap account.
+7. The same role configures Grafana OAuth provider, application, and entitlements.
 
 ## Repository Defaults
 
@@ -99,7 +112,10 @@ Important values:
 - API base URL: `https://identity.net.scetrov.live/api/v3`
 - readiness URL: `https://identity.net.scetrov.live/-/health/ready/`
 - unauthenticated config probe: `https://identity.net.scetrov.live/api/v3/root/config/`
+- upstream bootstrap username: `akadmin`
+- managed human admin username: `authentik_admin_user`
 - automation username: `api-automation`
+- primary-admin blueprint name: `primary-admin`
 - service-account blueprint name: `service-account-api`
 - Grafana application slug: `grafana`
 
@@ -109,22 +125,26 @@ This repo treats the vaulted `authentik_api_token` as the source-of-truth token 
 
 That means steady-state automation does not accept a generated token from Authentik. Instead, the role ensures that the token inside Authentik matches the pre-existing vaulted secret exactly.
 
-The working sequence is:
+Upstream Authentik only documents bootstrap settings for the default `akadmin`
+account on first startup. There is no repo-supported bootstrap username
+override. The working sequence is therefore:
 
-1. Check whether the vaulted `authentik_api_token` already works against `/api/v3/core/users/me/`.
-2. If not, check whether `AUTHENTIK_BOOTSTRAP_TOKEN` still works.
-3. If bootstrap still works:
-   create the service-account user through `/api/v3/core/users/service_account/`
-   then apply a managed blueprint that grants admin-group membership and sets the exact token key
-4. If bootstrap no longer works:
-   recover an authenticated browser session with the persisted admin credentials via the flow executor
-   then create the same service-account user through `/api/v3/core/users/service_account/`
-   then apply the same managed blueprint over that session
-5. Re-verify the vaulted `authentik_api_token` against `/api/v3/core/users/me/`.
+1. The NixOS module seeds `AUTHENTIK_BOOTSTRAP_PASSWORD`, optional `AUTHENTIK_BOOTSTRAP_EMAIL`, and `AUTHENTIK_BOOTSTRAP_TOKEN` for Authentik's upstream bootstrap path.
+2. The role checks whether the durable `authentik_api_token` already works against `/api/v3/core/users/me/`.
+3. If it does not, the role resolves repair auth in this order: bootstrap token, then persisted managed-admin login.
+4. With whichever repair credential works, the role reconciles the managed human admin account and verifies that account can log in through the flow executor.
+5. If the durable automation token is still missing, the role creates the `api-automation` service-account user through `/api/v3/core/users/service_account/` and applies a managed blueprint that grants admin-group membership and sets the exact token key.
+6. The role re-verifies the vaulted `authentik_api_token` against `/api/v3/core/users/me/`.
+7. Only after both the managed admin login and durable automation token work does the role disable the upstream bootstrap account.
 
 This hybrid approach is deliberate.
 
 The service-account creation action is used only to create the user. The deterministic token key still has to be reconciled through a blueprint because the service-account API generates a token rather than accepting a caller-supplied API key.
+
+The managed human admin account is also deliberate. In this repo, that account
+is the expected steady-state recovery login. The upstream `akadmin` account is
+treated as a first-boot bootstrap artifact, not the long-term administrator
+identity.
 
 ## Proven API Surface
 

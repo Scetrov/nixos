@@ -4,6 +4,8 @@
     that:
       - authentik_config_url | length > 0
       - authentik_config_api_token | length > 0
+      - authentik_config_primary_admin_username | length > 0
+      - authentik_config_primary_admin_password | length > 0
       - authentik_config_grafana_client_id | length > 0
       - authentik_config_grafana_client_secret | length > 0
     quiet: true
@@ -55,10 +57,28 @@
   changed_when: false
   no_log: true
 
-- name: Bootstrap the service-account token when it is missing
+- name: Initialize Authentik repair credential facts
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    authentik_config_repair_api_token: ""
+    authentik_config_repair_cookie_header: ""
+    authentik_config_repair_csrf_token: ""
+    authentik_config_repair_auth_source: ""
+    authentik_config_primary_admin_session: {}
+  no_log: true
+
+- name: Select the durable service-account token as the Authentik repair credential
+  when: authentik_config_service_account_token_check.status | default(0) == 200
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    authentik_config_repair_api_token: "{{ authentik_config_api_token }}"
+    authentik_config_repair_auth_source: "service-account-token"
+  no_log: true
+
+- name: Resolve Authentik repair credentials when the durable service-account token is missing
   when: authentik_config_service_account_token_check.status | default(0) != 200
   block:
-    - name: Check whether the bootstrap token can repair the missing service-account token
+    - name: Check whether the bootstrap token can repair Authentik state
       when: authentik_config_bootstrap_token | length > 0
       delegate_to: localhost
       ansible.builtin.uri:
@@ -73,45 +93,22 @@
       changed_when: false
       no_log: true
 
-    - name: Import the service-account blueprint with the bootstrap token
+    - name: Select the bootstrap token as the Authentik repair credential
       when: authentik_config_bootstrap_token_check.status | default(0) == 200
-      block:
-        - name: Ensure the Authentik automation service account exists with the bootstrap token
-          delegate_to: localhost
-          ansible.builtin.uri:
-            url: "{{ authentik_config_api_base_url }}/core/users/service_account/"
-            method: POST
-            headers:
-              Authorization: "Bearer {{ authentik_config_bootstrap_token }}"
-            body_format: json
-            body:
-              name: "{{ authentik_config_service_account_username }}"
-              create_group: false
-              expiring: false
-            validate_certs: "{{ authentik_config_validate_certs }}"
-            status_code:
-              - 200
-              - 400
-          register: authentik_config_service_account_bootstrap_create
-          failed_when: >-
-            authentik_config_service_account_bootstrap_create.status not in [200, 400]
-          changed_when: authentik_config_service_account_bootstrap_create.status == 200
-          no_log: true
+      delegate_to: localhost
+      ansible.builtin.set_fact:
+        authentik_config_repair_api_token: "{{ authentik_config_bootstrap_token }}"
+        authentik_config_repair_auth_source: "bootstrap-token"
+      no_log: true
 
-        - ansible.builtin.include_tasks: deploy-blueprint.yml
-          vars:
-            authentik_config_blueprint_api_token: "{{ authentik_config_bootstrap_token }}"
-            authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
-            authentik_config_blueprint_template: "{{ authentik_config_service_account_blueprint_template }}"
-
-    - name: Recover the service-account token with the persisted admin account
+    - name: Recover an Authentik admin session for repair work
       when: authentik_config_bootstrap_token_check.status | default(0) != 200
       block:
         - name: Assert Authentik admin recovery credentials are defined
           ansible.builtin.assert:
             that:
-              - authentik_admin_user | length > 0
-              - authentik_admin_password | length > 0
+              - authentik_config_primary_admin_username | length > 0
+              - authentik_config_primary_admin_password | length > 0
             quiet: true
 
         - name: Log in with the persisted Authentik admin account
@@ -121,8 +118,8 @@
               - "{{ ansible_playbook_python }}"
               - "{{ role_path }}/files/authentik_login.py"
               - "{{ authentik_config_api_base_url }}"
-              - "{{ authentik_admin_user }}"
-              - "{{ authentik_admin_password }}"
+              - "{{ authentik_config_primary_admin_username }}"
+              - "{{ authentik_config_primary_admin_password }}"
               - "{{ authentik_config_admin_recovery_flow_slug }}"
           register: authentik_config_admin_login
           failed_when: false
@@ -133,7 +130,7 @@
           when: authentik_config_admin_login.rc != 0
           delegate_to: localhost
           ansible.builtin.set_fact:
-            authentik_config_admin_login_error: >-
+            authentik_config_repair_admin_login_error: >-
               {{
                 (
                   authentik_config_admin_login.stderr
@@ -150,54 +147,143 @@
           ansible.builtin.fail:
             msg: >-
               Authentik admin recovery login failed.
-              This role uses blueprint reconciliation because Authentik's
-              /core/users/service_account/ endpoint returns a generated
-              APP_PASSWORD token rather than accepting a known API token key.
-              {{ authentik_config_admin_login_error.error | default('Unknown login error') }}
-              {% if authentik_config_admin_login_error.body is defined %}
-              Response: {{ authentik_config_admin_login_error.body | regex_replace('\\s+', ' ') | truncate(240, true) }}
+              {{ authentik_config_repair_admin_login_error.error | default('Unknown login error') }}
+              {% if authentik_config_repair_admin_login_error.body is defined %}
+              Response: {{ authentik_config_repair_admin_login_error.body | regex_replace('\\s+', ' ') | truncate(240, true) }}
               {% endif %}
 
         - name: Parse the Authentik admin session details
           when: authentik_config_admin_login.rc == 0
           delegate_to: localhost
           ansible.builtin.set_fact:
-            authentik_config_admin_session: "{{ authentik_config_admin_login.stdout | from_json }}"
+            authentik_config_repair_cookie_header: "{{ (authentik_config_admin_login.stdout | from_json).cookie_header }}"
+            authentik_config_repair_csrf_token: "{{ (authentik_config_admin_login.stdout | from_json).csrf_token }}"
+            authentik_config_repair_auth_source: "admin-session"
           no_log: true
 
-        - name: Import the service-account blueprint with the persisted Authentik admin session
-          when: authentik_config_admin_login.rc == 0
-          block:
-            - name: Ensure the Authentik automation service account exists with the persisted admin session
-              delegate_to: localhost
-              ansible.builtin.uri:
-                url: "{{ authentik_config_api_base_url }}/core/users/service_account/"
-                method: POST
-                headers:
-                  Cookie: "{{ authentik_config_admin_session.cookie_header }}"
-                  X-CSRFToken: "{{ authentik_config_admin_session.csrf_token }}"
-                body_format: json
-                body:
-                  name: "{{ authentik_config_service_account_username }}"
-                  create_group: false
-                  expiring: false
-                validate_certs: "{{ authentik_config_validate_certs }}"
-                status_code:
-                  - 200
-                  - 400
-              register: authentik_config_service_account_session_create
-              failed_when: >-
-                authentik_config_service_account_session_create.status not in [200, 400]
-              changed_when: authentik_config_service_account_session_create.status == 200
-              no_log: true
+- name: Assert Authentik repair credentials were resolved
+  delegate_to: localhost
+  ansible.builtin.assert:
+    that:
+      - >-
+        (authentik_config_repair_api_token | default('') | length > 0)
+        or (authentik_config_repair_cookie_header | default('') | length > 0)
+    quiet: true
 
-            - ansible.builtin.include_tasks: deploy-blueprint.yml
-              vars:
-                authentik_config_blueprint_api_token: ""
-                authentik_config_blueprint_cookie_header: "{{ authentik_config_admin_session.cookie_header }}"
-                authentik_config_blueprint_csrf_token: "{{ authentik_config_admin_session.csrf_token }}"
-                authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
-                authentik_config_blueprint_template: "{{ authentik_config_service_account_blueprint_template }}"
+- name: Reconcile the managed Authentik admin account
+  ansible.builtin.include_tasks: deploy-blueprint.yml
+  vars:
+    authentik_config_blueprint_api_token: "{{ authentik_config_repair_api_token }}"
+    authentik_config_blueprint_cookie_header: "{{ authentik_config_repair_cookie_header }}"
+    authentik_config_blueprint_csrf_token: "{{ authentik_config_repair_csrf_token }}"
+    authentik_config_blueprint_name: "{{ authentik_config_primary_admin_blueprint_name }}"
+    authentik_config_blueprint_template: "{{ authentik_config_primary_admin_blueprint_template }}"
+
+- name: Verify the managed Authentik admin account can log in
+  delegate_to: localhost
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_playbook_python }}"
+      - "{{ role_path }}/files/authentik_login.py"
+      - "{{ authentik_config_api_base_url }}"
+      - "{{ authentik_config_primary_admin_username }}"
+      - "{{ authentik_config_primary_admin_password }}"
+      - "{{ authentik_config_admin_recovery_flow_slug }}"
+  register: authentik_config_primary_admin_login
+  failed_when: false
+  changed_when: false
+  no_log: true
+
+- name: Parse the managed Authentik admin login failure details
+  when: authentik_config_primary_admin_login.rc != 0
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    authentik_config_primary_admin_login_error: >-
+      {{
+        (
+          authentik_config_primary_admin_login.stderr
+          if (authentik_config_primary_admin_login.stderr | default('') | trim | regex_search('^\s*\{'))
+          else authentik_config_primary_admin_login.stdout
+        )
+        | from_json
+      }}
+  failed_when: false
+  no_log: true
+
+- name: Fail when the managed Authentik admin login does not work
+  when: authentik_config_primary_admin_login.rc != 0
+  ansible.builtin.fail:
+    msg: >-
+      Managed Authentik admin login failed after reconciliation.
+      {{ authentik_config_primary_admin_login_error.error | default('Unknown login error') }}
+      {% if authentik_config_primary_admin_login_error.body is defined %}
+      Response: {{ authentik_config_primary_admin_login_error.body | regex_replace('\\s+', ' ') | truncate(240, true) }}
+      {% endif %}
+
+- name: Parse the managed Authentik admin session details
+  when: authentik_config_primary_admin_login.rc == 0
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    authentik_config_primary_admin_session: "{{ authentik_config_primary_admin_login.stdout | from_json }}"
+  no_log: true
+
+- name: Repair the service-account token when it is missing
+  when: authentik_config_service_account_token_check.status | default(0) != 200
+  block:
+    - name: Ensure the Authentik automation service account exists with the resolved repair token
+      when: authentik_config_repair_api_token | default('') | length > 0
+      delegate_to: localhost
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/users/service_account/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_config_repair_api_token }}"
+        body_format: json
+        body:
+          name: "{{ authentik_config_service_account_username }}"
+          create_group: false
+          expiring: false
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 400
+      register: authentik_config_service_account_repair_create
+      failed_when: >-
+        authentik_config_service_account_repair_create.status not in [200, 400]
+      changed_when: authentik_config_service_account_repair_create.status == 200
+      no_log: true
+
+    - name: Ensure the Authentik automation service account exists with the managed admin session
+      when: authentik_config_repair_api_token | default('') | length == 0
+      delegate_to: localhost
+      ansible.builtin.uri:
+        url: "{{ authentik_config_api_base_url }}/core/users/service_account/"
+        method: POST
+        headers:
+          Cookie: "{{ authentik_config_primary_admin_session.cookie_header }}"
+          X-CSRFToken: "{{ authentik_config_primary_admin_session.csrf_token }}"
+        body_format: json
+        body:
+          name: "{{ authentik_config_service_account_username }}"
+          create_group: false
+          expiring: false
+        validate_certs: "{{ authentik_config_validate_certs }}"
+        status_code:
+          - 200
+          - 400
+      register: authentik_config_service_account_session_create
+      failed_when: >-
+        authentik_config_service_account_session_create.status not in [200, 400]
+      changed_when: authentik_config_service_account_session_create.status == 200
+      no_log: true
+
+    - ansible.builtin.include_tasks: deploy-blueprint.yml
+      vars:
+        authentik_config_blueprint_api_token: "{{ authentik_config_repair_api_token }}"
+        authentik_config_blueprint_cookie_header: "{{ authentik_config_primary_admin_session.cookie_header | default('') }}"
+        authentik_config_blueprint_csrf_token: "{{ authentik_config_primary_admin_session.csrf_token | default('') }}"
+        authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
+        authentik_config_blueprint_template: "{{ authentik_config_service_account_blueprint_template }}"
 
 - name: Verify API token through Blueprint service account
   delegate_to: localhost
@@ -208,6 +294,39 @@
       Authorization: "Bearer {{ authentik_config_api_token }}"
     validate_certs: "{{ authentik_config_validate_certs }}"
     status_code: 200
+  no_log: true
+
+- name: Look up the bootstrap Authentik admin account
+  when: authentik_config_bootstrap_username != authentik_config_primary_admin_username
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/core/users/?username={{ authentik_config_bootstrap_username | urlencode }}&page_size=100"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code: 200
+  register: authentik_config_bootstrap_user_lookup
+  no_log: true
+
+- name: Disable the bootstrap Authentik admin account
+  when:
+    - authentik_config_bootstrap_username != authentik_config_primary_admin_username
+    - authentik_config_bootstrap_user_lookup.json.results | default([]) | length > 0
+    - authentik_config_bootstrap_user_lookup.json.results[0].is_active | default(true)
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/core/users/{{ authentik_config_bootstrap_user_lookup.json.results[0].pk }}/"
+    method: PATCH
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    body_format: json
+    body:
+      is_active: false
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code:
+      - 200
+      - 202
   no_log: true
 
 # ── Look up managed OAuth scope mappings (provisioned by Blueprint) ────

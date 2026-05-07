@@ -11,6 +11,8 @@ let
 in
 {
   "authentik_admin_user.age".publicKeys = users ++ systems;
+  "authentik_bootstrap_password.age".publicKeys = users ++ systems;
+  "authentik_bootstrap_email.age".publicKeys = users ++ systems;
   "authentik_bootstrap_token.age".publicKeys = users ++ systems;
   "authentik_api_token.age".publicKeys = users ++ systems;
   "authentik_admin_password.age".publicKeys = users ++ systems;

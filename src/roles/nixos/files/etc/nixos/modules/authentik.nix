@@ -10,6 +10,8 @@ let
   authentikSecretFiles = [
     "/root/secrets/authentik_admin_user.age"
     "/root/secrets/authentik_admin_password.age"
+    "/root/secrets/authentik_bootstrap_password.age"
+    "/root/secrets/authentik_bootstrap_email.age"
     "/root/secrets/authentik_bootstrap_token.age"
     "/root/secrets/authentik_api_token.age"
     "/root/secrets/authentik_postgresql_password.age"
@@ -30,7 +32,8 @@ let
     export AUTHENTIK_ENV_FILE=${authentikEnvFile}
     export AUTHENTIK_SECRET_KEY_FILE=${config.age.secrets.authentik_secret_key.path}
     export AUTHENTIK_POSTGRESQL_PASSWORD_FILE=${config.age.secrets.authentik_postgresql_password.path}
-    export AUTHENTIK_BOOTSTRAP_PASSWORD_FILE=${config.age.secrets.authentik_admin_password.path}
+    export AUTHENTIK_BOOTSTRAP_PASSWORD_FILE=${config.age.secrets.authentik_bootstrap_password.path}
+    export AUTHENTIK_BOOTSTRAP_EMAIL_FILE=${config.age.secrets.authentik_bootstrap_email.path}
     export AUTHENTIK_BOOTSTRAP_TOKEN_FILE=${config.age.secrets.authentik_bootstrap_token.path}
 
     # --- Write the environment file ---
@@ -57,6 +60,7 @@ entries = {
     "AUTHENTIK_BLUEPRINTS_DIR": "/blueprints",
     "AUTHENTIK_POSTGRESQL__PASSWORD": read_secret("AUTHENTIK_POSTGRESQL__PASSWORD", "AUTHENTIK_POSTGRESQL_PASSWORD_FILE"),
     "AUTHENTIK_BOOTSTRAP_PASSWORD": read_secret("AUTHENTIK_BOOTSTRAP_PASSWORD", "AUTHENTIK_BOOTSTRAP_PASSWORD_FILE"),
+    "AUTHENTIK_BOOTSTRAP_EMAIL": read_secret("AUTHENTIK_BOOTSTRAP_EMAIL", "AUTHENTIK_BOOTSTRAP_EMAIL_FILE"),
     "AUTHENTIK_BOOTSTRAP_TOKEN": read_secret("AUTHENTIK_BOOTSTRAP_TOKEN", "AUTHENTIK_BOOTSTRAP_TOKEN_FILE"),
     "AUTHENTIK_SECRET_KEY": read_secret("AUTHENTIK_SECRET_KEY", "AUTHENTIK_SECRET_KEY_FILE"),
 }
@@ -143,6 +147,20 @@ in
 
       age.secrets.authentik_admin_password = {
         file = /root/secrets/authentik_admin_password.age;
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+
+      age.secrets.authentik_bootstrap_password = {
+        file = /root/secrets/authentik_bootstrap_password.age;
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+
+      age.secrets.authentik_bootstrap_email = {
+        file = /root/secrets/authentik_bootstrap_email.age;
         owner = "root";
         group = "root";
         mode = "0400";
@@ -260,7 +278,7 @@ in
             "${templatesDir}:/blueprints/custom:U"
             "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
-            "${config.age.secrets.authentik_admin_password.path}:${config.age.secrets.authentik_admin_password.path}:ro"
+            "${config.age.secrets.authentik_bootstrap_password.path}:${config.age.secrets.authentik_bootstrap_password.path}:ro"
             "${config.age.secrets.authentik_api_token.path}:${config.age.secrets.authentik_api_token.path}:ro"
             "${config.age.secrets.authentik_bootstrap_token.path}:${config.age.secrets.authentik_bootstrap_token.path}:ro"
           ];
@@ -277,7 +295,7 @@ in
             "${templatesDir}:/blueprints/custom:U"
             "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
-            "${config.age.secrets.authentik_admin_password.path}:${config.age.secrets.authentik_admin_password.path}:ro"
+            "${config.age.secrets.authentik_bootstrap_password.path}:${config.age.secrets.authentik_bootstrap_password.path}:ro"
             "${config.age.secrets.authentik_api_token.path}:${config.age.secrets.authentik_api_token.path}:ro"
             "${config.age.secrets.authentik_bootstrap_token.path}:${config.age.secrets.authentik_bootstrap_token.path}:ro"
           ];

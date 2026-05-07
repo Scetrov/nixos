@@ -1,0 +1,23 @@
+# Blueprint: primary-admin
+#
+# Created by Ansible template deployment. Authentik imports this through
+# the API to create or update the managed human admin account that should be
+# used for steady-state recovery instead of the upstream bootstrap account.
+#
+version: 1
+metadata:
+  name: primary-admin
+entries:
+  - model: authentik_core.user
+    id: primary-admin-user
+    identifiers:
+      username: "{{ authentik_config_primary_admin_username }}"
+    attrs:
+      name: "{{ authentik_config_primary_admin_name }}"
+      email: "{{ authentik_config_primary_admin_email }}"
+      is_active: true
+      path: "{{ authentik_config_primary_admin_path }}"
+      type: internal
+      password: "{{ authentik_config_primary_admin_password }}"
+      groups:
+        - !Find [authentik_core.group, [name, authentik Admins]]
