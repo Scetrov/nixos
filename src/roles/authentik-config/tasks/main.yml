@@ -104,6 +104,47 @@
     - name: Recover an Authentik admin session for repair work
       when: authentik_config_bootstrap_token_check.status | default(0) != 200
       block:
+        - name: Probe whether Authentik setup is still open
+          delegate_to: localhost
+          ansible.builtin.uri:
+            url: "{{ authentik_config_setup_url }}"
+            method: HEAD
+            validate_certs: "{{ authentik_config_validate_certs }}"
+            status_code:
+              - 200
+              - 503
+          register: authentik_config_setup_probe
+          failed_when: false
+          changed_when: false
+
+        - name: Wait for the configured Authentik recovery flow page
+          when: authentik_config_setup_probe.status | default(0) != 200
+          delegate_to: localhost
+          ansible.builtin.uri:
+            url: "{{ authentik_config_url }}/if/flow/{{ authentik_config_admin_recovery_flow_slug | urlencode }}/"
+            method: GET
+            validate_certs: "{{ authentik_config_validate_certs }}"
+            status_code:
+              - 200
+              - 302
+              - 303
+          register: authentik_config_recovery_flow_probe
+          failed_when: false
+          changed_when: false
+          until: authentik_config_recovery_flow_probe.status | default(0) in [200, 302, 303]
+          retries: 60
+          delay: 5
+
+        - name: Fail when Authentik is still waiting for initial setup
+          when: authentik_config_setup_probe.status | default(0) == 200
+          ansible.builtin.fail:
+            msg: >-
+              Authentik is still exposing the upstream setup endpoint at {{ authentik_config_setup_url }},
+              so the recovery flow {{ authentik_config_admin_recovery_flow_slug }} is not yet usable.
+              This means first-boot setup has not completed on the instance. Ensure the bootstrap
+              environment variables were applied on the first start or complete the initial setup flow
+              before relying on session-based recovery.
+
         - name: Assert Authentik bootstrap recovery credentials are defined
           ansible.builtin.assert:
             that:

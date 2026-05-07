@@ -1,6 +1,7 @@
 authentik_config_url: "https://identity.net.scetrov.live"
 authentik_config_ready_url: "{{ authentik_config_url }}/-/health/ready/"
 authentik_config_info_url: "{{ authentik_config_url }}/api/v3/root/config/"
+authentik_config_setup_url: "{{ authentik_config_url }}/setup"
 authentik_config_api_base_url: "{{ authentik_config_url }}/api/v3"
 authentik_config_validate_certs: true
 authentik_config_bootstrap_token: "{{ authentik_bootstrap_token }}"
