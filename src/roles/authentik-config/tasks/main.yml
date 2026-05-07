@@ -263,10 +263,63 @@
         or (authentik_config_repair_cookie_header | default('') | length > 0)
     quiet: true
 
+- name: Recover a bootstrap Authentik session for managed blueprint work
+  when: authentik_config_repair_auth_source == 'bootstrap-token'
+  block:
+    - name: Log in with the upstream Authentik bootstrap account for blueprint work
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ role_path }}/files/authentik_login.py"
+          - "{{ authentik_config_api_base_url }}"
+          - "{{ authentik_config_bootstrap_username }}"
+          - "{{ authentik_config_bootstrap_password }}"
+          - "{{ authentik_config_admin_recovery_flow_slug }}"
+      register: authentik_config_bootstrap_blueprint_login
+      failed_when: false
+      changed_when: false
+      no_log: true
+
+    - name: Parse the Authentik bootstrap blueprint login failure details
+      when: authentik_config_bootstrap_blueprint_login.rc != 0
+      delegate_to: localhost
+      ansible.builtin.set_fact:
+        authentik_config_bootstrap_blueprint_login_error: >-
+          {{
+            (
+              authentik_config_bootstrap_blueprint_login.stderr
+              if (authentik_config_bootstrap_blueprint_login.stderr | default('') | trim | regex_search('^\s*\{'))
+              else authentik_config_bootstrap_blueprint_login.stdout
+            )
+            | from_json
+          }}
+      failed_when: false
+      no_log: true
+
+    - name: Fail when the bootstrap account cannot open a blueprint-management session
+      when: authentik_config_bootstrap_blueprint_login.rc != 0
+      ansible.builtin.fail:
+        msg: >-
+          Authentik bootstrap session recovery failed while preparing managed blueprint access.
+          {{ authentik_config_bootstrap_blueprint_login_error.error | default('Unknown login error') }}
+          {% if authentik_config_bootstrap_blueprint_login_error.body is defined %}
+          Response: {{ authentik_config_bootstrap_blueprint_login_error.body | regex_replace('\\s+', ' ') | truncate(240, true) }}
+          {% endif %}
+
+    - name: Parse the Authentik bootstrap session details for blueprint work
+      when: authentik_config_bootstrap_blueprint_login.rc == 0
+      delegate_to: localhost
+      ansible.builtin.set_fact:
+        authentik_config_repair_cookie_header: "{{ (authentik_config_bootstrap_blueprint_login.stdout | from_json).cookie_header }}"
+        authentik_config_repair_csrf_token: "{{ (authentik_config_bootstrap_blueprint_login.stdout | from_json).csrf_token }}"
+      no_log: true
+
 - name: Reconcile the managed Authentik admin account
   ansible.builtin.include_tasks: deploy-blueprint.yml
   vars:
-    authentik_config_blueprint_api_token: "{{ authentik_config_repair_api_token }}"
+    authentik_config_blueprint_api_token: >-
+      {{ authentik_config_repair_api_token if authentik_config_repair_auth_source != 'bootstrap-token' else '' }}
     authentik_config_blueprint_cookie_header: "{{ authentik_config_repair_cookie_header }}"
     authentik_config_blueprint_csrf_token: "{{ authentik_config_repair_csrf_token }}"
     authentik_config_blueprint_name: "{{ authentik_config_primary_admin_blueprint_name }}"
@@ -372,7 +425,8 @@
 
     - ansible.builtin.include_tasks: deploy-blueprint.yml
       vars:
-        authentik_config_blueprint_api_token: "{{ authentik_config_repair_api_token }}"
+        authentik_config_blueprint_api_token: >-
+          {{ authentik_config_repair_api_token if authentik_config_repair_auth_source != 'bootstrap-token' else '' }}
         authentik_config_blueprint_cookie_header: "{{ authentik_config_primary_admin_session.cookie_header | default('') }}"
         authentik_config_blueprint_csrf_token: "{{ authentik_config_primary_admin_session.csrf_token | default('') }}"
         authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
