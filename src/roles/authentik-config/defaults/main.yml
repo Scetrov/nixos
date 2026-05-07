@@ -5,6 +5,7 @@ authentik_config_api_base_url: "{{ authentik_config_url }}/api/v3"
 authentik_config_validate_certs: true
 authentik_config_bootstrap_token: "{{ authentik_bootstrap_token }}"
 authentik_config_bootstrap_username: "akadmin"
+authentik_config_bootstrap_password: "{{ authentik_bootstrap_password | default(authentik_admin_password) }}"
 authentik_config_primary_admin_username: "{{ authentik_admin_user }}"
 authentik_config_primary_admin_password: "{{ authentik_admin_password }}"
 authentik_config_primary_admin_name: "Authentik Admin"

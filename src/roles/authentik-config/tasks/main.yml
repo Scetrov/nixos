@@ -104,14 +104,46 @@
     - name: Recover an Authentik admin session for repair work
       when: authentik_config_bootstrap_token_check.status | default(0) != 200
       block:
-        - name: Assert Authentik admin recovery credentials are defined
+        - name: Assert Authentik bootstrap recovery credentials are defined
           ansible.builtin.assert:
             that:
-              - authentik_config_primary_admin_username | length > 0
-              - authentik_config_primary_admin_password | length > 0
+              - authentik_config_bootstrap_username | length > 0
+              - authentik_config_bootstrap_password | length > 0
             quiet: true
 
-        - name: Log in with the persisted Authentik admin account
+        - name: Log in with the upstream Authentik bootstrap account
+          delegate_to: localhost
+          ansible.builtin.command:
+            argv:
+              - "{{ ansible_playbook_python }}"
+              - "{{ role_path }}/files/authentik_login.py"
+              - "{{ authentik_config_api_base_url }}"
+              - "{{ authentik_config_bootstrap_username }}"
+              - "{{ authentik_config_bootstrap_password }}"
+              - "{{ authentik_config_admin_recovery_flow_slug }}"
+          register: authentik_config_bootstrap_login
+          failed_when: false
+          changed_when: false
+          no_log: true
+
+        - name: Parse the Authentik bootstrap login failure details
+          when: authentik_config_bootstrap_login.rc != 0
+          delegate_to: localhost
+          ansible.builtin.set_fact:
+            authentik_config_bootstrap_login_error: >-
+              {{
+                (
+                  authentik_config_bootstrap_login.stderr
+                  if (authentik_config_bootstrap_login.stderr | default('') | trim | regex_search('^\s*\{'))
+                  else authentik_config_bootstrap_login.stdout
+                )
+                | from_json
+              }}
+          failed_when: false
+          no_log: true
+
+        - name: Log in with the managed Authentik admin account when bootstrap recovery fails
+          when: authentik_config_bootstrap_login.rc != 0
           delegate_to: localhost
           ansible.builtin.command:
             argv:
@@ -126,8 +158,10 @@
           changed_when: false
           no_log: true
 
-        - name: Parse the Authentik admin login failure details
-          when: authentik_config_admin_login.rc != 0
+        - name: Parse the managed Authentik admin login failure details
+          when:
+            - authentik_config_bootstrap_login.rc != 0
+            - authentik_config_admin_login.rc != 0
           delegate_to: localhost
           ansible.builtin.set_fact:
             authentik_config_repair_admin_login_error: >-
@@ -142,18 +176,36 @@
           failed_when: false
           no_log: true
 
-        - name: Fail with a sanitized Authentik admin recovery error
-          when: authentik_config_admin_login.rc != 0
+        - name: Fail with sanitized Authentik recovery errors
+          when:
+            - authentik_config_bootstrap_login.rc != 0
+            - authentik_config_admin_login.rc != 0
           ansible.builtin.fail:
             msg: >-
-              Authentik admin recovery login failed.
-              {{ authentik_config_repair_admin_login_error.error | default('Unknown login error') }}
+              Authentik recovery login failed for both the bootstrap account {{ authentik_config_bootstrap_username }}
+              and the managed admin account {{ authentik_config_primary_admin_username }}.
+              Bootstrap error: {{ authentik_config_bootstrap_login_error.error | default('Unknown login error') }}.
+              {% if authentik_config_bootstrap_login_error.body is defined %}
+              Bootstrap response: {{ authentik_config_bootstrap_login_error.body | regex_replace('\\s+', ' ') | truncate(200, true) }}.
+              {% endif %}
+              Managed admin error: {{ authentik_config_repair_admin_login_error.error | default('Unknown login error') }}.
               {% if authentik_config_repair_admin_login_error.body is defined %}
-              Response: {{ authentik_config_repair_admin_login_error.body | regex_replace('\\s+', ' ') | truncate(240, true) }}
+              Managed admin response: {{ authentik_config_repair_admin_login_error.body | regex_replace('\\s+', ' ') | truncate(200, true) }}.
               {% endif %}
 
-        - name: Parse the Authentik admin session details
-          when: authentik_config_admin_login.rc == 0
+        - name: Parse the Authentik bootstrap session details
+          when: authentik_config_bootstrap_login.rc == 0
+          delegate_to: localhost
+          ansible.builtin.set_fact:
+            authentik_config_repair_cookie_header: "{{ (authentik_config_bootstrap_login.stdout | from_json).cookie_header }}"
+            authentik_config_repair_csrf_token: "{{ (authentik_config_bootstrap_login.stdout | from_json).csrf_token }}"
+            authentik_config_repair_auth_source: "bootstrap-session"
+          no_log: true
+
+        - name: Parse the managed Authentik admin session details for repair work
+          when:
+            - authentik_config_bootstrap_login.rc != 0
+            - authentik_config_admin_login.rc == 0
           delegate_to: localhost
           ansible.builtin.set_fact:
             authentik_config_repair_cookie_header: "{{ (authentik_config_admin_login.stdout | from_json).cookie_header }}"
