@@ -21,22 +21,22 @@
   delegate_to: localhost
   fail:
     msg: "Unstaged changes detected in the playbook directory!"
-  when: git_status.stdout != ""
+  when: unstaged_changes.rc != 0
 
 - name: Check for uncommitted local changes in playbook directory
   delegate_to: localhost
   command: git diff-index --quiet HEAD --
   args:
     chdir: "{{ playbook_dir }}"
-  register: git_clean_check
+  register: uncommitted_changes
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Fail if there are uncommitted local changes
   delegate_to: localhost
   fail:
     msg: "Uncommitted local changes detected in the playbook directory!"
-  when: git_clean_check.rc != 0
+  when: uncommitted_changes.rc != 0
 
 - name: Check for unpushed commits in playbook directory
   delegate_to: localhost
