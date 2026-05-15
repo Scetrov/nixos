@@ -29,6 +29,7 @@
         "metrics.net.scetrov.live"
         "identity.net.scetrov.live"
         "immich.net.scetrov.live"
+        "hermes.net.scetrov.live"
       ];
       "10.229.10.10" = [
         "bullit"
