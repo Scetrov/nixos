@@ -14,14 +14,14 @@
   command: git status --porcelain
   args:
     chdir: "{{ playbook_dir }}"
-  register: git_status
+  register: unstaged_changes
   changed_when: false
 
 - name: Fail if there are unstaged changes in the playbook directory
   delegate_to: localhost
   fail:
     msg: "Unstaged changes detected in the playbook directory!"
-  when: unstaged_changes.rc != 0
+  when: unstaged_changes.stdout != ""
 
 - name: Check for uncommitted local changes in playbook directory
   delegate_to: localhost
