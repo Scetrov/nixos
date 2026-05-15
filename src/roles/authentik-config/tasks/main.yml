@@ -318,8 +318,9 @@
 - name: Reconcile the managed Authentik admin account
   ansible.builtin.include_tasks: deploy-blueprint.yml
   vars:
-    authentik_config_blueprint_api_token: >-
-      {{ authentik_config_repair_api_token if authentik_config_repair_auth_source != 'bootstrap-token' else '' }}
+    # Authentik 2025.10 accepts blueprint writes with the bootstrap API token,
+    # but rejects the same POST through a recovered browser session with 403.
+    authentik_config_blueprint_api_token: "{{ authentik_config_repair_api_token }}"
     authentik_config_blueprint_cookie_header: "{{ authentik_config_repair_cookie_header }}"
     authentik_config_blueprint_csrf_token: "{{ authentik_config_repair_csrf_token }}"
     authentik_config_blueprint_name: "{{ authentik_config_primary_admin_blueprint_name }}"
@@ -425,8 +426,9 @@
 
     - ansible.builtin.include_tasks: deploy-blueprint.yml
       vars:
-        authentik_config_blueprint_api_token: >-
-          {{ authentik_config_repair_api_token if authentik_config_repair_auth_source != 'bootstrap-token' else '' }}
+        # Keep blueprint reconciliation on bearer auth whenever a working
+        # repair token exists; session-backed POSTs can fail with 403.
+        authentik_config_blueprint_api_token: "{{ authentik_config_repair_api_token }}"
         authentik_config_blueprint_cookie_header: "{{ authentik_config_primary_admin_session.cookie_header | default('') }}"
         authentik_config_blueprint_csrf_token: "{{ authentik_config_primary_admin_session.csrf_token | default('') }}"
         authentik_config_blueprint_name: "{{ authentik_config_service_account_blueprint_name }}"
