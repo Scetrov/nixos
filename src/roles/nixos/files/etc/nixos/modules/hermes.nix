@@ -432,6 +432,7 @@ in
       hermes-webui = {
         image = cfg.webuiImage;
         dependsOn = [ "hermes-agent" ];
+        ports = lib.optional (!cfg.enableCaddy) "${cfg.caddyListenAddress}:${toString cfg.webuiPort}:8787";
         volumes = [
           "${cfg.homeVolume}:/home/hermeswebui/.hermes"
           "${cfg.agentSourceVolume}:/home/hermeswebui/.hermes/hermes-agent"

@@ -24,7 +24,8 @@
 
   services.hermes-webui = {
     enable = true;
-    caddyListenAddress = "0.0.0.0";
+    enableCaddy = false;
+    caddyListenAddress = "127.0.0.1";
     environmentFile = config.age.secrets.hermes_webui_env.path;
   };
 

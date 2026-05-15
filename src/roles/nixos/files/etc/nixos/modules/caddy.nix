@@ -56,5 +56,13 @@ lib.mkIf config.services.grafana.enable {
         redir / /grafana
       '';
     };
+
+    virtualHosts."hermes.net.scetrov.live" = lib.mkIf config.services.hermes-webui.enable {
+      useACMEHost = "scetrov.live";
+      extraConfig = ''
+        encode zstd gzip
+        reverse_proxy 127.0.0.1:8787
+      '';
+    };
   };
 }
