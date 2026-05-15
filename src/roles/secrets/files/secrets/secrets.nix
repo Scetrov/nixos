@@ -28,4 +28,5 @@ in
   "grafana_authentik_client_id.age".publicKeys = users ++ systems;
   "grafana_authentik_client_secret.age".publicKeys = users ++ systems;
   "syncthing_gui_password.age".publicKeys = users ++ systems;
+  "hermes_webui_env.age".publicKeys = users ++ systems;
 }

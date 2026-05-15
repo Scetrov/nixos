@@ -17,9 +17,21 @@
     ./modules/pyroscope.nix
     ./modules/prometheus.nix
     ./modules/tempo.nix
+    ./modules/hermes.nix
     ./modules/user-scetrov-filebrowser.nix
     ./modules/user-scetrov-syncthing.nix
   ];
+
+  services.hermes-webui = {
+    enable = true;
+    caddyListenAddress = "0.0.0.0";
+    environmentFile = config.age.secrets.hermes_webui_env.path;
+  };
+
+  age.secrets.hermes_webui_env = {
+    file = /root/secrets/hermes_webui_env.age;
+    owner = "hermes-webui";
+  };
 
   scetrov.services.authentik.enable = true;
   
