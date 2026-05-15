@@ -304,9 +304,8 @@ in
       subGidRanges = [{ startGid = 100000; count = 65536; }];
     };
 
-    boot.kernel.sysctl = lib.mkIf (rootlessPodman && cfg.enableCaddy && cfg.allowRootlessPort80 && cfg.caddyHostPort < 1024) {
-      "net.ipv4.ip_unprivileged_port_start" = cfg.caddyHostPort;
-    };
+    # Sysctl net.ipv4.ip_unprivileged_port_start is already set to 0 in podman.nix,
+    # which allows rootless Caddy to bind port 80 without further configuration.
 
     virtualisation.oci-containers.backend = cfg.backend;
 
