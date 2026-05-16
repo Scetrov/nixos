@@ -6,13 +6,27 @@ let
     multitenancy_enabled = false;
     analytics.reporting_enabled = false;
     api."base-url" = "https://metrics.net.scetrov.live/pyroscope";
+    common = {
+      instance_addr = "127.0.0.1";
+      ring.kvstore.store = "inmemory";
+      replication_factor = 1;
+    };
     memberlist.bind_port = 7948;
     server = {
-      http_listen_address = "127.0.0.1";
+      http_listen_address = "0.0.0.0";
       http_listen_port = 4040;
       http_path_prefix = "/pyroscope";
-      grpc_listen_address = "127.0.0.1";
+      grpc_listen_address = "0.0.0.0";
       grpc_listen_port = 4041;
+    };
+    ingester = {
+      lifecycler = {
+        address = "127.0.0.1";
+        ring = {
+          kvstore.store = "inmemory";
+          replication_factor = 1;
+        };
+      };
     };
     storage = {
       backend = "filesystem";
