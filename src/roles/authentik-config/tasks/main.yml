@@ -633,12 +633,14 @@
 - name: Look up the Grafana application
   delegate_to: localhost
   ansible.builtin.uri:
-    url: "{{ authentik_config_api_base_url }}/core/applications/?slug={{ authentik_config_grafana_application_slug | urlencode }}&page_size=100"
+    url: "{{ authentik_config_api_base_url }}/core/applications/{{ authentik_config_grafana_application_slug | urlencode }}/"
     method: GET
     headers:
       Authorization: "Bearer {{ authentik_config_api_token }}"
     validate_certs: "{{ authentik_config_validate_certs }}"
-    status_code: 200
+    status_code:
+      - 200
+      - 404
   register: authentik_grafana_application_lookup
 
 - name: Create the Grafana application when missing
@@ -660,13 +662,13 @@
     status_code:
       - 200
       - 201
-  when: authentik_grafana_application_lookup.json.results | length == 0
+  when: authentik_grafana_application_lookup.status == 404
   register: authentik_grafana_application_create
 
 - name: Update the Grafana application when present
   delegate_to: localhost
   ansible.builtin.uri:
-    url: "{{ authentik_config_api_base_url }}/core/applications/{{ (authentik_grafana_application_lookup.json.results | first).slug | urlencode }}/"
+    url: "{{ authentik_config_api_base_url }}/core/applications/{{ authentik_config_grafana_application_slug | urlencode }}/"
     method: PATCH
     headers:
       Authorization: "Bearer {{ authentik_config_api_token }}"
@@ -682,12 +684,12 @@
     status_code:
       - 200
       - 202
-  when: authentik_grafana_application_lookup.json.results | length > 0
+  when: authentik_grafana_application_lookup.status == 200
 
 - name: Persist the Grafana application primary key
   delegate_to: localhost
   ansible.builtin.set_fact:
-    authentik_config_grafana_application_pk: "{{ authentik_grafana_application_create.json.pk | default((authentik_grafana_application_lookup.json.results | first).pk) }}"
+    authentik_config_grafana_application_pk: "{{ authentik_grafana_application_create.json.pk | default(authentik_grafana_application_lookup.json.pk) }}"
 
 # ── Grafana entitlements ────────────────────────────────────────────────
 - name: Look up the Grafana Admin entitlement
