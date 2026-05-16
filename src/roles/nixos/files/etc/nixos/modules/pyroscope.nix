@@ -9,7 +9,6 @@ let
     server = {
       http_listen_address = "0.0.0.0";
       http_listen_port = 4040;
-      http_path_prefix = "/pyroscope";
       grpc_listen_address = "0.0.0.0";
       grpc_listen_port = 4041;
     };
