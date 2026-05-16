@@ -6,7 +6,6 @@ let
     multitenancy_enabled = false;
     analytics.reporting_enabled = false;
     api."base-url" = "https://metrics.net.scetrov.live/pyroscope";
-    ring.store = "inmemory";
     server = {
       http_listen_address = "0.0.0.0";
       http_listen_port = 4040;
@@ -14,6 +13,9 @@ let
       grpc_listen_address = "0.0.0.0";
       grpc_listen_port = 4041;
     };
+    memberlist.bind_port = 7948;
+    ingester.lifecycler.ring.kvstore.store = "inmemory";
+    distributor.ring.kvstore.store = "inmemory";
     storage = {
       backend = "filesystem";
       filesystem.dir = "/var/lib/pyroscope/storage";
