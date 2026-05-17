@@ -40,6 +40,13 @@ authentik_config_grafana_client_secret: "{{ grafana_authentik_client_secret }}"
 
 authentik_config_authorization_flow_slug: "default-provider-authorization-implicit-consent"
 authentik_config_invalidation_flow_slug: "default-provider-invalidation-flow"
+
+# Hermes Authentik configuration
+authentik_config_hermes_provider_name: "Hermes"
+authentik_config_hermes_application_name: "Hermes"
+authentik_config_hermes_application_slug: "hermes"
+authentik_config_hermes_external_host: "https://hermes.net.scetrov.live"
+
 authentik_config_scope_mappings:
   openid:
     scope_name: "openid"

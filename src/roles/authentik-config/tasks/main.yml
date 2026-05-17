@@ -757,3 +757,145 @@
       - 201
   loop: "{{ authentik_grafana_remaining_entitlements.results }}"
   when: item.json.results | length == 0
+
+# ── Hermes Proxy provider ───────────────────────────────────────────────
+- name: Look up the Hermes Proxy provider
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/providers/proxy/?name={{ authentik_config_hermes_provider_name | urlencode }}&page_size=100"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code: 200
+  register: authentik_hermes_provider_lookup
+
+- name: Create the Hermes Proxy provider when missing
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/providers/proxy/"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    body_format: json
+    body:
+      name: "{{ authentik_config_hermes_provider_name }}"
+      authorization_flow: "{{ authentik_grafana_authorization_flow.json.pk }}"
+      invalidation_flow: "{{ authentik_grafana_invalidation_flow.json.pk }}"
+      internal_host: "http://127.0.0.1:8787"
+      external_host: "{{ authentik_config_hermes_external_host }}"
+      mode: forward_single
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code:
+      - 200
+      - 201
+  when: authentik_hermes_provider_lookup.json.results | length == 0
+  register: authentik_hermes_provider_create
+
+- name: Update the Hermes Proxy provider when present
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/providers/proxy/{{ (authentik_hermes_provider_lookup.json.results | first).pk }}/"
+    method: PATCH
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    body_format: json
+    body:
+      name: "{{ authentik_config_hermes_provider_name }}"
+      authorization_flow: "{{ authentik_grafana_authorization_flow.json.pk }}"
+      invalidation_flow: "{{ authentik_grafana_invalidation_flow.json.pk }}"
+      internal_host: "http://127.0.0.1:8787"
+      external_host: "{{ authentik_config_hermes_external_host }}"
+      mode: forward_single
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code:
+      - 200
+      - 202
+  when: authentik_hermes_provider_lookup.json.results | length > 0
+
+- name: Persist the Hermes Proxy provider primary key
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    authentik_config_hermes_provider_pk: "{{ authentik_hermes_provider_create.json.pk | default((authentik_hermes_provider_lookup.json.results | first).pk) }}"
+
+# ── Outpost assignment ──────────────────────────────────────────────────
+- name: Look up the Authentik Embedded Outpost
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/outposts/instances/?managed=goauthentik.io/outposts/embedded"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code: 200
+  register: authentik_embedded_outpost_lookup
+
+- name: Assign the Hermes Proxy provider to the Embedded Outpost
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/outposts/instances/{{ (authentik_embedded_outpost_lookup.json.results | first).pk }}/"
+    method: PATCH
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    body_format: json
+    body:
+      name: "{{ (authentik_embedded_outpost_lookup.json.results | first).name }}"
+      providers: "{{ ((authentik_embedded_outpost_lookup.json.results | first).providers + [authentik_config_hermes_provider_pk | int]) | unique }}"
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code:
+      - 200
+      - 202
+  when:
+    - authentik_embedded_outpost_lookup.json.results | length > 0
+    - (authentik_config_hermes_provider_pk | int) not in (authentik_embedded_outpost_lookup.json.results | first).providers
+
+# ── Hermes application ──────────────────────────────────────────────────
+- name: Look up the Hermes application
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/core/applications/{{ authentik_config_hermes_application_slug | urlencode }}/"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code:
+      - 200
+      - 404
+  register: authentik_hermes_application_lookup
+
+- name: Create the Hermes application when missing
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/core/applications/"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    body_format: json
+    body:
+      name: "{{ authentik_config_hermes_application_name }}"
+      slug: "{{ authentik_config_hermes_application_slug }}"
+      provider: "{{ authentik_config_hermes_provider_pk | int }}"
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code:
+      - 200
+      - 201
+  when: authentik_hermes_application_lookup.status == 404
+  register: authentik_hermes_application_create
+
+- name: Update the Hermes application when present
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "{{ authentik_config_api_base_url }}/core/applications/{{ authentik_config_hermes_application_slug | urlencode }}/"
+    method: PATCH
+    headers:
+      Authorization: "Bearer {{ authentik_config_api_token }}"
+    body_format: json
+    body:
+      name: "{{ authentik_config_hermes_application_name }}"
+      slug: "{{ authentik_config_hermes_application_slug }}"
+      provider: "{{ authentik_config_hermes_provider_pk | int }}"
+    validate_certs: "{{ authentik_config_validate_certs }}"
+    status_code:
+      - 200
+      - 202
+  when: authentik_hermes_application_lookup.status == 200
