@@ -45,7 +45,7 @@
   become: true
   environment:
     NIXOS_LABEL: "{{ clean_nixos_label }}"
-  command: nixos-rebuild switch --upgrade
+  command: nixos-rebuild switch
   register: nixos_output
   changed_when: "'switching' in nixos_output.stdout"
 

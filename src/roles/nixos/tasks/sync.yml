@@ -64,49 +64,12 @@
     src: "{{ role_path }}/files/device-configuration/{{ nixos_device_configuration }}"
     dest: /etc/nixos/device-configuration.nix
 
-- name: Set ownership and permissions /etc/nixos
+- name: Set ownership and permissions /etc/nixos recursively
   become: true
-  file:
-    path: "/etc/nixos"
+  ansible.builtin.file:
+    path: /etc/nixos
     owner: root
     group: root
-    mode: '0755'
- 
-- name: Find synchronized files and directories
-  become: true
-  find:
-    paths: /etc/nixos
+    mode: 'u=rwX,g=rX,o=rX'
     recurse: yes
-    file_type: file
-  register: synced_files
-
-- name: Set ownership and permissions for synchronized files
-  become: true
-  file:
-    path: "{{ item.path }}"
-    owner: root
-    group: root
-    mode: '0644'
-  loop: "{{ synced_files.files }}"
-  loop_control:
-    label: "{{ item.path }}"
-
-- name: Find synchronized files and directories
-  become: true
-  find:
-    paths: /etc/nixos
-    recurse: yes
-    file_type: directory
-  register: synced_dirs
-
-- name: Set ownership and permissions for synchronized directories
-  become: true
-  file:
-    path: "{{ item.path }}"
-    owner: root
-    group: root
-    mode: '0755'
-  loop: "{{ synced_dirs.files }}"
-  loop_control:
-    label: "{{ item.path }}"
 

@@ -1,8 +1,3 @@
-variable "authentik_token" {
-  type      = string
-  sensitive = true
-}
-
 terraform {
   backend "pg" {
     # Pass via -backend-config="conn_str=..."

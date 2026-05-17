@@ -18,6 +18,7 @@ in
     nodejs_20
     nodejs_20.pkgs.pnpm
     networkmanager-openvpn
+    opentofu
     openvpn
     (python3.withPackages (ps: with ps; [ cryptography ]))
     wget

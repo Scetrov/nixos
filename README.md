@@ -29,6 +29,25 @@ git add . && git commit && git push origin HEAD && ansible-playbook -i src/inven
 
 Secrets are managed through Ansible Vault, they are variously deployed to machines either by pushing the secret through Ansible; or by using `agenix` for inclusion in NixOS's `configuration.nix` and modules.
 
+By default, private SSH identity keys are **not** deployed to target machines to minimize risk. If a host requires its private key (e.g., for git operations), set `secrets_deploy_private_key: true` for that host.
+
+### Service Configuration
+
+This repository increasingly uses **OpenTofu** (or Terraform) for declarative management of service-level state (e.g., Authentik applications, providers, and entitlements) after the base NixOS system is provisioned. This is handled automatically by the `authentik-config` role.
+
+### Deployment Quality Control
+
+The playbook includes a linting phase (`nixos-lint`) that verifies Nix syntax and ensures the repository is in a clean state (no unstaged changes or unpushed commits) before deployment.
+
+- To bypass these checks during active development, use: `-e nixos_force_deploy=true`.
+- To format Nix files locally, use `nixfmt` (the linting role uses `nixfmt --check` to avoid unintended modifications).
+
+### Performance Optimization
+
+The deployment process is optimized for speed and determinism:
+- **Synchronized Configuration**: NixOS modules are synchronized recursively with optimized permission handling.
+- **Deterministic Rebuilds**: `nixos-rebuild switch` is used without the `--upgrade` flag to avoid redundant channel checks across multiple hosts in a single run.
+
 ### Ansible Directory Structure
 
 #### Root Directories

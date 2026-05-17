@@ -4,10 +4,11 @@
     patterns: "*.nix"
   register: nix_files
 
-- name: Run nixfmt on each .nix file
-  command: nixfmt "{{ item.path }}"
+- name: Run nixfmt check on each .nix file
+  command: nixfmt --check "{{ item.path }}"
   loop: "{{ nix_files.files }}"
   when: nix_files.matched > 0
+  changed_when: false
 
 - name: Check for unstaged changes in the playbook directory
   delegate_to: localhost
@@ -16,12 +17,15 @@
     chdir: "{{ playbook_dir }}"
   register: unstaged_changes
   changed_when: false
+  when: not (nixos_force_deploy | default(false))
 
 - name: Fail if there are unstaged changes in the playbook directory
   delegate_to: localhost
   fail:
-    msg: "Unstaged changes detected in the playbook directory!"
-  when: unstaged_changes.stdout != ""
+    msg: "Unstaged changes detected in the playbook directory! Use -e nixos_force_deploy=true to bypass."
+  when: 
+    - not (nixos_force_deploy | default(false))
+    - unstaged_changes.stdout != ""
 
 - name: Check for uncommitted local changes in playbook directory
   delegate_to: localhost
@@ -31,12 +35,15 @@
   register: uncommitted_changes
   changed_when: false
   failed_when: false
+  when: not (nixos_force_deploy | default(false))
 
 - name: Fail if there are uncommitted local changes
   delegate_to: localhost
   fail:
-    msg: "Uncommitted local changes detected in the playbook directory!"
-  when: uncommitted_changes.rc != 0
+    msg: "Uncommitted local changes detected in the playbook directory! Use -e nixos_force_deploy=true to bypass."
+  when: 
+    - not (nixos_force_deploy | default(false))
+    - uncommitted_changes.rc | default(0) != 0
 
 - name: Check for unpushed commits in playbook directory
   delegate_to: localhost
@@ -46,9 +53,12 @@
   register: unpushed_count
   changed_when: false
   failed_when: false
+  when: not (nixos_force_deploy | default(false))
 
 - name: Fail if there are unpushed commits
   delegate_to: localhost
   fail:
-    msg: "There are {{ unpushed_count.stdout }} unpushed commits in the playbook directory!"
-  when: unpushed_count.stdout | int > 0
+    msg: "There are {{ unpushed_count.stdout }} unpushed commits in the playbook directory! Use -e nixos_force_deploy=true to bypass."
+  when: 
+    - not (nixos_force_deploy | default(false))
+    - unpushed_count.stdout | default('0') | int > 0
