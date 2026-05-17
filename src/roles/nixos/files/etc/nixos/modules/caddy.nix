@@ -33,7 +33,7 @@ lib.mkIf config.services.grafana.enable {
           reverse_proxy 127.0.0.1:8080
         }
 
-        handle /prometheus* {
+        handle_path /prometheus* {
           reverse_proxy 127.0.0.1:9090
         }
 

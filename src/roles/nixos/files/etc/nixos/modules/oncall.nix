@@ -1,13 +1,24 @@
-{ pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
+let
+  stateDir = "/var/lib/oncall";
+  oncallEnvFile = "${stateDir}/oncall.env";
+in
 {
+  age.secrets.oncall_secret_key.file = /root/secrets/oncall_secret_key.age;
+  age.secrets.grafana_oncall_api_key.file = /root/secrets/grafana_oncall_api_key.age;
+
   systemd.tmpfiles.rules = [
-    "d /var/lib/oncall 0750 root root - -"
+    "d ${stateDir} 0750 root root - -"
   ];
 
-  systemd.services.oncall-bootstrap = {
-    description = "Prepare Grafana OnCall runtime environment";
+  systemd.services.oncall-prepare-env = {
+    description = "Prepare Grafana OnCall environment file";
     wantedBy = [ "multi-user.target" ];
+    restartTriggers = [
+      config.age.secrets.oncall_secret_key.file
+      config.age.secrets.grafana_oncall_api_key.file
+    ];
     before = [
       "oncall-migrate.service"
       "podman-oncall-engine.service"
@@ -18,15 +29,17 @@
       RemainAfterExit = true;
     };
     script = ''
-      ${pkgs.coreutils}/bin/install -d -m 0750 /var/lib/oncall
-      if [ ! -f /var/lib/oncall/oncall.env ]; then
-        secret="$(${pkgs.openssl}/bin/openssl rand -hex 32)"
-        umask 077
-        ${pkgs.coreutils}/bin/cat > /var/lib/oncall/oncall.env <<EOF
+      set -euo pipefail
+      ${pkgs.coreutils}/bin/install -d -m 0750 ${stateDir}
+      
+      secret_key=$(cat ${config.age.secrets.oncall_secret_key.path})
+      grafana_api_key=$(cat ${config.age.secrets.grafana_oncall_api_key.path})
+
+      cat > ${oncallEnvFile} <<EOF
 DATABASE_TYPE=sqlite3
 BROKER_TYPE=redis
 BASE_URL=https://metrics.net.scetrov.live/oncall
-SECRET_KEY=$secret
+SECRET_KEY=$secret_key
 FEATURE_PROMETHEUS_EXPORTER_ENABLED=False
 PROMETHEUS_EXPORTER_SECRET=
 REDIS_URI=redis://oncall-redis:6379/0
@@ -37,19 +50,20 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD=100
 CELERY_WORKER_SHUTDOWN_INTERVAL=65m
 CELERY_WORKER_BEAT_ENABLED=True
 GRAFANA_API_URL=http://host.containers.internal:3000
+GRAFANA_API_KEY=$grafana_api_key
 EOF
-      fi
+      chmod 0600 ${oncallEnvFile}
     '';
   };
 
   systemd.services.oncall-migrate = {
     description = "Run Grafana OnCall database migrations";
     after = [
-      "oncall-bootstrap.service"
+      "oncall-prepare-env.service"
       "podman-oncall-redis.service"
     ];
     requires = [
-      "oncall-bootstrap.service"
+      "oncall-prepare-env.service"
       "podman-oncall-redis.service"
     ];
     before = [
@@ -63,8 +77,8 @@ EOF
       ExecStart = ''
         ${pkgs.podman}/bin/podman run --rm \
           --network=podman \
-          --env-file=/var/lib/oncall/oncall.env \
-          -v /var/lib/oncall:/var/lib/oncall:U \
+          --env-file=${oncallEnvFile} \
+          -v ${stateDir}:${stateDir}:U \
           docker.io/grafana/oncall:latest \
           sh -ceu 'python manage.py migrate --noinput && python manage.py collectstatic --noinput'
       '';
@@ -72,13 +86,13 @@ EOF
   };
 
   systemd.services.podman-oncall-engine = {
-    after = [ "oncall-migrate.service" ];
-    requires = [ "oncall-migrate.service" ];
+    after = [ "oncall-migrate.service" "oncall-prepare-env.service" ];
+    requires = [ "oncall-migrate.service" "oncall-prepare-env.service" ];
   };
 
   systemd.services.podman-oncall-celery = {
-    after = [ "oncall-migrate.service" ];
-    requires = [ "oncall-migrate.service" ];
+    after = [ "oncall-migrate.service" "oncall-prepare-env.service" ];
+    requires = [ "oncall-migrate.service" "oncall-prepare-env.service" ];
   };
 
   virtualisation.oci-containers.containers = {
@@ -92,19 +106,19 @@ EOF
       image = "docker.io/grafana/oncall:latest";
       autoStart = true;
       cmd = [ "sh" "-ceu" "uwsgi --ini uwsgi.ini" ];
-      environmentFiles = [ "/var/lib/oncall/oncall.env" ];
+      environmentFiles = [ oncallEnvFile ];
       extraOptions = [ "--network=podman" ];
       ports = [ "127.0.0.1:18080:8080" ];
-      volumes = [ "/var/lib/oncall:/var/lib/oncall:U" ];
+      volumes = [ "${stateDir}:${stateDir}:U" ];
     };
 
     oncall-celery = {
       image = "docker.io/grafana/oncall:latest";
       autoStart = true;
       cmd = [ "sh" "-ceu" "./celery_with_exporter.sh" ];
-      environmentFiles = [ "/var/lib/oncall/oncall.env" ];
+      environmentFiles = [ oncallEnvFile ];
       extraOptions = [ "--network=podman" ];
-      volumes = [ "/var/lib/oncall:/var/lib/oncall:U" ];
+      volumes = [ "${stateDir}:${stateDir}:U" ];
     };
   };
 }

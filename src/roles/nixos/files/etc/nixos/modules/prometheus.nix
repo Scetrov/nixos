@@ -6,7 +6,8 @@
     listenAddress = "127.0.0.1";
     port = 9090;
     retentionTime = "15d";
-    webExternalUrl = "https://metrics.net.scetrov.live/prometheus";
+    webExternalUrl = "https://metrics.net.scetrov.live";
+    extraFlags = [ "--web.route-prefix=/" ];
     exporters.node = {
       enable = true;
       enabledCollectors = [ "systemd" ];

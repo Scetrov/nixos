@@ -492,10 +492,42 @@
       tofu init -reconfigure -backend-config="conn_str=$PG_CONN"
       tofu apply -auto-approve \
         -var="authentik_token={{ authentik_api_token }}" \
+        -var="grafana_token={{ grafana_admin_token }}" \
         -var="grafana_client_id={{ grafana_authentik_client_id }}" \
         -var="grafana_client_secret={{ grafana_authentik_client_secret }}" \
         -var="hermes_external_host={{ authentik_config_hermes_external_host }}"
+      
+      # Capture OnCall token output if it exists
+      tofu output -json grafana_oncall_token > grafana_oncall_token.json || echo "null" > grafana_oncall_token.json
     chdir: "{{ playbook_dir }}/../terraform"
+  register: tofu_apply_output
   environment:
     TF_IN_AUTOMATION: "true"
   no_log: true
+
+- name: Set fact for Grafana OnCall token
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    grafana_oncall_api_key: "{{ (lookup('file', playbook_dir + '/../terraform/grafana_oncall_token.json') | from_json) }}"
+  when: 
+    - tofu_apply_output is success
+    - (lookup('file', playbook_dir + '/../terraform/grafana_oncall_token.json') | from_json) is not none
+  no_log: false
+
+- name: Debug Grafana OnCall token
+  ansible.builtin.debug:
+    msg: "OnCall Token found: {{ grafana_oncall_api_key | default('NOT SET') }}"
+
+- name: Generate OnCall Secret Key if not provided
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.set_fact:
+    oncall_secret_key: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=64') }}"
+  when: oncall_secret_key is not defined
+
+- name: Restart OnCall environment preparation on host
+  become: true
+  ansible.builtin.systemd:
+    name: oncall-prepare-env.service
+    state: restarted
+  when: (grafana_oncall_api_key is defined) or (oncall_secret_key is defined)

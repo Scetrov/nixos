@@ -3,6 +3,11 @@ variable "authentik_token" {
   sensitive = true
 }
 
+variable "grafana_token" {
+  type      = string
+  sensitive = true
+}
+
 variable "grafana_client_id" {
   type = string
 }

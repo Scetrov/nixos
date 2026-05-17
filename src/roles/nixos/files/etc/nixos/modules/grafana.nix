@@ -7,7 +7,6 @@
   services.grafana = {
     enable = true;
     declarativePlugins = with pkgs.grafanaPlugins; [
-      grafana-lokiexplore-app
       grafana-oncall-app
       grafana-pyroscope-app
     ];
@@ -54,6 +53,9 @@
             type = "prometheus";
             uid = "prometheus";
             url = "http://127.0.0.1:9090";
+            jsonData = {
+              httpMethod = "POST";
+            };
           }
           {
             access = "proxy";
@@ -71,6 +73,7 @@
             uid = "tempo";
             url = "http://127.0.0.1:3200";
             jsonData = {
+              httpMethod = "POST";
               nodeGraph.enabled = true;
               search.hide = false;
               serviceMap.datasourceUid = "mimir";
@@ -119,4 +122,14 @@
       "/run/agenix/grafana_authentik_client_secret"
     ];
   };
+
+  systemd.tmpfiles.rules = [
+    "d /etc/grafana/provisioning/plugins 0750 grafana grafana - -"
+    "L+ /etc/grafana/provisioning/plugins/oncall.yaml - - - - ${pkgs.writeText "oncall.yaml" ''
+      apiVersion: 1
+      apps:
+        - type: grafana-oncall-app
+          disabled: false
+    ''}"
+  ];
 }

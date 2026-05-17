@@ -13,3 +13,5 @@
     - role: authentik-config
       when: authentik_config_enabled | default(false)
     - user-scetrov
+    - role: secrets
+      tags: [ 'secrets-post' ]
