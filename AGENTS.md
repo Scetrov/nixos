@@ -24,6 +24,17 @@ We use **OpenTofu** for declarative management of application-level resources (A
 
 ---
 
+## 📊 Monitoring & Observability
+
+We use **Grafana** and **Loki** for central observability.
+
+### **1. Error Investigation**
+*   **Workflow:** Systematic investigation of system logs (Loki) should be performed whenever service degradation is suspected.
+*   **Instructions:** Detailed procedures are located in `.agents/instructions/grafana-error-investigator.instructions.md`.
+*   **Automation:** Use the investigation script at `.agents/skills/grafana-error-investigator/scripts/investigate_errors.sh` to quickly pull and prioritize recent errors.
+
+---
+
 ## 🛠 Operation Standards
 
 ### **Declarative vs. Imperative**

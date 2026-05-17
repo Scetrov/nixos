@@ -25,6 +25,60 @@ data "authentik_flow" "default_invalidation" {
 }
 
 # --- Grafana OAuth2 Provider ---
-# We keep these but without imports if we want to just reconcile, 
-# but they clash. For now, we'll comment out the clashy parts.
-# resource "authentik_provider_oauth2" "grafana" { ... }
+resource "authentik_provider_oauth2" "grafana" {
+  name          = "Grafana"
+  client_id     = var.grafana_client_id
+  client_secret = var.grafana_client_secret
+  
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+
+  allowed_redirect_uris = [
+    {
+      url           = "https://metrics.net.scetrov.live/grafana/login/generic_oauth"
+      matching_mode = "strict"
+    }
+  ]
+  
+  property_mappings = [
+    data.authentik_property_mapping_provider_scope.openid.id,
+    data.authentik_property_mapping_provider_scope.profile.id,
+    data.authentik_property_mapping_provider_scope.email.id,
+  ]
+}
+
+resource "authentik_application" "grafana" {
+  name              = "Grafana"
+  slug              = "grafana"
+  protocol_provider = authentik_provider_oauth2.grafana.id
+}
+
+# --- Hermes Proxy Provider ---
+resource "authentik_provider_proxy" "hermes" {
+  name               = "Hermes"
+  external_host      = var.hermes_external_host
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  mode               = "forward_single"
+}
+
+resource "authentik_application" "hermes" {
+  name              = "Hermes"
+  slug              = "hermes"
+  protocol_provider = authentik_provider_proxy.hermes.id
+}
+
+# --- Outpost ---
+# This manages the embedded outpost that provides forward_auth for Caddy.
+resource "authentik_outpost" "proxy" {
+  name = "authentik Embedded Outpost"
+  type = "proxy"
+  
+  protocol_providers = [
+    authentik_provider_proxy.hermes.id
+  ]
+  
+  config = jsonencode({
+    authentik_host = "https://identity.net.scetrov.live"
+  })
+}
