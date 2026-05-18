@@ -33,4 +33,7 @@ in
   "grafana_oncall_api_key.age".publicKeys = users ++ systems;
   "loki_token.age".publicKeys = users ++ systems;
   "loki_token_hash.age".publicKeys = users ++ systems;
-}
+  "dtrack_db_password.age".publicKeys = users ++ systems;
+  "dtrack_github_pat.age".publicKeys = users ++ systems;
+  "dtrack_nvd_api_key.age".publicKeys = users ++ systems;
+  }
