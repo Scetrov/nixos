@@ -58,12 +58,11 @@ Manual user management is disabled in favor of **Authentik OIDC**.
 
 - **Redirect URI**: `https://dtrack.net.scetrov.live/static/oidc-callback.html`
 - **Initial Login**: Users will be automatically provisioned on their first login.
-- **Admin Access**: 
-  1. Log in to Dependency Track using the default `admin` / `admin` account.
-  2. Navigate to **Administration** > **Access Management** > **Teams**.
-  3. Select the **Administrators** team.
-  4. In the **OpenID Connect Groups** tab, add the group name exactly as it appears in Authentik (e.g., `All Applications` or `authentik Admins`).
-  5. Save and log out. Your OIDC user will now have full admin rights upon the next login.
+- **Admin Access**:
+  Access is automatically managed via the `dependency-track-config` Ansible role.
+  - The role maps the Authentik group **`All Applications`** to the Dependency Track **`Administrators`** team.
+  - Ensure `ALPINE_OIDC_TEAM_SYNCHRONIZATION=true` is set (this is the default in our module).
+  - Users belonging to the `All Applications` group in Authentik will receive admin rights automatically upon their next login.
 
 ## 🛠 Resource Management
 
