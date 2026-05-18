@@ -58,7 +58,12 @@ Manual user management is disabled in favor of **Authentik OIDC**.
 
 - **Redirect URI**: `https://dtrack.net.scetrov.live/static/oidc-callback.html`
 - **Initial Login**: Users will be automatically provisioned on their first login.
-- **Admin Access**: To gain admin privileges, you must map your OIDC group to the `Administrators` team inside the Dependency Track UI (Administration > Access Management > Teams).
+- **Admin Access**: 
+  1. Log in to Dependency Track using the default `admin` / `admin` account.
+  2. Navigate to **Administration** > **Access Management** > **Teams**.
+  3. Select the **Administrators** team.
+  4. In the **OpenID Connect Groups** tab, add the group name exactly as it appears in Authentik (e.g., `All Applications` or `authentik Admins`).
+  5. Save and log out. Your OIDC user will now have full admin rights upon the next login.
 
 ## 🛠 Resource Management
 

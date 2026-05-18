@@ -6,10 +6,17 @@ data "authentik_property_mapping_provider_scope" "openid" {
 data "authentik_property_mapping_provider_scope" "profile" {
   managed = "goauthentik.io/providers/oauth2/scope-profile"
 }
-
 data "authentik_property_mapping_provider_scope" "email" {
   managed = "goauthentik.io/providers/oauth2/scope-email"
 }
+
+resource "authentik_property_mapping_provider_scope" "groups" {
+  name       = "groups"
+  scope_name = "groups"
+  expression = "return {'groups': [group.name for group in request.user.ak_groups]}"
+}
+
+# --- Flows ---
 
 data "authentik_property_mapping_provider_scope" "entitlements" {
   managed = "goauthentik.io/providers/oauth2/scope-entitlements"
@@ -31,7 +38,7 @@ resource "random_id" "grafana_client_id" {
 
 resource "random_password" "grafana_client_secret" {
   length  = 40
-  special = true
+  special = false
 }
 
 resource "random_id" "dtrack_client_id" {
@@ -40,7 +47,12 @@ resource "random_id" "dtrack_client_id" {
 
 resource "random_password" "dtrack_client_secret" {
   length  = 40
-  special = true
+  special = false
+}
+
+# --- Certificates ---
+data "authentik_certificate_key_pair" "default" {
+  name = "authentik Self-signed Certificate"
 }
 
 # --- Grafana OAuth2 Provider ---
@@ -48,6 +60,7 @@ resource "authentik_provider_oauth2" "grafana" {
   name          = "Grafana"
   client_id     = random_id.grafana_client_id.hex
   client_secret = random_password.grafana_client_secret.result
+  signing_key   = data.authentik_certificate_key_pair.default.id
   
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id
@@ -63,6 +76,7 @@ resource "authentik_provider_oauth2" "grafana" {
     data.authentik_property_mapping_provider_scope.openid.id,
     data.authentik_property_mapping_provider_scope.profile.id,
     data.authentik_property_mapping_provider_scope.email.id,
+    authentik_property_mapping_provider_scope.groups.id,
   ]
 }
 
@@ -92,8 +106,11 @@ resource "authentik_provider_oauth2" "dependency_track" {
   name          = "Dependency Track"
   client_id     = random_id.dtrack_client_id.hex
   client_secret = random_password.dtrack_client_secret.result
-  
+  client_type   = "public"
+  signing_key   = data.authentik_certificate_key_pair.default.id
+
   authorization_flow = data.authentik_flow.default_authorization.id
+
   invalidation_flow  = data.authentik_flow.default_invalidation.id
 
   allowed_redirect_uris = [
@@ -107,6 +124,7 @@ resource "authentik_provider_oauth2" "dependency_track" {
     data.authentik_property_mapping_provider_scope.openid.id,
     data.authentik_property_mapping_provider_scope.profile.id,
     data.authentik_property_mapping_provider_scope.email.id,
+    authentik_property_mapping_provider_scope.groups.id,
   ]
 }
 
@@ -114,6 +132,27 @@ resource "authentik_application" "dependency_track" {
   name              = "Dependency Track"
   slug              = "dependency-track"
   protocol_provider = authentik_provider_oauth2.dependency_track.id
+}
+
+data "authentik_group" "admins" {
+  name = "authentik Admins"
+}
+
+data "authentik_user" "scetrov" {
+  username = "scetrov"
+}
+
+resource "authentik_group" "all_applications" {
+  name = "All Applications"
+  users = [
+    data.authentik_user.scetrov.id
+  ]
+}
+
+resource "authentik_policy_binding" "dependency_track_access" {
+  target = authentik_application.dependency_track.uuid
+  group  = authentik_group.all_applications.id
+  order  = 0
 }
 
 # --- Outpost ---

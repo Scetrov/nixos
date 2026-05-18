@@ -17,6 +17,7 @@ let
     export DTRACK_GITHUB_PAT_FILE=${config.age.secrets.dtrack_github_pat.path}
     export DTRACK_NVD_API_KEY_FILE=${config.age.secrets.dtrack_nvd_api_key.path}
     export DTRACK_OIDC_CLIENT_ID_FILE=${config.age.secrets.dtrack_oidc_client_id.path}
+    export DTRACK_OIDC_CLIENT_SECRET_FILE=${config.age.secrets.dtrack_oidc_client_secret.path}
 
     ${pkgs.python3}/bin/python3 <<'PY'
 import os
@@ -37,6 +38,7 @@ db_pass = read_secret("DB_PASSWORD", "DTRACK_DB_PASSWORD_FILE")
 github_pat = read_secret("GITHUB_PAT", "DTRACK_GITHUB_PAT_FILE")
 nvd_key = read_secret("NVD_API_KEY", "DTRACK_NVD_API_KEY_FILE")
 oidc_client_id = read_secret("OIDC_CLIENT_ID", "DTRACK_OIDC_CLIENT_ID_FILE")
+oidc_client_secret = read_secret("OIDC_CLIENT_SECRET", "DTRACK_OIDC_CLIENT_SECRET_FILE")
 
 entries = {
     "ALPINE_DATABASE_MODE": "external",
@@ -51,8 +53,11 @@ entries = {
     "ALPINE_OIDC_ISSUER": "https://identity.net.scetrov.live/application/o/dependency-track/",
     "ALPINE_OIDC_CLIENT_ID": oidc_client_id,
     "ALPINE_OIDC_USERNAME_CLAIM": "preferred_username",
+    "ALPINE_OIDC_TEAMS_CLAIM": "groups",
     "ALPINE_OIDC_USER_PROVISIONING": "true",
     "ALPINE_OIDC_TEAM_PROVISIONING": "true",
+    "ALPINE_CORS_ENABLED": "true",
+    "ALPINE_CORS_ALLOW_ORIGIN": "https://dtrack.net.scetrov.live",
 }
 
 if github_pat:
@@ -97,6 +102,9 @@ entries = {
     "API_BASE_URL": "https://${cfg.apiDomain}",
     "OIDC_ISSUER": "https://identity.net.scetrov.live/application/o/dependency-track/",
     "OIDC_CLIENT_ID": oidc_client_id,
+    "OIDC_FLOW": "code",
+    "OIDC_SCOPE": "openid profile email groups",
+    "OIDC_LOGIN_BUTTON_TEXT": "Login with Authentik",
 }
 
 with tempfile.NamedTemporaryFile("w", dir=env_path.parent, delete=False, encoding="utf-8") as handle:
@@ -218,7 +226,7 @@ in
       dtrack-db = {
         image = cfg.postgresqlImage;
         autoStart = true;
-        extraOptions = [ "--network=dtrack" ];
+        extraOptions = [ "--network=authentik" ];
         environment = {
           POSTGRES_USER = "dtrack";
           POSTGRES_DB = "dtrack";
@@ -235,13 +243,17 @@ in
         autoStart = true;
         environmentFiles = [ apiserverEnvFile ];
         extraOptions = [ 
-          "--network=dtrack"
+          "--network=authentik"
           "--memory=4g"
           "--cpus=2.0"
+          "--add-host=identity.net.scetrov.live:10.89.0.1"
+          "--add-host=dtrack.net.scetrov.live:10.89.0.1"
+          "--add-host=dtrack-api.net.scetrov.live:10.89.0.1"
         ];
         ports = [ "127.0.0.1:${toString cfg.apiPort}:8080" ];
         volumes = [
           "${dataDir}:/data:U"
+          "/etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro"
         ];
         dependsOn = [ "dtrack-db" ];
       };
@@ -250,7 +262,12 @@ in
         image = cfg.frontendImage;
         autoStart = true;
         environmentFiles = [ frontendEnvFile ];
-        extraOptions = [ "--network=dtrack" ];
+        extraOptions = [ 
+          "--network=authentik"
+          "--add-host=identity.net.scetrov.live:10.89.0.1"
+          "--add-host=dtrack.net.scetrov.live:10.89.0.1"
+          "--add-host=dtrack-api.net.scetrov.live:10.89.0.1"
+        ];
         ports = [ "127.0.0.1:${toString cfg.frontendPort}:8080" ];
         dependsOn = [ "dtrack-apiserver" ];
       };
