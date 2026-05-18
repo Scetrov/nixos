@@ -26,6 +26,8 @@ To fully enable the integration and secure the database, the following secrets M
 | `dtrack_db_password` | Password for the `dtrack` PostgreSQL user. |
 | `dtrack_github_pat` | (Optional) GitHub Personal Access Token for repository analysis and intelligence. |
 | `dtrack_nvd_api_key` | (Optional) NVD API Key to avoid rate-limiting during vulnerability data sync. |
+| `dtrack_oidc_client_id` | OIDC Client ID from Authentik. |
+| `dtrack_oidc_client_secret` | OIDC Client Secret from Authentik. |
 
 ### How to add secrets:
 
@@ -35,14 +37,28 @@ To fully enable the integration and secure the database, the following secrets M
     ```
 2.  Add the keys:
     ```yaml
-    dtrack_db_password: "your_secure_password"
+    dtrack_db_password: "your_secure_db_password"
+    dtrack_oidc_client_id: "your-authentik-client-id"
+    dtrack_oidc_client_secret: "your-authentik-client-secret"
     dtrack_github_pat: "ghp_your_token"
     dtrack_nvd_api_key: "your-nvd-uuid-key"
     ```
-3.  Deploy the changes:
+3.  Apply infrastructure changes:
+    ```bash
+    ./scripts/tofu.sh
+    ```
+4.  Deploy the NixOS changes:
     ```bash
     ./scripts/play.sh
     ```
+
+## 🔐 Authentication (OIDC)
+
+Manual user management is disabled in favor of **Authentik OIDC**. 
+
+- **Redirect URI**: `https://dtrack.net.scetrov.live/static/oidc-callback.html`
+- **Initial Login**: Users will be automatically provisioned on their first login.
+- **Admin Access**: To gain admin privileges, you must map your OIDC group to the `Administrators` team inside the Dependency Track UI (Administration > Access Management > Teams).
 
 ## 🛠 Resource Management
 

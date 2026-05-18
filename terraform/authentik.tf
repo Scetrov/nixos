@@ -68,6 +68,35 @@ resource "authentik_application" "hermes" {
   protocol_provider = authentik_provider_proxy.hermes.id
 }
 
+# --- Dependency Track OIDC Provider ---
+resource "authentik_provider_oauth2" "dependency_track" {
+  name          = "Dependency Track"
+  client_id     = var.dtrack_oidc_client_id
+  client_secret = var.dtrack_oidc_client_secret
+  
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+
+  allowed_redirect_uris = [
+    {
+      url           = "https://dtrack.net.scetrov.live/static/oidc-callback.html"
+      matching_mode = "strict"
+    }
+  ]
+  
+  property_mappings = [
+    data.authentik_property_mapping_provider_scope.openid.id,
+    data.authentik_property_mapping_provider_scope.profile.id,
+    data.authentik_property_mapping_provider_scope.email.id,
+  ]
+}
+
+resource "authentik_application" "dependency_track" {
+  name              = "Dependency Track"
+  slug              = "dependency-track"
+  protocol_provider = authentik_provider_oauth2.dependency_track.id
+}
+
 # --- Outpost ---
 # This manages the embedded outpost that provides forward_auth for Caddy.
 resource "authentik_outpost" "proxy" {

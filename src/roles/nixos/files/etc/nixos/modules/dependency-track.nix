@@ -16,6 +16,7 @@ let
     export DTRACK_DB_PASSWORD_FILE=${config.age.secrets.dtrack_db_password.path}
     export DTRACK_GITHUB_PAT_FILE=${config.age.secrets.dtrack_github_pat.path}
     export DTRACK_NVD_API_KEY_FILE=${config.age.secrets.dtrack_nvd_api_key.path}
+    export DTRACK_OIDC_CLIENT_ID_FILE=${config.age.secrets.dtrack_oidc_client_id.path}
 
     ${pkgs.python3}/bin/python3 <<'PY'
 import os
@@ -35,6 +36,7 @@ env_path = Path(os.environ["DTRACK_ENV_FILE"])
 db_pass = read_secret("DB_PASSWORD", "DTRACK_DB_PASSWORD_FILE")
 github_pat = read_secret("GITHUB_PAT", "DTRACK_GITHUB_PAT_FILE")
 nvd_key = read_secret("NVD_API_KEY", "DTRACK_NVD_API_KEY_FILE")
+oidc_client_id = read_secret("OIDC_CLIENT_ID", "DTRACK_OIDC_CLIENT_ID_FILE")
 
 entries = {
     "ALPINE_DATABASE_MODE": "external",
@@ -45,6 +47,12 @@ entries = {
     "ALPINE_DATABASE_POOL_ENABLED": "true",
     "ALPINE_DATABASE_POOL_MAX_SIZE": "20",
     "ALPINE_METRICS_ENABLED": "true",
+    "ALPINE_OIDC_ENABLED": "true",
+    "ALPINE_OIDC_ISSUER": "https://identity.net.scetrov.live/application/o/dependency-track/",
+    "ALPINE_OIDC_CLIENT_ID": oidc_client_id,
+    "ALPINE_OIDC_USERNAME_CLAIM": "preferred_username",
+    "ALPINE_OIDC_USER_PROVISIONING": "true",
+    "ALPINE_OIDC_TEAM_PROVISIONING": "true",
 }
 
 if github_pat:
@@ -52,6 +60,44 @@ if github_pat:
 
 if nvd_key:
     entries["VULNERABILITY_SOURCE_NVD_API_KEY"] = nvd_key
+
+with tempfile.NamedTemporaryFile("w", dir=env_path.parent, delete=False, encoding="utf-8") as handle:
+    for key, value in entries.items():
+        handle.write(f"{key}={value}\n")
+    temp_path = Path(handle.name)
+
+temp_path.chmod(0o600)
+temp_path.replace(env_path)
+PY
+  '';
+
+  frontendEnvFile = "${stateDir}/frontend.env";
+  frontendPrepareEnvScript = pkgs.writeShellScript "dtrack-frontend-prepare-env" ''
+    set -euo pipefail
+
+    export DTRACK_FRONTEND_ENV_FILE=${frontendEnvFile}
+    export DTRACK_OIDC_CLIENT_ID_FILE=${config.age.secrets.dtrack_oidc_client_id.path}
+
+    ${pkgs.python3}/bin/python3 <<'PY'
+import os
+import tempfile
+from pathlib import Path
+
+def read_secret(name: str, path_var: str) -> str:
+    path = os.environ.get(path_var)
+    if not path or not Path(path).exists():
+        return ""
+    value = Path(path).read_text().strip()
+    return value
+
+env_path = Path(os.environ["DTRACK_FRONTEND_ENV_FILE"])
+oidc_client_id = read_secret("OIDC_CLIENT_ID", "DTRACK_OIDC_CLIENT_ID_FILE")
+
+entries = {
+    "API_BASE_URL": "https://${cfg.apiDomain}",
+    "OIDC_ISSUER": "https://identity.net.scetrov.live/application/o/dependency-track/",
+    "OIDC_CLIENT_ID": oidc_client_id,
+}
 
 with tempfile.NamedTemporaryFile("w", dir=env_path.parent, delete=False, encoding="utf-8") as handle:
     for key, value in entries.items():
@@ -123,6 +169,14 @@ in
       file = /root/secrets/dtrack_nvd_api_key.age;
       owner = "root";
     };
+    age.secrets.dtrack_oidc_client_id = {
+      file = /root/secrets/dtrack_oidc_client_id.age;
+      owner = "root";
+    };
+    age.secrets.dtrack_oidc_client_secret = {
+      file = /root/secrets/dtrack_oidc_client_secret.age;
+      owner = "root";
+    };
 
     systemd.services.dtrack-apiserver-prepare-env = {
       description = "Prepare Dependency Track API Server environment file";
@@ -131,6 +185,16 @@ in
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStart = apiserverPrepareEnvScript;
+      };
+    };
+
+    systemd.services.dtrack-frontend-prepare-env = {
+      description = "Prepare Dependency Track Frontend environment file";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = frontendPrepareEnvScript;
       };
     };
 
@@ -185,9 +249,7 @@ in
       dtrack-frontend = {
         image = cfg.frontendImage;
         autoStart = true;
-        environment = {
-          API_BASE_URL = "https://${cfg.apiDomain}";
-        };
+        environmentFiles = [ frontendEnvFile ];
         extraOptions = [ "--network=dtrack" ];
         ports = [ "127.0.0.1:${toString cfg.frontendPort}:8080" ];
         dependsOn = [ "dtrack-apiserver" ];
