@@ -529,3 +529,41 @@ The proven model for this repository is:
 - reconcile admin membership and the deterministic API token key through a managed blueprint
 - verify the durable token with `/api/v3/core/users/me/`
 - manage Grafana provider/application/entitlements through the documented API routes, with application updates keyed by slug
+
+## Automated OIDC Secret Management
+
+This repository uses a "Compute and Capture" pattern for OIDC credentials to eliminate manual vaulting steps.
+
+### Workflow
+
+1.  **Generation**: OpenTofu (via the `random` provider) generates stable `client_id` and `client_secret` values for each provider.
+2.  **Capture**: `scripts/tofu.sh` executes `tofu apply`, then uses `tofu output -json` and `jq` to extract the credentials.
+3.  **Persistence**: The extracted values are written to `src/generated-secrets.yml`.
+4.  **Encryption**: `scripts/tofu.sh` immediately encrypts the file using `ansible-vault`.
+5.  **Consumption**: The main `src/playbook.yml` is configured to optionally include `generated-secrets.yml`.
+
+### Proven Safety Rules
+
+- **Avoid Special Characters**: Use `special = false` in `random_password` resources. This prevents shell interpolation or YAML parsing errors when secrets are moved between Tofu, Bash, and Ansible.
+- **Stable Identifiers**: Use `random_id` for client IDs to ensure they remain consistent across infrastructure updates.
+
+## OIDC Integration Patterns
+
+The following patterns are proven to work for OIDC-enabled services (e.g., Dependency Track, Grafana) behind the local Caddy proxy.
+
+### Single Page Applications (SPA)
+
+For services where the frontend performs the authentication redirect (like Dependency Track):
+
+- **Client Type**: `public` (or `confidential` if the API server handles the back-channel token exchange).
+- **Flow**: `code` (Authorization Code Flow with PKCE).
+- **Issuer Consistency**: The `OIDC_ISSUER` URL must be identical across the provider, the frontend, and the API server. In this repo, the format `https://identity.net.scetrov.live/application/o/slug/` (with trailing slash) is standard.
+- **CORS**: The API server must have CORS enabled (`ALPINE_CORS_ENABLED=true`) and explicitly allow the frontend origin.
+
+### Container Connectivity
+
+OCI containers must be able to reach the Authentik discovery endpoint at startup.
+
+- **Networking**: Move application containers to the `authentik` Podman network.
+- **DNS Mapping**: Use `--add-host` flags to map `identity.net.scetrov.live` to the network gateway IP (typically `10.89.0.1`). This ensures the container can reach the host-based Caddy proxy even if external DNS is unreachable.
+- **Validation**: Verified through `GET /api/v1/oidc/available` returning `true`.
