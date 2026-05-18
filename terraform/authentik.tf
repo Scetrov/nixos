@@ -27,8 +27,6 @@ data "authentik_flow" "default_invalidation" {
 # --- Grafana OAuth2 Provider ---
 resource "authentik_provider_oauth2" "grafana" {
   name          = "Grafana"
-  client_id     = var.grafana_client_id
-  client_secret = var.grafana_client_secret
   
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id

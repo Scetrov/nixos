@@ -493,8 +493,6 @@
       tofu apply -auto-approve \
         -var="authentik_token={{ authentik_api_token }}" \
         -var="grafana_token={{ grafana_admin_token }}" \
-        -var="grafana_client_id={{ grafana_authentik_client_id }}" \
-        -var="grafana_client_secret={{ grafana_authentik_client_secret }}" \
         -var="hermes_external_host={{ authentik_config_hermes_external_host }}"
       
       # Capture OnCall token output if it exists

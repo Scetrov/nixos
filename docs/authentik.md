@@ -65,8 +65,8 @@ The NixOS module consumes these secrets and writes them into the Authentik env f
 - `authentik_api_token`
 - `authentik_postgresql_password`
 - `authentik_secret_key`
-- `grafana_authentik_client_id`
-- `grafana_authentik_client_secret`
+- `grafana_authentik_client_id` (Automated)
+- `grafana_authentik_client_secret` (Automated)
 
 The controller-side `authentik-config` role separately consumes these persisted
 recovery credentials:
