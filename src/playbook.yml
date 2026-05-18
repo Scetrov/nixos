@@ -7,6 +7,7 @@
   hosts: all
   vars_files:
     - secrets.yml
+    - "{{ (lookup('env', 'PWD') + '/src/generated-secrets.yml') if (lookup('env', 'PWD') + '/src/generated-secrets.yml') is file else '/dev/null' }}"
   roles:
     - secrets
     - nixos

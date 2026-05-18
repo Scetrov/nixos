@@ -27,3 +27,12 @@ output "grafana_log_pusher_token" {
   value     = grafana_service_account_token.log_pusher.key
   sensitive = true
 }
+
+output "dtrack_oidc_client_id" {
+  value = authentik_provider_oauth2.dependency_track.client_id
+}
+
+output "dtrack_oidc_client_secret" {
+  value     = authentik_provider_oauth2.dependency_track.client_secret
+  sensitive = true
+}

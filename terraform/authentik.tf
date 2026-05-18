@@ -71,8 +71,6 @@ resource "authentik_application" "hermes" {
 # --- Dependency Track OIDC Provider ---
 resource "authentik_provider_oauth2" "dependency_track" {
   name          = "Dependency Track"
-  client_id     = var.dtrack_oidc_client_id
-  client_secret = var.dtrack_oidc_client_secret
   
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id

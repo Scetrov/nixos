@@ -24,12 +24,9 @@ To fully enable the integration and secure the database, the following secrets M
 | Secret Key | Description |
 | :--- | :--- |
 | `dtrack_db_password` | Password for the `dtrack` PostgreSQL user. |
-| `dtrack_github_pat` | (Optional) GitHub Personal Access Token for repository analysis and intelligence. |
 | `dtrack_nvd_api_key` | (Optional) NVD API Key to avoid rate-limiting during vulnerability data sync. |
-| `dtrack_oidc_client_id` | OIDC Client ID from Authentik. |
-| `dtrack_oidc_client_secret` | OIDC Client Secret from Authentik. |
 
-### How to add secrets:
+### How to add manual secrets:
 
 1.  Edit the vault:
     ```bash
@@ -38,16 +35,19 @@ To fully enable the integration and secure the database, the following secrets M
 2.  Add the keys:
     ```yaml
     dtrack_db_password: "your_secure_db_password"
-    dtrack_oidc_client_id: "your-authentik-client-id"
-    dtrack_oidc_client_secret: "your-authentik-client-secret"
     dtrack_github_pat: "ghp_your_token"
     dtrack_nvd_api_key: "your-nvd-uuid-key"
     ```
-3.  Apply infrastructure changes:
+
+### Automated Secrets:
+
+OIDC credentials (`dtrack_oidc_client_id`, `dtrack_oidc_client_secret`) and `grafana_oncall_api_key` are automatically generated and stored in `src/generated-secrets.yml` by the infrastructure script.
+
+1.  Apply infrastructure changes (this generates the OIDC credentials):
     ```bash
     ./scripts/tofu.sh
     ```
-4.  Deploy the NixOS changes:
+2.  Deploy the NixOS changes (this will automatically pick up the generated secrets):
     ```bash
     ./scripts/play.sh
     ```

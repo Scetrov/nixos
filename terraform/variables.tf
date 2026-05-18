@@ -17,15 +17,6 @@ variable "grafana_client_secret" {
   sensitive = true
 }
 
-variable "dtrack_oidc_client_id" {
-  type = string
-}
-
-variable "dtrack_oidc_client_secret" {
-  type      = string
-  sensitive = true
-}
-
 variable "hermes_external_host" {
   type    = string
   default = "https://hermes.net.scetrov.live"
