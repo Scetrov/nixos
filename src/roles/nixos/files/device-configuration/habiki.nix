@@ -4,7 +4,6 @@
   imports = [
     ./modules/acme.nix
     ./modules/authentik.nix
-    ./modules/alloy.nix
     ./modules/blocky.nix
     ./modules/caddy.nix
     ./modules/grafana.nix

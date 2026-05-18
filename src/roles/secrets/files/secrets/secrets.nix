@@ -31,4 +31,6 @@ in
   "hermes_webui_env.age".publicKeys = users ++ systems;
   "oncall_secret_key.age".publicKeys = users ++ systems;
   "grafana_oncall_api_key.age".publicKeys = users ++ systems;
+  "loki_token.age".publicKeys = users ++ systems;
+  "loki_token_hash.age".publicKeys = users ++ systems;
 }

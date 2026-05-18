@@ -3,6 +3,15 @@
 lib.mkIf config.services.grafana.enable {
   networking.firewall.allowedTCPPorts = [ 80 443 ];
 
+  age.secrets.loki_token_hash = {
+    file = /root/secrets/loki_token_hash.age;
+    owner = "caddy";
+  };
+
+  systemd.services.caddy.serviceConfig.EnvironmentFile = [
+    "/run/agenix/loki_token_hash"
+  ];
+
   services.caddy = {
     enable = true;
     virtualHosts."metrics.net.scetrov.live" = {
@@ -15,6 +24,13 @@ lib.mkIf config.services.grafana.enable {
           X-Content-Type-Options nosniff
           X-Frame-Options SAMEORIGIN
           Referrer-Policy no-referrer-when-downgrade
+        }
+
+        handle /loki/api/v1/push {
+          basic_auth {
+            log-pusher {$LOKI_TOKEN_HASH}
+          }
+          reverse_proxy 127.0.0.1:3100
         }
 
         handle /loki* {

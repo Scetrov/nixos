@@ -1,17 +1,33 @@
-{ ... }:
+{ config, lib, ... }:
 
 {
+  users.users.alloy = {
+    isSystemUser = true;
+    group = "alloy";
+    extraGroups = [ "adm" "systemd-journal" ];
+  };
+  users.groups.alloy = {};
+
+  age.secrets.loki_token = {
+    file = /root/secrets/loki_token.age;
+    owner = "alloy";
+  };
+
   environment.etc."alloy/config.alloy".text = ''
-    loki.write "local" {
+    loki.write "central" {
       endpoint {
-        url = "http://127.0.0.1:3100/loki/api/v1/push"
+        url = "https://metrics.net.scetrov.live/loki/api/v1/push"
+        basic_auth {
+          username = "log-pusher"
+          password_file = "/run/agenix/loki_token"
+        }
       }
     }
 
     loki.source.journal "systemd" {
-      forward_to = [loki.write.local.receiver]
+      forward_to = [loki.write.central.receiver]
       labels = {
-        host = "habiki",
+        host = "${config.networking.hostName}",
         job  = "systemd-journal",
       }
     }
@@ -19,14 +35,14 @@
     local.file_match "varlogs" {
       path_targets = [{
         __path__ = "/var/log/*.log",
-        host     = "habiki",
+        host     = "${config.networking.hostName}",
         job      = "varlogs",
       }]
     }
 
     loki.source.file "varlogs" {
       targets    = local.file_match.varlogs.targets
-      forward_to = [loki.write.local.receiver]
+      forward_to = [loki.write.central.receiver]
     }
 
     otelcol.receiver.otlp "ingest" {
@@ -64,8 +80,15 @@
     ];
   };
 
-  systemd.services.alloy.serviceConfig.SupplementaryGroups = [
-    "adm"
-    "systemd-journal"
+  systemd.tmpfiles.rules = [
+    "d /var/lib/alloy 0750 alloy alloy -"
+    "d /var/lib/alloy/data 0750 alloy alloy -"
+    "Z /var/lib/alloy - alloy alloy -"
   ];
+
+  systemd.services.alloy.serviceConfig = {
+    DynamicUser = lib.mkForce false;
+    User = "alloy";
+    Group = "alloy";
+  };
 }
