@@ -33,6 +33,11 @@ We use **Grafana** and **Loki** for central observability.
 
 ## 🛠 Operation Standards
 
+### Automation First
+*   Automation is critical for BCDR recovery and reproducability
+*   All changes must be made through Automation (Ansible / Terraform)
+*   All state must be provisioned through Automation (Ansible / Terraform)
+
 ### **Declarative vs. Imperative**
 *   **NixOS/Ansible:** Used for host-level configuration, package installation, and container orchestration (systemd/podman).
 *   **OpenTofu:** Used for configuring the internal state of services (creating Authentik applications, groups, users, and Caddy API-based routing).
