@@ -30,6 +30,8 @@
         "identity.net.scetrov.live"
         "immich.net.scetrov.live"
         "hermes.net.scetrov.live"
+        "dtrack.net.scetrov.live"
+        "dtrack-api.net.scetrov.live"
       ];
       "10.229.10.10" = [
         "bullit"

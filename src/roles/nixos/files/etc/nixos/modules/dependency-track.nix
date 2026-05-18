@@ -139,13 +139,13 @@ in
 
     apiserverImage = lib.mkOption {
       type = lib.types.str;
-      default = "dependencytrack/apiserver:4.12";
+      default = "dependencytrack/apiserver:4.14.1";
       description = "Container image for API Server.";
     };
 
     frontendImage = lib.mkOption {
       type = lib.types.str;
-      default = "dependencytrack/frontend:4.12";
+      default = "dependencytrack/frontend:4.14.1";
       description = "Container image for Frontend.";
     };
 

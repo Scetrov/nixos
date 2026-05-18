@@ -24,9 +24,30 @@ data "authentik_flow" "default_invalidation" {
   slug = "default-provider-invalidation-flow"
 }
 
+# --- Random Credentials ---
+resource "random_id" "grafana_client_id" {
+  byte_length = 20
+}
+
+resource "random_password" "grafana_client_secret" {
+  length  = 40
+  special = true
+}
+
+resource "random_id" "dtrack_client_id" {
+  byte_length = 20
+}
+
+resource "random_password" "dtrack_client_secret" {
+  length  = 40
+  special = true
+}
+
 # --- Grafana OAuth2 Provider ---
 resource "authentik_provider_oauth2" "grafana" {
   name          = "Grafana"
+  client_id     = random_id.grafana_client_id.hex
+  client_secret = random_password.grafana_client_secret.result
   
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id
@@ -69,6 +90,8 @@ resource "authentik_application" "hermes" {
 # --- Dependency Track OIDC Provider ---
 resource "authentik_provider_oauth2" "dependency_track" {
   name          = "Dependency Track"
+  client_id     = random_id.dtrack_client_id.hex
+  client_secret = random_password.dtrack_client_secret.result
   
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id

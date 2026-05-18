@@ -22,8 +22,6 @@ We use **OpenTofu** for declarative management of application-level resources (A
 *   **Location:** The state is stored in the `terraform_state` database on the `habiki` host (running in the `authentik-postgresql` container).
 *   **Permissions:** Use the dedicated `terraform` user with limited schema permissions for state operations.
 
----
-
 ## 📊 Monitoring & Observability
 
 We use **Grafana** and **Loki** for central observability.
@@ -32,8 +30,6 @@ We use **Grafana** and **Loki** for central observability.
 *   **Workflow:** Systematic investigation of system logs (Loki) should be performed whenever service degradation is suspected.
 *   **Instructions:** Detailed procedures are located in `.agents/instructions/grafana-error-investigator.instructions.md`.
 *   **Automation:** Use the investigation script at `.agents/skills/grafana-error-investigator/scripts/investigate_errors.sh` to quickly pull and prioritize recent errors.
-
----
 
 ## 🛠 Operation Standards
 
@@ -45,7 +41,18 @@ We use **Grafana** and **Loki** for central observability.
 *   The `terraform/.gitignore` MUST exclude `.terraform/`, `.opentofu/`, and any `*.tfstate` files to prevent accidental leakage of resource metadata or cached secrets.
 *   The `terraform/.terraform.lock.hcl` should also be ignored to avoid platform-specific lock conflicts in this environment.
 
----
+## Task Sign Off Checklist
+
+For each tasks ensure the following is complete:
+
+- [ ] All of the required files are staged ready for commit in git (Staging Rule)
+- [ ] No files contain secrets, keys or sensitive material (Toxic Waste Rule)
+- [ ] Any new aliases have been added to device hosts and resolve via `local-networking.nix` (Local DNS Rule)
+- [ ] Identity and Access management is handled using Authentik (IdAM Rule)
+- [ ] Logging, Monitoring and Alerting is configured to send data to Grafana (Observability Rule)
+- [ ] No additional ports, endpoints or routes are left dangling (Hygiene Rule)
+- [ ] Modern versions of all software is in use (Concurrency Rule)
+- [ ] New updates that don't fix CVSS >= 7.0 are differed for 7 days (7x7 Rule)
 
 ## 🎓 Lessons Learned (Security Remediation)
 *   **Incident:** Hardcoded secrets were accidentally committed to Git history.
