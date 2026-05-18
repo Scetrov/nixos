@@ -1,0 +1,89 @@
+- name: Wait for Dependency Track API to be reachable
+  ansible.builtin.uri:
+    url: "{{ dependency_track_url }}/api/v1/oidc/available"
+    method: GET
+  register: dtrack_available_check
+  until: dtrack_available_check.status == 200
+  retries: 30
+  delay: 10
+  delegate_to: localhost
+
+- name: Authenticate with Dependency Track to get an API token
+  ansible.builtin.uri:
+    url: "{{ dependency_track_url }}/api/v1/user/login"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      username: "admin"
+      password: "{{ dependency_track_admin_password }}"
+    status_code: 200
+    return_content: true
+  register: dtrack_login
+  delegate_to: localhost
+  no_log: true
+
+- name: Set Dependency Track API token fact
+  ansible.builtin.set_fact:
+    dtrack_token: "{{ dtrack_login.content }}"
+  no_log: true
+
+- name: Check if OIDC group already exists
+  ansible.builtin.uri:
+    url: "{{ dependency_track_url }}/api/v1/oidc/group"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ dtrack_token }}"
+    status_code: 200
+  register: dtrack_oidc_groups
+  delegate_to: localhost
+
+- name: Create OIDC group if it doesn't exist
+  ansible.builtin.uri:
+    url: "{{ dependency_track_url }}/api/v1/oidc/group"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ dtrack_token }}"
+    body_format: json
+    body:
+      name: "{{ dependency_track_oidc_group_name }}"
+    status_code: 201
+  register: dtrack_oidc_group_create
+  when: "dependency_track_oidc_group_name not in (dtrack_oidc_groups.json | map(attribute='name') | list)"
+  delegate_to: localhost
+
+- name: Get OIDC group UUID
+  ansible.builtin.uri:
+    url: "{{ dependency_track_url }}/api/v1/oidc/group"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ dtrack_token }}"
+    status_code: 200
+  register: dtrack_oidc_groups_final
+  delegate_to: localhost
+
+- name: Find OIDC group UUID fact
+  ansible.builtin.set_fact:
+    dtrack_oidc_group_uuid: "{{ (dtrack_oidc_groups_final.json | selectattr('name', 'equalto', dependency_track_oidc_group_name) | first).uuid }}"
+
+- name: Get list of teams
+  ansible.builtin.uri:
+    url: "{{ dependency_track_url }}/api/v1/team"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ dtrack_token }}"
+    status_code: 200
+  register: dtrack_teams
+  delegate_to: localhost
+
+- name: Find Administrators team UUID
+  ansible.builtin.set_fact:
+    dtrack_admin_team_uuid: "{{ (dtrack_teams.json | selectattr('name', 'equalto', 'Administrators') | first).uuid }}"
+
+- name: Map OIDC group to Administrators team
+  ansible.builtin.uri:
+    url: "{{ dependency_track_url }}/api/v1/team/{{ dtrack_admin_team_uuid }}/oidcGroup/{{ dtrack_oidc_group_uuid }}"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ dtrack_token }}"
+    status_code: [200, 304] # 304 if already mapped
+  delegate_to: localhost

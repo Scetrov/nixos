@@ -56,6 +56,7 @@ entries = {
     "ALPINE_OIDC_TEAMS_CLAIM": "groups",
     "ALPINE_OIDC_USER_PROVISIONING": "true",
     "ALPINE_OIDC_TEAM_PROVISIONING": "true",
+    "ALPINE_OIDC_TEAM_SYNCHRONIZATION": "true",
     "ALPINE_CORS_ENABLED": "true",
     "ALPINE_CORS_ALLOW_ORIGIN": "https://dtrack.net.scetrov.live",
 }

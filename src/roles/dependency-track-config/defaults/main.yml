@@ -1,0 +1,3 @@
+dependency_track_url: "https://dtrack-api.net.scetrov.live"
+dependency_track_admin_password: "admin"
+dependency_track_oidc_group_name: "All Applications"
