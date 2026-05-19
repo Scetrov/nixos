@@ -20,7 +20,7 @@
   loop:
     - logo.png
     - background.jpg
-  when: scetrov_services_authentik_enable | default(false)
+  when: authentik_config_enabled | default(false)
 
 - name: Include NixOS rebuild tasks
   ansible.builtin.include_tasks: rebuild.yml

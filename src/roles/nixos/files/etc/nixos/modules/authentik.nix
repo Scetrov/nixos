@@ -277,7 +277,7 @@ in
           ports = [ "127.0.0.1:${toString cfg.port}:9000" ];
           volumes = [
             "${dataDir}:/data:U"
-            "${brandingDir}:/web/static/branding:U"
+            "${brandingDir}:/web/dist/branding:U"
             "${templatesDir}:/blueprints/custom:U"
             "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
@@ -295,7 +295,7 @@ in
           extraOptions = [ "--shm-size=512m" "--network=authentik" ];
           volumes = [
             "${dataDir}:/data:U"
-            "${brandingDir}:/web/static/branding:U"
+            "${brandingDir}:/web/dist/branding:U"
             "${templatesDir}:/blueprints/custom:U"
             "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"

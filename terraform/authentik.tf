@@ -176,20 +176,23 @@ resource "authentik_brand" "default" {
   default        = true
   branding_title = "scetrov.live Identity"
   
-  branding_logo    = "/static/branding/logo.png"
-  branding_favicon = "/static/branding/logo.png"
+  branding_logo    = "/static/dist/branding/logo.png"
+  branding_favicon = "/static/dist/branding/logo.png"
+  
+  branding_default_flow_background = "/static/dist/branding/background.jpg"
   
   branding_custom_css = <<-EOT
     :root {
-        --ak-flow-background: url('/static/branding/background.jpg') !important;
+        --ak-flow-background: url('/static/dist/branding/background.jpg') !important;
     }
     .pf-c-background-image {
-        --pf-c-background-image--BackgroundImage: url('/static/branding/background.jpg') !important;
+        --pf-c-background-image--BackgroundImage: url('/static/dist/branding/background.jpg') !important;
         --pf-c-background-image--Filter: none !important;
     }
     .pf-c-login__main {
         background-color: rgba(0, 0, 0, 0.4) !important;
         backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         border-radius: 12px;
         color: white !important;
     }
@@ -198,6 +201,10 @@ resource "authentik_brand" "default" {
     }
     .pf-c-form__label-text {
         color: #eee !important;
+    }
+    /* Ensure the background image covers the whole screen */
+    .pf-c-background-image::before {
+        background-image: url('/static/dist/branding/background.jpg') !important;
     }
   EOT
 
