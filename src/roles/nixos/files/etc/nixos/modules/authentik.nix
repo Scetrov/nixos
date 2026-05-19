@@ -4,6 +4,7 @@ let
   cfg = config.scetrov.services.authentik;
   stateDir = "/var/lib/authentik";
   dataDir = "${stateDir}/data";
+  brandingDir = "${stateDir}/branding";
   templatesDir = "${stateDir}/templates";
   postgresqlDataDir = "${stateDir}/postgresql-data";
   authentikEnvFile = "${stateDir}/authentik.env";
@@ -199,6 +200,7 @@ in
       systemd.tmpfiles.rules = [
         "d ${stateDir} 0750 root root - -"
         "d ${dataDir} 0750 root root - -"
+        "d ${brandingDir} 0750 root root - -"
         "d ${templatesDir} 0750 root root - -"
         "d ${postgresqlDataDir} 0700 root root - -"
       ];
@@ -275,6 +277,7 @@ in
           ports = [ "127.0.0.1:${toString cfg.port}:9000" ];
           volumes = [
             "${dataDir}:/data:U"
+            "${brandingDir}:/web/static/branding:U"
             "${templatesDir}:/blueprints/custom:U"
             "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"
@@ -292,6 +295,7 @@ in
           extraOptions = [ "--shm-size=512m" "--network=authentik" ];
           volumes = [
             "${dataDir}:/data:U"
+            "${brandingDir}:/web/static/branding:U"
             "${templatesDir}:/blueprints/custom:U"
             "${config.age.secrets.authentik_secret_key.path}:${config.age.secrets.authentik_secret_key.path}:ro"
             "${config.age.secrets.authentik_postgresql_password.path}:${config.age.secrets.authentik_postgresql_password.path}:ro"

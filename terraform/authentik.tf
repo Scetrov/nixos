@@ -170,6 +170,40 @@ resource "authentik_application" "metrics" {
   protocol_provider = authentik_provider_proxy.metrics.id
 }
 
+# --- Branding ---
+resource "authentik_brand" "default" {
+  domain         = "."
+  default        = true
+  branding_title = "scetrov.live Identity"
+  
+  branding_logo    = "/static/branding/logo.png"
+  branding_favicon = "/static/branding/logo.png"
+  
+  branding_custom_css = <<-EOT
+    :root {
+        --ak-flow-background: url('/static/branding/background.jpg') !important;
+    }
+    .pf-c-background-image {
+        --pf-c-background-image--BackgroundImage: url('/static/branding/background.jpg') !important;
+        --pf-c-background-image--Filter: none !important;
+    }
+    .pf-c-login__main {
+        background-color: rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(8px);
+        border-radius: 12px;
+        color: white !important;
+    }
+    .pf-c-title {
+        color: white !important;
+    }
+    .pf-c-form__label-text {
+        color: #eee !important;
+    }
+  EOT
+
+  flow_authentication = data.authentik_flow.default_authorization.id
+}
+
 # --- Outpost ---
 # This manages the embedded outpost that provides forward_auth for Caddy.
 resource "authentik_outpost" "proxy" {

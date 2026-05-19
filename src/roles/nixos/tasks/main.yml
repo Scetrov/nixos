@@ -9,6 +9,19 @@
 - name: Include NixOS sync tasks
   ansible.builtin.include_tasks: sync.yml
 
+- name: Copy Authentik branding assets
+  become: true
+  ansible.builtin.copy:
+    src: "etc/nixos/branding/{{ item }}"
+    dest: "/var/lib/authentik/branding/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - logo.png
+    - background.jpg
+  when: scetrov_services_authentik_enable | default(false)
+
 - name: Include NixOS rebuild tasks
   ansible.builtin.include_tasks: rebuild.yml
 
