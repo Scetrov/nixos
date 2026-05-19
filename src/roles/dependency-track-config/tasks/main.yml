@@ -81,9 +81,13 @@
 
 - name: Map OIDC group to Administrators team
   ansible.builtin.uri:
-    url: "{{ dependency_track_url }}/api/v1/team/{{ dtrack_admin_team_uuid }}/oidcGroup/{{ dtrack_oidc_group_uuid }}"
-    method: POST
+    url: "{{ dependency_track_url }}/api/v1/oidc/mapping"
+    method: PUT
     headers:
       Authorization: "Bearer {{ dtrack_token }}"
-    status_code: [200, 304] # 304 if already mapped
+    body_format: json
+    body:
+      team: "{{ dtrack_admin_team_uuid }}"
+      group: "{{ dtrack_oidc_group_uuid }}"
+    status_code: [200, 201]
   delegate_to: localhost
