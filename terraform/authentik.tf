@@ -155,6 +155,21 @@ resource "authentik_policy_binding" "dependency_track_access" {
   order  = 0
 }
 
+# --- Metrics Proxy Provider ---
+resource "authentik_provider_proxy" "metrics" {
+  name               = "Metrics"
+  external_host      = "https://metrics.net.scetrov.live"
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  mode               = "forward_single"
+}
+
+resource "authentik_application" "metrics" {
+  name              = "Metrics"
+  slug              = "metrics"
+  protocol_provider = authentik_provider_proxy.metrics.id
+}
+
 # --- Outpost ---
 # This manages the embedded outpost that provides forward_auth for Caddy.
 resource "authentik_outpost" "proxy" {
@@ -162,7 +177,8 @@ resource "authentik_outpost" "proxy" {
   type = "proxy"
   
   protocol_providers = [
-    authentik_provider_proxy.hermes.id
+    authentik_provider_proxy.hermes.id,
+    authentik_provider_proxy.metrics.id
   ]
   
   config = jsonencode({
