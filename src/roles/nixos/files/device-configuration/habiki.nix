@@ -25,11 +25,11 @@
   services.hermes-webui = {
     enable = true;
     enableCaddy = false;
-    caddyListenAddress = "0.0.0.0";
+    caddyListenAddress = "127.0.0.1";
     environmentFile = config.age.secrets.hermes_webui_env.path;
     extraEnvironment = {
       HERMES_WEBUI_TRUSTED_PROXY_AUTH_HEADER = "X-Authentik-Username";
-      HERMES_WEBUI_TRUSTED_PROXY_NETS = "0.0.0.0/0";
+      HERMES_WEBUI_TRUSTED_PROXY_NETS = "127.0.0.0/8, 10.0.0.0/8";
       # Setting this to empty string in 'environment' overrides any value in 'environmentFile'
       # and enables trusted proxy authentication in Hermes WebUI.
       HERMES_WEBUI_PASSWORD = "";

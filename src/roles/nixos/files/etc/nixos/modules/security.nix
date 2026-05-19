@@ -3,7 +3,15 @@
 {
   boot.blacklistedKernelModules = [ "algif_aead" ];
 
-  security.sudo.wheelNeedsPassword = false;
+  security.sudo.wheelNeedsPassword = true;
+  security.sudo.extraRules = [
+    {
+      users = [ "scetrov" ];
+      commands = [
+        { command = "ALL"; options = [ "NOPASSWD" ]; }
+      ];
+    }
+  ];
 
   services.openssh = {
     enable = true;

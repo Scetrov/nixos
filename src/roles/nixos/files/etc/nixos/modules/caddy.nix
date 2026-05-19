@@ -19,6 +19,15 @@ lib.mkIf config.services.grafana.enable {
       extraConfig = ''
         encode zstd gzip
 
+        @auth_routes {
+          path /loki* /tempo* /otlp* /mimir* /prometheus* /pyroscope* /alloy* /oncall*
+          not path /loki/api/v1/push
+        }
+        forward_auth @auth_routes http://127.0.0.1:9000 {
+          uri /outpost.goauthentik.io/auth/caddy
+          copy_headers X-Authentik-Username X-Authentik-Groups X-Authentik-Email X-Authentik-Name X-Authentik-Uid
+        }
+
         header {
           Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
           X-Content-Type-Options nosniff

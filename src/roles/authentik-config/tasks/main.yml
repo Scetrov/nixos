@@ -486,35 +486,36 @@
   ansible.builtin.shell:
     cmd: |
       set -e
-      # Determine connection string for PG backend
-      PG_CONN="postgres://terraform:{{ authentik_postgresql_password }}@{{ hostvars['habiki'].ansible_host | default('10.229.10.2') }}:5433/terraform_state?sslmode=disable"
+      tofu init -reconfigure
+      tofu apply -auto-approve
       
-      tofu init -reconfigure -backend-config="conn_str=$PG_CONN"
-      tofu apply -auto-approve \
-        -var="authentik_token={{ authentik_api_token }}" \
-        -var="grafana_token={{ grafana_admin_token }}" \
-        -var="hermes_external_host={{ authentik_config_hermes_external_host }}"
-      
-      # Capture OnCall token output if it exists
-      tofu output -json grafana_oncall_token > grafana_oncall_token.json || echo "null" > grafana_oncall_token.json
+      # We no longer write the token to disk here.
     chdir: "{{ playbook_dir }}/../terraform"
   register: tofu_apply_output
   environment:
     TF_IN_AUTOMATION: "true"
+    PG_CONN_STR: "postgres://terraform:{{ authentik_postgresql_password }}@{{ hostvars['habiki'].ansible_host | default('10.229.10.2') }}:5433/terraform_state?sslmode=disable"
+    TF_VAR_authentik_token: "{{ authentik_api_token }}"
+    TF_VAR_grafana_token: "{{ grafana_admin_token }}"
+    TF_VAR_hermes_external_host: "{{ authentik_config_hermes_external_host }}"
+  no_log: true
+
+- name: Retrieve Grafana OnCall token from Tofu
+  delegate_to: localhost
+  ansible.builtin.command: tofu output -raw grafana_oncall_token
+  args:
+    chdir: "{{ playbook_dir }}/../terraform"
+  register: tofu_oncall_token
+  when: tofu_apply_output is success
+  changed_when: false
   no_log: true
 
 - name: Set fact for Grafana OnCall token
   delegate_to: localhost
   ansible.builtin.set_fact:
-    grafana_oncall_api_key: "{{ (lookup('file', playbook_dir + '/../terraform/grafana_oncall_token.json') | from_json) }}"
-  when: 
-    - tofu_apply_output is success
-    - (lookup('file', playbook_dir + '/../terraform/grafana_oncall_token.json') | from_json) is not none
-  no_log: false
-
-- name: Debug Grafana OnCall token
-  ansible.builtin.debug:
-    msg: "OnCall Token found: {{ grafana_oncall_api_key | default('NOT SET') }}"
+    grafana_oncall_api_key: "{{ tofu_oncall_token.stdout }}"
+  when: tofu_oncall_token is success
+  no_log: true
 
 - name: Generate OnCall Secret Key if not provided
   delegate_to: localhost
