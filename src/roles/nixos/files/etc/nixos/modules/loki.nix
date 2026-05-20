@@ -18,9 +18,14 @@
         working_directory = "/var/lib/loki/compactor";
       };
       limits_config = {
+        discover_log_levels = true;
         reject_old_samples = true;
         reject_old_samples_max_age = "168h";
         retention_period = "168h";
+        volume_enabled = true;
+      };
+      pattern_ingester = {
+        enabled = true;
       };
       ruler.storage = {
         local.directory = "/var/lib/loki/rules";

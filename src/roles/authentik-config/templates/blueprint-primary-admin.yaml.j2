@@ -21,3 +21,12 @@ entries:
       password: "{{ authentik_config_primary_admin_password }}"
       groups:
         - !Find [authentik_core.group, [name, authentik Admins]]
+
+  - model: authentik_core.user
+    id: user-scetrov
+    identifiers:
+      username: "scetrov"
+    attrs:
+      name: "Scetrov"
+      groups:
+        - !Find [authentik_core.group, [name, authentik Admins]]

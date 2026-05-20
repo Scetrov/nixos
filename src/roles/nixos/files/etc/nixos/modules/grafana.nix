@@ -7,6 +7,8 @@
   services.grafana = {
     enable = true;
     declarativePlugins = with pkgs.grafanaPlugins; [
+      grafana-lokiexplore-app
+      grafana-metricsdrilldown-app
       grafana-oncall-app
       grafana-pyroscope-app
     ];
@@ -45,6 +47,10 @@
             type = "prometheus";
             uid = "mimir";
             url = "http://127.0.0.1:8080/prometheus";
+            jsonData = {
+              httpMethod = "POST";
+              timeInterval = "15s";
+            };
           }
           {
             access = "proxy";
@@ -55,6 +61,7 @@
             url = "http://127.0.0.1:9090";
             jsonData = {
               httpMethod = "POST";
+              timeInterval = "15s";
             };
           }
           {
@@ -128,6 +135,10 @@
     "L+ /etc/grafana/provisioning/plugins/oncall.yaml - - - - ${pkgs.writeText "oncall.yaml" ''
       apiVersion: 1
       apps:
+        - type: grafana-lokiexplore-app
+          disabled: false
+        - type: grafana-metricsdrilldown-app
+          disabled: false
         - type: grafana-oncall-app
           disabled: false
     ''}"

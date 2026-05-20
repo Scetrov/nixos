@@ -23,6 +23,10 @@ data "authentik_property_mapping_provider_scope" "entitlements" {
 }
 
 # --- Flows ---
+data "authentik_flow" "default_authentication" {
+  slug = "default-authentication-flow"
+}
+
 data "authentik_flow" "default_authorization" {
   slug = "default-provider-authorization-implicit-consent"
 }
@@ -85,6 +89,7 @@ resource "authentik_application" "grafana" {
   name              = "Grafana"
   slug              = "grafana"
   protocol_provider = authentik_provider_oauth2.grafana.id
+  meta_icon         = "https://raw.githubusercontent.com/grafana/grafana/main/public/img/grafana_icon.svg"
 }
 
 resource "authentik_application_entitlement" "grafana_admins" {
@@ -191,6 +196,7 @@ resource "authentik_application" "metrics" {
   name              = "Metrics"
   slug              = "metrics"
   protocol_provider = authentik_provider_proxy.metrics.id
+  meta_launch_url   = "blank://blank"
 }
 
 # --- Branding ---
@@ -231,7 +237,7 @@ resource "authentik_brand" "default" {
     }
   EOT
 
-  flow_authentication = data.authentik_flow.default_authorization.id
+  flow_authentication = data.authentik_flow.default_authentication.id
 }
 
 # --- Outpost ---
