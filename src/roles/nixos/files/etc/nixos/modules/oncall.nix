@@ -3,10 +3,35 @@
 let
   stateDir = "/var/lib/oncall";
   oncallEnvFile = "${stateDir}/oncall.env";
+  oncallMigrateScript = pkgs.writeShellScript "oncall-migrate" ''
+    set -euo pipefail
+
+    ${pkgs.podman}/bin/podman run --rm \
+      --network=podman \
+      --env-file=${oncallEnvFile} \
+      -v ${stateDir}:${stateDir}:U \
+      docker.io/grafana/oncall:latest \
+      sh -ceu 'python - <<PY
+import socket
+import time
+
+deadline = time.monotonic() + 60
+while True:
+    try:
+        with socket.create_connection(("oncall-postgres", 5432), timeout=2):
+            break
+    except OSError:
+        if time.monotonic() > deadline:
+            raise
+        time.sleep(1)
+PY
+      python manage.py migrate --noinput && python manage.py collectstatic --noinput'
+  '';
 in
 {
   age.secrets.oncall_secret_key.file = /root/secrets/oncall_secret_key.age;
   age.secrets.grafana_oncall_api_key.file = /root/secrets/grafana_oncall_api_key.age;
+  age.secrets.oncall_postgresql_password.file = /root/secrets/oncall_postgresql_password.age;
 
   systemd.tmpfiles.rules = [
     "d ${stateDir} 0750 root root - -"
@@ -34,9 +59,15 @@ in
       
       secret_key=$(cat ${config.age.secrets.oncall_secret_key.path})
       grafana_api_key=$(cat ${config.age.secrets.grafana_oncall_api_key.path})
+      database_password=$(cat ${config.age.secrets.oncall_postgresql_password.path})
 
       cat > ${oncallEnvFile} <<EOF
-DATABASE_TYPE=sqlite3
+DATABASE_TYPE=postgresql
+DATABASE_HOST=oncall-postgres
+DATABASE_PORT=5432
+DATABASE_NAME=oncall
+DATABASE_USER=oncall
+DATABASE_PASSWORD=$database_password
 BROKER_TYPE=redis
 BASE_URL=https://metrics.net.scetrov.live/oncall
 SECRET_KEY=$secret_key
@@ -60,10 +91,12 @@ EOF
     description = "Run Grafana OnCall database migrations";
     after = [
       "oncall-prepare-env.service"
+      "podman-oncall-postgres.service"
       "podman-oncall-redis.service"
     ];
     requires = [
       "oncall-prepare-env.service"
+      "podman-oncall-postgres.service"
       "podman-oncall-redis.service"
     ];
     before = [
@@ -74,28 +107,36 @@ EOF
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = ''
-        ${pkgs.podman}/bin/podman run --rm \
-          --network=podman \
-          --env-file=${oncallEnvFile} \
-          -v ${stateDir}:${stateDir}:U \
-          docker.io/grafana/oncall:latest \
-          sh -ceu 'python manage.py migrate --noinput && python manage.py collectstatic --noinput'
-      '';
+      ExecStart = oncallMigrateScript;
     };
   };
 
   systemd.services.podman-oncall-engine = {
-    after = [ "oncall-migrate.service" "oncall-prepare-env.service" ];
-    requires = [ "oncall-migrate.service" "oncall-prepare-env.service" ];
+    after = [ "oncall-migrate.service" "oncall-prepare-env.service" "podman-oncall-postgres.service" ];
+    requires = [ "oncall-migrate.service" "oncall-prepare-env.service" "podman-oncall-postgres.service" ];
   };
 
   systemd.services.podman-oncall-celery = {
-    after = [ "oncall-migrate.service" "oncall-prepare-env.service" ];
-    requires = [ "oncall-migrate.service" "oncall-prepare-env.service" ];
+    after = [ "oncall-migrate.service" "oncall-prepare-env.service" "podman-oncall-postgres.service" ];
+    requires = [ "oncall-migrate.service" "oncall-prepare-env.service" "podman-oncall-postgres.service" ];
   };
 
   virtualisation.oci-containers.containers = {
+    oncall-postgres = {
+      image = "docker.io/postgres:16-alpine";
+      autoStart = true;
+      extraOptions = [ "--network=podman" ];
+      environment = {
+        POSTGRES_USER = "oncall";
+        POSTGRES_DB = "oncall";
+        POSTGRES_PASSWORD_FILE = "${config.age.secrets.oncall_postgresql_password.path}";
+      };
+      volumes = [
+        "oncall-postgres-data:/var/lib/postgresql/data"
+        "${config.age.secrets.oncall_postgresql_password.path}:${config.age.secrets.oncall_postgresql_password.path}:ro"
+      ];
+    };
+
     oncall-redis = {
       image = "docker.io/redis:7-alpine";
       autoStart = true;
@@ -110,6 +151,7 @@ EOF
       extraOptions = [ "--network=podman" ];
       ports = [ "127.0.0.1:18080:8080" ];
       volumes = [ "${stateDir}:${stateDir}:U" ];
+      dependsOn = [ "oncall-postgres" "oncall-redis" ];
     };
 
     oncall-celery = {
@@ -119,6 +161,7 @@ EOF
       environmentFiles = [ oncallEnvFile ];
       extraOptions = [ "--network=podman" ];
       volumes = [ "${stateDir}:${stateDir}:U" ];
+      dependsOn = [ "oncall-postgres" "oncall-redis" ];
     };
   };
 }

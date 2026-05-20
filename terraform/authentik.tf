@@ -127,6 +127,7 @@ resource "authentik_application" "hermes" {
   name              = "Hermes"
   slug              = "hermes"
   protocol_provider = authentik_provider_proxy.hermes.id
+  meta_icon         = "https://raw.githubusercontent.com/scetrov/hermes/main/public/img/hermes_icon.svg"
 }
 
 # --- Dependency Track OIDC Provider ---
