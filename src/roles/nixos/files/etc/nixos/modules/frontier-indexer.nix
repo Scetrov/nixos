@@ -9,11 +9,13 @@ let
   cfg = config.scetrov.services.frontier-indexer;
   stateDir = "/var/lib/frontier-indexer";
   timescaleDataDir = "${stateDir}/timescaledb-data";
+  dbPasswordFile = "${stateDir}/db-password";
   indexerEnvFile = "${stateDir}/indexer.env";
   indexerPrepareEnvScript = pkgs.writeShellScript "frontier-indexer-prepare-env" ''
     set -euo pipefail
 
-    ${pkgs.coreutils}/bin/install -d -m 0750 ${stateDir} ${timescaleDataDir}
+    ${pkgs.coreutils}/bin/install -d -m 0750 ${stateDir}
+    ${pkgs.coreutils}/bin/install -m 0444 ${config.age.secrets.frontier_indexer_db_password.path} ${dbPasswordFile}
 
     db_password="$(${pkgs.coreutils}/bin/cat ${config.age.secrets.frontier_indexer_db_password.path})"
     umask 077
@@ -97,7 +99,10 @@ in
     systemd.services.frontier-indexer-prepare-env = {
       description = "Prepare Frontier Indexer environment file";
       wantedBy = [ "multi-user.target" ];
-      before = [ "podman-frontier-indexer.service" ];
+      before = [
+        "podman-frontier-timescaledb.service"
+        "podman-frontier-indexer.service"
+      ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -130,11 +135,11 @@ in
         environment = {
           POSTGRES_USER = "postgres";
           POSTGRES_DB = "postgres";
-          POSTGRES_PASSWORD_FILE = config.age.secrets.frontier_indexer_db_password.path;
+          POSTGRES_PASSWORD_FILE = dbPasswordFile;
         };
         volumes = [
           "${timescaleDataDir}:/home/postgres/pgdata/data:U"
-          "${config.age.secrets.frontier_indexer_db_password.path}:${config.age.secrets.frontier_indexer_db_password.path}:ro"
+          "${dbPasswordFile}:${dbPasswordFile}:ro"
         ];
       };
 
@@ -149,10 +154,16 @@ in
     };
 
     systemd.services.podman-frontier-timescaledb = {
-      requires = [ "frontier-indexer-network.service" ];
-      after = [ "frontier-indexer-network.service" ];
+      requires = [
+        "frontier-indexer-prepare-env.service"
+        "frontier-indexer-network.service"
+      ];
+      after = [
+        "frontier-indexer-prepare-env.service"
+        "frontier-indexer-network.service"
+      ];
       serviceConfig = {
-        Restart = "on-failure";
+        Restart = lib.mkForce "on-failure";
         RestartSec = "10s";
       };
     };
@@ -205,7 +216,7 @@ in
         "frontier-indexer-wait-for-db.service"
       ];
       serviceConfig = {
-        Restart = "on-failure";
+        Restart = lib.mkForce "on-failure";
         RestartSec = "10s";
       };
     };
@@ -220,9 +231,13 @@ in
     services.prometheus.scrapeConfigs = lib.mkAfter [
       {
         job_name = "frontier-indexer";
+        metrics_path = "/metrics";
         static_configs = [
           {
             targets = [ "127.0.0.1:${toString cfg.metricsPort}" ];
+            labels = {
+              service = "frontier-indexer";
+            };
           }
         ];
       }

@@ -20,7 +20,7 @@ lib.mkIf config.services.grafana.enable {
         encode zstd gzip
 
         @auth_routes {
-          path /loki* /tempo* /otlp* /mimir* /prometheus* /pyroscope* /alloy* /oncall*
+          path /loki* /tempo* /otlp* /mimir* /prometheus* /pyroscope* /alloy* /frontier-indexer* /oncall*
           not path /loki/api/v1/push
         }
         forward_auth @auth_routes http://127.0.0.1:9000 {
@@ -68,6 +68,10 @@ lib.mkIf config.services.grafana.enable {
 
         handle_path /alloy* {
           reverse_proxy 127.0.0.1:12345
+        }
+
+        handle_path /frontier-indexer/metrics* {
+          reverse_proxy 127.0.0.1:9184
         }
 
         handle /oncall* {

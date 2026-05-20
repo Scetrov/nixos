@@ -10,15 +10,17 @@ When troubleshooting system health or responding to reports of errors, use the f
 ## 🔑 Authentication
 - Credentials are stored in `~/env/grafana.env`.
 - Source this file to obtain `GRAFANA_SERVICE_TOKEN`.
-- The Loki API is accessible at `https://metrics.net.scetrov.live/loki`.
+- Query Loki through Grafana's datasource API at `https://metrics.net.scetrov.live/grafana/api/ds/query`.
+- The Loki datasource UID is `loki`.
+- Direct `https://metrics.net.scetrov.live/loki` queries are protected by Authentik and redirect to interactive login.
 
 ## 🔍 Log Query Workflow
-1. **Query Loki:** Use the `/loki/api/v1/query_range` endpoint.
-2. **Filter:** Focus on logs with levels `error`, `warn`, `fail`, or `critical`.
-3. **Time Range:** Start with the last 6 hours (`date -d "6 hours ago" +%s%N`).
+1. **Query Loki:** Use Grafana's `/grafana/api/ds/query` endpoint with the `loki` datasource.
+2. **Filter:** Focus on logs containing `error`, `warn`, `failed`, `failure`, `critical`, `fatal`, or `exception`.
+3. **Time Range:** Start with the last 6 hours (`date -d "6 hours ago" +%s%3N` for Grafana milliseconds).
 4. **Analysis:**
    - Group messages by frequency to identify high-impact recurring issues.
-   - Filter out noise from internal monitoring (e.g., query execution logs).
+   - Filter out noise from internal monitoring, DNS `NOERROR` query logs, and healthy container health events.
    - Correlate errors across services using the `job` label.
 
 ## 🛠 Tooling

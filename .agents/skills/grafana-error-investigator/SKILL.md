@@ -1,19 +1,20 @@
 ---
 name: grafana-error-investigator
-description: Investigates errors and warnings logged in Grafana (Loki). Use this skill when the user wants to identify, prioritize, and fix issues reported in the system logs. It sources credentials from ~/env/grafana.env and queries Loki for recent Errors and Warnings.
+description: Investigates errors and warnings logged in Grafana (Loki). Use this skill when the user wants to identify, prioritize, and fix issues reported in the system logs. It sources credentials from ~/env/grafana.env and queries Loki through Grafana's datasource API.
 ---
 
 # Grafana Error Investigator
 
-This skill helps you investigate system health by querying Loki for Errors and Warnings, presenting them as a prioritized list, and offering to fix them.
+This skill helps you investigate system health by querying Loki for Errors and Warnings through Grafana, presenting them as a prioritized list, and offering to fix them.
 
 ## Workflow
 
 1. **Source Credentials**: Always source `~/env/grafana.env` to obtain `GRAFANA_SERVICE_TOKEN`.
-2. **Query Loki**: Use `curl` to query the Loki API at `https://metrics.net.scetrov.live/loki/api/v1/query_range`.
+2. **Query Loki Through Grafana**: Use `curl` to query Grafana's datasource API at `https://metrics.net.scetrov.live/grafana/api/ds/query` with datasource UID `loki`. Direct `/loki` queries are protected by Authentik and redirect to interactive login.
 3. **Analyze Results**: 
    - Focus on logs from the last 1-6 hours.
-   - Filter for strings like "error", "warn", "fail", "critical".
+   - Filter for strings like "error", "warn", "failed", "failure", "critical", "fatal", and "exception".
+   - Filter out known benign noise such as DNS query logs with `NOERROR` and container `health_status=healthy` events.
    - Group similar log messages to identify recurring issues.
 4. **Prioritize**: Rank issues by frequency and perceived severity.
 5. **Present**: Show a clean list of top issues.

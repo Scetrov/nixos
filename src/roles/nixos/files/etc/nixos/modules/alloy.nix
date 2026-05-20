@@ -24,8 +24,28 @@
       }
     }
 
+    loki.relabel "journal" {
+      forward_to = []
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        target_label  = "unit"
+      }
+
+      rule {
+        source_labels = ["__journal_syslog_identifier"]
+        target_label  = "syslog_identifier"
+      }
+
+      rule {
+        source_labels = ["__journal_priority_keyword"]
+        target_label  = "journal_priority"
+      }
+    }
+
     loki.source.journal "systemd" {
-      forward_to = [loki.write.central.receiver]
+      forward_to    = [loki.write.central.receiver]
+      relabel_rules = loki.relabel.journal.rules
       labels = {
         host = "${config.networking.hostName}",
         job  = "systemd-journal",
