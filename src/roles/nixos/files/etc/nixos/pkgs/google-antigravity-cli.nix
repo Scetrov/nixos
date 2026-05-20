@@ -2,15 +2,14 @@
 
 pkgs.stdenv.mkDerivation {
   pname = "google-antigravity-cli";
-  version = "latest";
+  version = "1.0.0-5288553236791296";
 
   src = pkgs.fetchurl {
-    url = "https://antigravity.google/cli/download/linux-amd64";
-    # Update with: nix-prefetch-url https://antigravity.google/cli/download/linux-amd64
-    sha256 = "0000000000000000000000000000000000000000000000000000";
+    url = "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.0.0-5288553236791296/linux-x64/cli_linux_x64.tar.gz";
+    sha256 = "sha256-cAljQFdPr8SgbE08gFcxTiLUdc4cgg0K1R/wf7fpnrY=";
   };
 
-  dontUnpack = true;
+  sourceRoot = ".";
 
   nativeBuildInputs = [
     pkgs.patchelf
@@ -20,7 +19,7 @@ pkgs.stdenv.mkDerivation {
     runHook preInstall
 
     mkdir -p $out/bin
-    cp $src $out/bin/agy
+    cp antigravity $out/bin/agy
     chmod +x $out/bin/agy
 
     runHook postInstall
