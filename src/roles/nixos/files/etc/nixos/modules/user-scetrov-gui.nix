@@ -63,6 +63,7 @@ in
       nerd-fonts.fira-code
       sqlite
       unstable.brave
+      unstable.bun
       unstable.code-cursor
       unstable.codex
       unstable.cursor-cli
