@@ -77,6 +77,7 @@ resource "authentik_provider_oauth2" "grafana" {
     data.authentik_property_mapping_provider_scope.profile.id,
     data.authentik_property_mapping_provider_scope.email.id,
     authentik_property_mapping_provider_scope.groups.id,
+    data.authentik_property_mapping_provider_scope.entitlements.id,
   ]
 }
 
@@ -84,6 +85,28 @@ resource "authentik_application" "grafana" {
   name              = "Grafana"
   slug              = "grafana"
   protocol_provider = authentik_provider_oauth2.grafana.id
+}
+
+resource "authentik_application_entitlement" "grafana_admins" {
+  name        = "Grafana Admins"
+  application = authentik_application.grafana.uuid
+}
+
+resource "authentik_policy_binding" "grafana_admins_binding" {
+  target = authentik_application_entitlement.grafana_admins.id
+  group  = data.authentik_group.admins.id
+  order  = 0
+}
+
+resource "authentik_application_entitlement" "grafana_editors" {
+  name        = "Grafana Editors"
+  application = authentik_application.grafana.uuid
+}
+
+resource "authentik_policy_binding" "grafana_editors_binding" {
+  target = authentik_application_entitlement.grafana_editors.id
+  group  = authentik_group.all_applications.id
+  order  = 0
 }
 
 # --- Hermes Proxy Provider ---
