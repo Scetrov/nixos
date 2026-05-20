@@ -7,6 +7,7 @@
     ./modules/blocky.nix
     ./modules/caddy.nix
     ./modules/dependency-track.nix
+    ./modules/frontier-indexer.nix
     ./modules/grafana.nix
     ./modules/immich.nix
     ./modules/k6.nix
@@ -43,7 +44,8 @@
 
   scetrov.services.authentik.enable = true;
   scetrov.services.dependency-track.enable = true;
-  
+  scetrov.services.frontier-indexer.enable = true;
+
   blocky.bindAddr = "10.229.53.2:53";
 
   networking = {

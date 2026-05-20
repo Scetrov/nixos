@@ -40,7 +40,6 @@ in
         curl
         dive
         exiftool
-        foundry
         fzf
         git
         gh

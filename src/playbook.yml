@@ -11,9 +11,9 @@
     - "{{ (lookup('env', 'PWD') + '/src/generated-secrets.yml') if (lookup('env', 'PWD') + '/src/generated-secrets.yml') is file else '/dev/null' }}"
   roles:
     - role: secrets
-      tags: [ 'secrets', 'nixos', 'authentik', 'hermes', 'dependency-track' ]
+      tags: [ 'secrets', 'nixos', 'authentik', 'hermes', 'dependency-track', 'frontier-indexer' ]
     - role: nixos
-      tags: [ 'nixos', 'hermes', 'dependency-track' ]
+      tags: [ 'nixos', 'hermes', 'dependency-track', 'frontier-indexer' ]
     - role: authentik-config
       tags: [ 'authentik', 'hermes', 'dependency-track' ]
     - role: user-scetrov
@@ -21,4 +21,4 @@
     - role: dependency-track-config
       tags: [ 'dependency-track' ]
     - role: secrets
-      tags: [ 'secrets-post', 'nixos', 'authentik', 'hermes', 'dependency-track' ]
+      tags: [ 'secrets-post', 'nixos', 'authentik', 'hermes', 'dependency-track', 'frontier-indexer' ]
