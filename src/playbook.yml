@@ -12,7 +12,6 @@
     - secrets
     - nixos
     - role: authentik-config
-      when: authentik_config_enabled | default(false)
     - user-scetrov
     - role: dependency-track-config
     - role: secrets
