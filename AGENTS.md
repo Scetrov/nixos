@@ -42,6 +42,16 @@ We use **Grafana** and **Loki** for central observability.
 *   **NixOS/Ansible:** Used for host-level configuration, package installation, and container orchestration (systemd/podman).
 *   **OpenTofu:** Used for configuring the internal state of services (creating Authentik applications, groups, users, and Caddy API-based routing).
 
+### **Deployment Orchestration (`play.sh`)**
+*   **Default Behavior:** By default, running `./scripts/play.sh` deploys to all hosts without constraints.
+*   **Modular Targeting (`--limit`):** To avoid deploying to all hosts, use the `--limit` flag to target specific hosts (e.g. `./scripts/play.sh --limit habiki`).
+*   **Component-based Runs (`--tags`):** To run only specific configuration flows, restrict execution using tags:
+    *   `nixos`: Lint, generate/copy secrets, and rebuild host-level NixOS configurations.
+    *   `authentik`: Configure the Authentik identity platform and application configurations via OpenTofu.
+    *   `hermes`: Perform end-to-end Hermes deployment (secrets, host services via NixOS, and SSO proxy via Authentik).
+    *   `dependency-track`: Perform end-to-end Dependency Track deployment (secrets, host services, Authentik SSO, and API mappings).
+*   **Agent Guideline:** When executing tasks as an agent, always prefer targeted runs using `--limit` and `--tags` to speed up execution, reduce resource utilization, and minimize blast radius (e.g., `./scripts/play.sh --limit habiki --tags hermes`).
+
 ### **Repository Hygiene**
 *   The `terraform/.gitignore` MUST exclude `.terraform/`, `.opentofu/`, and any `*.tfstate` files to prevent accidental leakage of resource metadata or cached secrets.
 *   The `terraform/.terraform.lock.hcl` should also be ignored to avoid platform-specific lock conflicts in this environment.

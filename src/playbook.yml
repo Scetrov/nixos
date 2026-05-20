@@ -1,7 +1,8 @@
 - name: Check NixOS Configuration
   hosts: localhost
   roles:
-    - nixos-lint
+    - role: nixos-lint
+      tags: [ 'nixos', 'lint' ]
 
 - name: Deploy NixOS Configuration
   hosts: all
@@ -9,10 +10,15 @@
     - secrets.yml
     - "{{ (lookup('env', 'PWD') + '/src/generated-secrets.yml') if (lookup('env', 'PWD') + '/src/generated-secrets.yml') is file else '/dev/null' }}"
   roles:
-    - secrets
-    - nixos
-    - role: authentik-config
-    - user-scetrov
-    - role: dependency-track-config
     - role: secrets
-      tags: [ 'secrets-post' ]
+      tags: [ 'secrets', 'nixos', 'authentik', 'hermes', 'dependency-track' ]
+    - role: nixos
+      tags: [ 'nixos', 'hermes', 'dependency-track' ]
+    - role: authentik-config
+      tags: [ 'authentik', 'hermes', 'dependency-track' ]
+    - role: user-scetrov
+      tags: [ 'nixos', 'user' ]
+    - role: dependency-track-config
+      tags: [ 'dependency-track' ]
+    - role: secrets
+      tags: [ 'secrets-post', 'nixos', 'authentik', 'hermes', 'dependency-track' ]
