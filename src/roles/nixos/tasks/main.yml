@@ -20,6 +20,7 @@
   loop:
     - logo.png
     - background.jpg
+    - hermes.png
   when: authentik_config_enabled | default(false)
 
 - name: Include NixOS rebuild tasks

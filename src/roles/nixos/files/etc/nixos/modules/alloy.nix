@@ -65,6 +65,33 @@
       forward_to = [loki.write.central.receiver]
     }
 
+    prometheus.exporter.unix "local" {
+      include_exporter_metrics = true
+    }
+
+    prometheus.scrape "local" {
+      targets    = prometheus.exporter.unix.local.targets
+      forward_to = [prometheus.remote_write.central.receiver]
+
+      job_name = "node"
+      scrape_interval = "15s"
+
+      clustering {
+        enabled = false
+      }
+    }
+
+    prometheus.remote_write "central" {
+      endpoint {
+        url = "http://10.229.10.2:8080/api/v1/push"
+      }
+
+      external_labels = {
+        cluster = "net",
+        host    = "${config.networking.hostName}",
+      }
+    }
+
     otelcol.receiver.otlp "ingest" {
       grpc {
         endpoint = "127.0.0.1:4317"

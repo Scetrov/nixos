@@ -8,12 +8,6 @@
     retentionTime = "15d";
     webExternalUrl = "https://metrics.net.scetrov.live";
     extraFlags = [ "--web.route-prefix=/" ];
-    exporters.node = {
-      enable = true;
-      enabledCollectors = [ "systemd" ];
-      listenAddress = "127.0.0.1";
-      port = 9100;
-    };
     globalConfig = {
       external_labels = {
         cluster = "net";
