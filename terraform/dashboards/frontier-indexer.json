@@ -815,7 +815,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{unit=\"podman-frontier-indexer.service\"} or {syslog_identifier=\"podman-frontier-indexer\"}",
+          "expr": "{unit=\"podman-frontier-indexer.service\"}",
           "queryType": "range",
           "refId": "A"
         }
