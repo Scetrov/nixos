@@ -23,6 +23,20 @@ git add . && git commit && git push origin HEAD && ansible-playbook -i src/inven
 > [!IMPORTANT]
 > The `git` commands are important as the playbook will check to see if there are any uncommitted changes to the repository, or local changesets. This ensures that if you do push a change that destroys the local machine you don't lose any progress. Additionally, the commit message is used to generate a NixOS Label for Grub.
 
+### Running with Podman
+
+You can also obtain a ready-to-run environment with Podman:
+
+```sh
+podman build -q -t nixos_devenv
+```
+
+Then run the container with:
+
+```sh
+podman run --rm -it --userns=keep-id -v "$(pwd):/workspace" -v ~/.ansible:/root/.ansible:ro nixos_devenv -c zsh
+```
+
 ## Reference
 
 ### Secret Management
