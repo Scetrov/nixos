@@ -44,7 +44,10 @@
 
   scetrov.services.authentik.enable = true;
   scetrov.services.dependency-track.enable = true;
-  scetrov.services.frontier-indexer.enable = true;
+  scetrov.services.frontier-indexer = {
+    enable = true;
+    firstCheckpoint = "302790346";
+  };
 
   blocky.bindAddr = "10.229.53.2:53";
 

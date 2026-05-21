@@ -45,3 +45,7 @@ output "dtrack_oidc_client_secret" {
   value     = authentik_provider_oauth2.dependency_track.client_secret
   sensitive = true
 }
+
+resource "grafana_dashboard" "frontier_indexer" {
+  config_json = file("${path.module}/dashboards/frontier-indexer.json")
+}

@@ -491,7 +491,7 @@
           set -e
           tofu init -reconfigure
           tofu apply -auto-approve
-          
+
           # We no longer write the token to disk here.
         chdir: "{{ playbook_dir }}/../terraform"
       register: tofu_apply_output

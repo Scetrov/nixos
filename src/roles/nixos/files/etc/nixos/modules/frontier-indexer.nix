@@ -29,6 +29,9 @@ let
       printf 'SUI_NETWORK=%s\n' ${lib.escapeShellArg cfg.suiNetwork}
       printf 'PACKAGES=app,world\n'
       printf 'METRICS_ADDRESS=0.0.0.0:9184\n'
+      ${lib.optionalString (cfg.firstCheckpoint != null) ''
+        printf 'FIRST_CHECKPOINT=%s\n' ${lib.escapeShellArg cfg.firstCheckpoint}
+      ''}
     } > ${indexerEnvFile}
   '';
 in
@@ -85,6 +88,12 @@ in
       ];
       default = "testnet";
       description = "Sui network Frontier Indexer should process.";
+    };
+
+    firstCheckpoint = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "The first checkpoint sequence number to start indexing from.";
     };
   };
 
