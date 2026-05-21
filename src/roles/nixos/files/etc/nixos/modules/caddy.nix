@@ -79,7 +79,7 @@ lib.mkIf config.services.grafana.enable {
         }
 
         handle /grafana* {
-          reverse_proxy 127.0.0.1:3000
+          reverse_proxy 127.0.0.1:3005
         }
 
         redir / /grafana

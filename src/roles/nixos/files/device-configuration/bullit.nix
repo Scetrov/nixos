@@ -7,7 +7,6 @@
     ./modules/user-scetrov-gui.nix
     ./modules/user-scetrov-syncthing.nix
     ./modules/xserver.nix
-    ./modules/synergy-server.nix
   ];
 
   networking = {

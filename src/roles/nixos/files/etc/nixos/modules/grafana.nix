@@ -27,8 +27,8 @@
       server = {
         domain = "metrics.net.scetrov.live";
         enable_gzip = true;
-        http_addr = "127.0.0.1";
-        http_port = 3000;
+        http_addr = "0.0.0.0";
+        http_port = 3005;
       };
       users = {
         allow_sign_up = false;

@@ -49,7 +49,7 @@
         job_name = "grafana";
         static_configs = [
           {
-            targets = [ "127.0.0.1:3000" ];
+            targets = [ "127.0.0.1:3005" ];
           }
         ];
       }
