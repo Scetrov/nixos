@@ -48,4 +48,6 @@ in
   "dtrack_oidc_client_id.age".publicKeys = users ++ systems;
   "dtrack_oidc_client_secret.age".publicKeys = users ++ systems;
   "frontier_indexer_db_password.age".publicKeys = users ++ systems;
+  "mcp_client_token.age".publicKeys = users ++ systems;
+  "grafana_mcp_token.age".publicKeys = users ++ systems;
 }

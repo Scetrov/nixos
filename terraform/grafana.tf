@@ -28,6 +28,22 @@ output "grafana_log_pusher_token" {
   sensitive = true
 }
 
+resource "grafana_service_account" "mcp" {
+  name = "mcp-service-account"
+  role = "Admin"
+}
+
+resource "grafana_service_account_token" "mcp" {
+  name               = "mcp-token"
+  service_account_id = grafana_service_account.mcp.id
+}
+
+output "grafana_mcp_token" {
+  value     = grafana_service_account_token.mcp.key
+  sensitive = true
+}
+
+
 output "grafana_oidc_client_id" {
   value = authentik_provider_oauth2.grafana.client_id
 }

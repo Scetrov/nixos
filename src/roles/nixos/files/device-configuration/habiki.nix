@@ -21,6 +21,7 @@
     ./modules/hermes.nix
     ./modules/user-scetrov-filebrowser.nix
     ./modules/user-scetrov-syncthing.nix
+    ./modules/grafana-mcp.nix
   ];
 
   services.hermes-webui = {
@@ -47,6 +48,9 @@
   scetrov.services.frontier-indexer = {
     enable = true;
     firstCheckpoint = "302790346";
+  };
+  services.grafana-mcp = {
+    enable = true;
   };
 
   blocky.bindAddr = "10.229.53.2:53";

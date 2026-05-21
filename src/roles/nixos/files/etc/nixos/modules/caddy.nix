@@ -10,9 +10,14 @@ lib.mkIf config.services.grafana.enable {
     file = /root/secrets/loki_token_hash.age;
     owner = "caddy";
   };
+  age.secrets.mcp_client_token = {
+    file = /root/secrets/mcp_client_token.age;
+    owner = "caddy";
+  };
 
   systemd.services.caddy.serviceConfig.EnvironmentFile = [
     "/run/agenix/loki_token_hash"
+    "/run/agenix/mcp_client_token"
   ];
 
   services.caddy = {
@@ -79,6 +84,15 @@ lib.mkIf config.services.grafana.enable {
 
         handle /oncall* {
           reverse_proxy 127.0.0.1:18080
+        }
+
+        handle /mcp* {
+          @mcp_auth {
+            not header Authorization "Bearer {$MCP_CLIENT_TOKEN}"
+          }
+          respond @mcp_auth "Unauthorized" 401
+
+          reverse_proxy 127.0.0.1:8000
         }
 
         handle /grafana* {

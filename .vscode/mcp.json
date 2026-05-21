@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "grafana-mcp": {
+      "command": "ssh",
+      "args": [
+        "-q",
+        "habiki",
+        "sudo podman exec -i grafana-mcp /app/mcp-grafana"
+      ]
+    }
+  }
+}

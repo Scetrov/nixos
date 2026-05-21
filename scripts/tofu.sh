@@ -21,6 +21,7 @@ DTRACK_CLIENT_SECRET=$(echo "$JSON_OUTPUTS" | jq -r '.dtrack_oidc_client_secret.
 GRAFANA_ONCALL_TOKEN=$(echo "$JSON_OUTPUTS" | jq -r '.grafana_oncall_token.value')
 GRAFANA_CLIENT_ID=$(echo "$JSON_OUTPUTS" | jq -r '.grafana_oidc_client_id.value')
 GRAFANA_CLIENT_SECRET=$(echo "$JSON_OUTPUTS" | jq -r '.grafana_oidc_client_secret.value')
+GRAFANA_MCP_TOKEN=$(echo "$JSON_OUTPUTS" | jq -r '.grafana_mcp_token.value')
 
 TMP_SEC_FILE=$(mktemp /dev/shm/generated-secrets.XXXXXX)
 
@@ -34,6 +35,7 @@ grafana_oncall_api_key: "$GRAFANA_ONCALL_TOKEN"
 grafana_authentik_client_id: "$GRAFANA_CLIENT_ID"
 grafana_authentik_client_secret: |
   $GRAFANA_CLIENT_SECRET
+grafana_mcp_token: "$GRAFANA_MCP_TOKEN"
 EOF
 
 ansible-vault encrypt "$TMP_SEC_FILE" --vault-password-file ~/.ansible/nixos_vault_password --output ../src/generated-secrets.yml
