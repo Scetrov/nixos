@@ -401,7 +401,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 8,
         "w": 12,
         "x": 0,
         "y": 6
@@ -498,7 +498,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 8,
         "w": 12,
         "x": 12,
         "y": 6
@@ -554,7 +554,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 14
       },
       "panels": []
     },
@@ -609,10 +609,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 8,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 15
       },
       "id": 10,
       "options": {
@@ -706,10 +706,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 8,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 15
       },
       "id": 11,
       "options": {
@@ -734,7 +734,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "frontier_indexer_ingestion_concurrency_inflight{job=\"frontier-indexer\"}",
+          "expr": "sum(frontier_indexer_ingestion_concurrency_inflight{job=\"frontier-indexer\"})",
           "legendFormat": "Inflight Ingestion Tasks",
           "refId": "A"
         },
@@ -744,7 +744,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "frontier_indexer_ingestion_concurrency_limit{job=\"frontier-indexer\"}",
+          "expr": "sum(frontier_indexer_ingestion_concurrency_limit{job=\"frontier-indexer\"})",
           "legendFormat": "Ingestion Limit",
           "refId": "B"
         },
@@ -754,7 +754,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "frontier_indexer_processor_concurrency_inflight{job=\"frontier-indexer\"}",
+          "expr": "sum(frontier_indexer_processor_concurrency_inflight{job=\"frontier-indexer\"})",
           "legendFormat": "Inflight Processing Tasks",
           "refId": "C"
         },
@@ -764,7 +764,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "frontier_indexer_processor_concurrency_limit{job=\"frontier-indexer\"}",
+          "expr": "sum(frontier_indexer_processor_concurrency_limit{job=\"frontier-indexer\"})",
           "legendFormat": "Processing Limit",
           "refId": "D"
         }
@@ -782,7 +782,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 23
       },
       "panels": []
     },
@@ -792,10 +792,10 @@
         "uid": "loki"
       },
       "gridPos": {
-        "h": 10,
+        "h": 12,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 24
       },
       "id": 13,
       "options": {
