@@ -1,13 +1,24 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.services.hermes-webui;
-  inherit (lib) mkEnableOption mkIf mkOption types;
+  inherit (lib)
+    mkEnableOption
+    mkIf
+    mkOption
+    types
+    ;
 
   backendPackage =
-    if cfg.backend == "docker"
-    then config.virtualisation.docker.package
-    else config.virtualisation.podman.package;
+    if cfg.backend == "docker" then
+      config.virtualisation.docker.package
+    else
+      config.virtualisation.podman.package;
 
   backendBin = "${backendPackage}/bin/${cfg.backend}";
   shellBin = "${pkgs.runtimeShell}";
@@ -63,7 +74,10 @@ in
     enable = mkEnableOption "Hermes WebUI multi-container stack";
 
     backend = mkOption {
-      type = types.enum [ "podman" "docker" ];
+      type = types.enum [
+        "podman"
+        "docker"
+      ];
       default = "podman";
       description = "OCI backend used by virtualisation.oci-containers.";
     };
@@ -275,13 +289,15 @@ in
         message = "services.hermes-webui.rootless requires services.hermes-webui.backend = \"podman\".";
       }
       {
-        assertion = !(rootlessPodman && cfg.enableCaddy && cfg.caddyHostPort < 1024) || cfg.allowRootlessPort80;
+        assertion =
+          !(rootlessPodman && cfg.enableCaddy && cfg.caddyHostPort < 1024) || cfg.allowRootlessPort80;
         message = ''
           Rootless Caddy cannot bind a privileged port without lowering net.ipv4.ip_unprivileged_port_start.
           Either keep allowRootlessPort80 enabled or set caddyHostPort to 1024 or higher.
         '';
       }
-    ] ++ lib.optional (cfg.enableCaddy && cfg.environmentFile == null) {
+    ]
+    ++ lib.optional (cfg.enableCaddy && cfg.environmentFile == null) {
       assertion = cfg.caddyListenAddress == "127.0.0.1";
       message = ''
         services.hermes-webui.caddyListenAddress is not localhost, but no environmentFile is set.
@@ -300,8 +316,18 @@ in
       shell = "${pkgs.shadow}/bin/nologin";
       linger = true;
       extraGroups = [ ];
-      subUidRanges = [{ startUid = 100000; count = 65536; }];
-      subGidRanges = [{ startGid = 100000; count = 65536; }];
+      subUidRanges = [
+        {
+          startUid = 100000;
+          count = 65536;
+        }
+      ];
+      subGidRanges = [
+        {
+          startGid = 100000;
+          count = 65536;
+        }
+      ];
     };
 
     # Sysctl net.ipv4.ip_unprivileged_port_start is already set to 0 in podman.nix,
@@ -321,8 +347,9 @@ in
       lib.optionals rootlessPodman [
         "d ${toString cfg.home} 0750 ${cfg.user} ${cfg.group} - -"
       ]
-      ++ lib.optional cfg.createWorkspace
-        "d ${toString cfg.workspace} 0750 ${if rootlessPodman then cfg.user else toString cfg.uid} ${if rootlessPodman then cfg.group else toString cfg.gid} - -";
+      ++ lib.optional cfg.createWorkspace "d ${toString cfg.workspace} 0750 ${
+        if rootlessPodman then cfg.user else toString cfg.uid
+      } ${if rootlessPodman then cfg.group else toString cfg.gid} - -";
 
     systemd.services.hermes-webui-oci-setup = {
       description = "Create Hermes WebUI OCI network and volumes";
@@ -351,7 +378,8 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-      } // lib.optionalAttrs rootlessPodman {
+      }
+      // lib.optionalAttrs rootlessPodman {
         User = cfg.user;
         Group = cfg.group;
         RuntimeDirectory = "hermes-webui-setup";
@@ -415,7 +443,10 @@ in
     virtualisation.oci-containers.containers = {
       hermes-agent = {
         image = cfg.agentImage;
-        cmd = [ "gateway" "run" ];
+        cmd = [
+          "gateway"
+          "run"
+        ];
         volumes = [
           "${cfg.homeVolume}:/home/hermes/.hermes"
           "${cfg.agentSourceVolume}:/opt/hermes"
@@ -427,7 +458,8 @@ in
         };
         environmentFiles = optionalEnvFiles;
         extraOptions = [ "--network=${cfg.networkName}" ] ++ rootlessHealthOptions;
-      } // podmanRootlessConfig;
+      }
+      // podmanRootlessConfig;
 
       hermes-webui = {
         image = cfg.webuiImage;
@@ -447,11 +479,18 @@ in
         };
         environmentFiles = optionalEnvFiles ++ [ webuiEnvFile ];
         extraOptions = [ "--network=${cfg.networkName}" ] ++ rootlessHealthOptions;
-      } // podmanRootlessConfig;
-    } // lib.optionalAttrs cfg.enableDashboard {
+      }
+      // podmanRootlessConfig;
+    }
+    // lib.optionalAttrs cfg.enableDashboard {
       hermes-dashboard = {
         image = cfg.agentImage;
-        cmd = [ "dashboard" "--host" "0.0.0.0" "--insecure" ];
+        cmd = [
+          "dashboard"
+          "--host"
+          "0.0.0.0"
+          "--insecure"
+        ];
         dependsOn = [ "hermes-agent" ];
         volumes = [ "${cfg.homeVolume}:/home/hermes/.hermes" ];
         environment = cfg.extraEnvironment // {
@@ -462,15 +501,18 @@ in
         };
         environmentFiles = optionalEnvFiles;
         extraOptions = [ "--network=${cfg.networkName}" ] ++ rootlessHealthOptions;
-      } // podmanRootlessConfig;
-    } // lib.optionalAttrs cfg.enableCaddy {
+      }
+      // podmanRootlessConfig;
+    }
+    // lib.optionalAttrs cfg.enableCaddy {
       hermes-caddy = {
         image = cfg.caddyImage;
         dependsOn = [ "hermes-webui" ];
         ports = [ "${cfg.caddyListenAddress}:${toString cfg.caddyHostPort}:80" ];
         volumes = [ "${caddyfile}:/etc/caddy/Caddyfile:ro" ];
         extraOptions = [ "--network=${cfg.networkName}" ] ++ rootlessHealthOptions;
-      } // podmanRootlessConfig;
+      }
+      // podmanRootlessConfig;
     };
 
     systemd.services.${containerUnit "hermes-agent"} = {
@@ -479,18 +521,36 @@ in
     };
 
     systemd.services.${containerUnit "hermes-webui"} = {
-      requires = [ setupUnit (containerUnit "hermes-agent") ];
-      after = [ setupUnit (containerUnit "hermes-agent") ];
+      requires = [
+        setupUnit
+        (containerUnit "hermes-agent")
+      ];
+      after = [
+        setupUnit
+        (containerUnit "hermes-agent")
+      ];
     };
 
     systemd.services.${containerUnit "hermes-dashboard"} = mkIf cfg.enableDashboard {
-      requires = [ setupUnit (containerUnit "hermes-agent") ];
-      after = [ setupUnit (containerUnit "hermes-agent") ];
+      requires = [
+        setupUnit
+        (containerUnit "hermes-agent")
+      ];
+      after = [
+        setupUnit
+        (containerUnit "hermes-agent")
+      ];
     };
 
     systemd.services.${containerUnit "hermes-caddy"} = mkIf cfg.enableCaddy {
-      requires = [ setupUnit (containerUnit "hermes-webui") ];
-      after = [ setupUnit (containerUnit "hermes-webui") ];
+      requires = [
+        setupUnit
+        (containerUnit "hermes-webui")
+      ];
+      after = [
+        setupUnit
+        (containerUnit "hermes-webui")
+      ];
     };
   };
 }

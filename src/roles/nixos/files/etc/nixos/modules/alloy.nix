@@ -4,9 +4,12 @@
   users.users.alloy = {
     isSystemUser = true;
     group = "alloy";
-    extraGroups = [ "adm" "systemd-journal" ];
+    extraGroups = [
+      "adm"
+      "systemd-journal"
+    ];
   };
-  users.groups.alloy = {};
+  users.groups.alloy = { };
 
   age.secrets.loki_token = {
     file = /root/secrets/loki_token.age;

@@ -54,7 +54,7 @@ OIDC credentials (`dtrack_oidc_client_id`, `dtrack_oidc_client_secret`) and `gra
 
 ## 🔐 Authentication (OIDC)
 
-Manual user management is disabled in favor of **Authentik OIDC**. 
+Manual user management is disabled in favor of **Authentik OIDC**.
 
 - **Redirect URI**: `https://dtrack.net.scetrov.live/static/oidc-callback.html`
 - **Initial Login**: Users will be automatically provisioned on their first login.

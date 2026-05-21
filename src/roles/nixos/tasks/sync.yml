@@ -72,4 +72,3 @@
     group: root
     mode: 'u=rwX,g=rX,o=rX'
     recurse: yes
-

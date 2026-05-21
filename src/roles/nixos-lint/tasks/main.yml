@@ -23,7 +23,7 @@
   delegate_to: localhost
   fail:
     msg: "Unstaged changes detected in the playbook directory! Use -e nixos_force_deploy=true to bypass."
-  when: 
+  when:
     - not (nixos_force_deploy | default(false))
     - unstaged_changes.stdout != ""
 
@@ -41,7 +41,7 @@
   delegate_to: localhost
   fail:
     msg: "Uncommitted local changes detected in the playbook directory! Use -e nixos_force_deploy=true to bypass."
-  when: 
+  when:
     - not (nixos_force_deploy | default(false))
     - uncommitted_changes.rc | default(0) != 0
 
@@ -59,6 +59,6 @@
   delegate_to: localhost
   fail:
     msg: "There are {{ unpushed_count.stdout }} unpushed commits in the playbook directory! Use -e nixos_force_deploy=true to bypass."
-  when: 
+  when:
     - not (nixos_force_deploy | default(false))
     - unpushed_count.stdout | default('0') | int > 0

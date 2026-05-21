@@ -41,10 +41,12 @@ The playbook includes a linting phase (`nixos-lint`) that verifies Nix syntax an
 
 - To bypass these checks during active development, use: `-e nixos_force_deploy=true`.
 - To format Nix files locally, use `nixfmt` (the linting role uses `nixfmt --check` to avoid unintended modifications).
+- To apply the repository formatting rules to all supported files, run `pre-commit install` once and then `pre-commit run --all-files` (the VS Code task `Format all files` runs the same command).
 
 ### Performance Optimization
 
 The deployment process is optimized for speed and determinism:
+
 - **Synchronized Configuration**: NixOS modules are synchronized recursively with optimized permission handling.
 - **Deterministic Rebuilds**: `nixos-rebuild switch` is used without the `--upgrade` flag to avoid redundant channel checks across multiple hosts in a single run.
 

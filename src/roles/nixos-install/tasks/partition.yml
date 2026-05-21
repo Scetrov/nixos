@@ -40,7 +40,7 @@
         - name: Set disk as empty
           set_fact:
             disk_is_empty: true
-    
+
     - name: Detect Naming Convention for NVMe/SATA
       set_fact:
         partition_suffix: "{% if target_device | regex_search('nvme') %}p{% else %}{{ '' }}{% endif %}"
@@ -117,4 +117,3 @@
             force: true
             dev: "{{ swap_device }}"
             opts: "-L swap"
-

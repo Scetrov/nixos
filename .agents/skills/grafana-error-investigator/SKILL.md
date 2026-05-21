@@ -11,7 +11,7 @@ This skill helps you investigate system health by querying Loki for Errors and W
 
 1. **Source Credentials**: Always source `~/env/grafana.env` to obtain `GRAFANA_SERVICE_TOKEN`.
 2. **Query Loki Through Grafana**: Use `curl` to query Grafana's datasource API at `https://metrics.net.scetrov.live/grafana/api/ds/query` with datasource UID `loki`. Direct `/loki` queries are protected by Authentik and redirect to interactive login.
-3. **Analyze Results**: 
+3. **Analyze Results**:
    - Focus on logs from the last 1-6 hours.
    - Filter for strings like "error", "warn", "failed", "failure", "critical", "fatal", and "exception".
    - Filter out known benign noise such as DNS query logs with `NOERROR` and container `health_status=healthy` events.

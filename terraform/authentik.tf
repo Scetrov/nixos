@@ -65,7 +65,7 @@ resource "authentik_provider_oauth2" "grafana" {
   client_id     = random_id.grafana_client_id.hex
   client_secret = random_password.grafana_client_secret.result
   signing_key   = data.authentik_certificate_key_pair.default.id
-  
+
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id
 
@@ -75,7 +75,7 @@ resource "authentik_provider_oauth2" "grafana" {
       matching_mode = "strict"
     }
   ]
-  
+
   property_mappings = [
     data.authentik_property_mapping_provider_scope.openid.id,
     data.authentik_property_mapping_provider_scope.profile.id,
@@ -140,7 +140,7 @@ resource "authentik_provider_oauth2" "dependency_track" {
 
   authorization_flow = data.authentik_flow.default_authorization.id
 
-  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  invalidation_flow = data.authentik_flow.default_invalidation.id
 
   allowed_redirect_uris = [
     {
@@ -148,7 +148,7 @@ resource "authentik_provider_oauth2" "dependency_track" {
       matching_mode = "strict"
     }
   ]
-  
+
   property_mappings = [
     data.authentik_property_mapping_provider_scope.openid.id,
     data.authentik_property_mapping_provider_scope.profile.id,
@@ -206,12 +206,12 @@ resource "authentik_brand" "default" {
   domain         = "."
   default        = true
   branding_title = "scetrov.live Identity"
-  
+
   branding_logo    = "/static/dist/branding/logo.png"
   branding_favicon = "/static/dist/branding/logo.png"
-  
+
   branding_default_flow_background = "/static/dist/branding/background.jpg"
-  
+
   branding_custom_css = <<-EOT
     :root {
         --ak-flow-background: url('/static/dist/branding/background.jpg') !important;
@@ -247,12 +247,12 @@ resource "authentik_brand" "default" {
 resource "authentik_outpost" "proxy" {
   name = "authentik Embedded Outpost"
   type = "proxy"
-  
+
   protocol_providers = [
     authentik_provider_proxy.hermes.id,
     authentik_provider_proxy.metrics.id
   ]
-  
+
   config = jsonencode({
     authentik_host = "https://identity.net.scetrov.live"
   })

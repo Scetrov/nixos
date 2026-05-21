@@ -8,7 +8,10 @@
     {
       users = [ "scetrov" ];
       commands = [
-        { command = "ALL"; options = [ "NOPASSWD" ]; }
+        {
+          command = "ALL";
+          options = [ "NOPASSWD" ];
+        }
       ];
     }
   ];
@@ -35,7 +38,7 @@
     login.u2fAuth = true;
     sudo.u2fAuth = true;
   };
-  
+
   services = {
     pcscd.enable = true;
 

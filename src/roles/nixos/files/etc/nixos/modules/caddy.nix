@@ -1,7 +1,10 @@
 { config, lib, ... }:
 
 lib.mkIf config.services.grafana.enable {
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
 
   age.secrets.loki_token_hash = {
     file = /root/secrets/loki_token_hash.age;

@@ -8,7 +8,10 @@
   };
 
   config.networking = {
-    firewall.allowedTCPPorts = [ 53 4000 ];
+    firewall.allowedTCPPorts = [
+      53
+      4000
+    ];
     firewall.allowedUDPPorts = [ 53 ];
     nameservers = [
       "10.229.53.1" # blocky on Fyne

@@ -5,14 +5,14 @@ terraform {
 
   required_providers {
     authentik = {
-      source = "goauthentik/authentik"
+      source  = "goauthentik/authentik"
       version = "= 2025.10.0"
-      }
-      random = {
+    }
+    random = {
       source  = "hashicorp/random"
       version = "~> 3.0"
-      }
-      caddy = {
+    }
+    caddy = {
 
       source  = "conradludgate/caddy"
       version = "0.2.8"
