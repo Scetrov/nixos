@@ -248,7 +248,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "rate(frontier_indexer_total_handler_checkpoints_processed{job=\"frontier-indexer\"}[5m])",
+          "expr": "rate(frontier_indexer_total_ingested_checkpoints{job=\"frontier-indexer\"}[5m])",
           "legendFormat": "Throughput",
           "refId": "A"
         }
@@ -266,7 +266,21 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "Down",
+                  "index": 0
+                },
+                "1": {
+                  "text": "Up",
+                  "index": 1
+                }
+              },
+              "type": "value"
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -415,7 +429,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "rate(frontier_indexer_total_handler_checkpoints_processed{job=\"frontier-indexer\"}[1m])",
+          "expr": "rate(frontier_indexer_total_ingested_checkpoints{job=\"frontier-indexer\"}[1m])",
           "legendFormat": "Ingestion Rate (1m)",
           "refId": "A"
         },
@@ -425,7 +439,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "rate(frontier_indexer_total_handler_checkpoints_processed{job=\"frontier-indexer\"}[5m])",
+          "expr": "rate(frontier_indexer_total_ingested_checkpoints{job=\"frontier-indexer\"}[5m])",
           "legendFormat": "Ingestion Rate (5m)",
           "refId": "B"
         }
