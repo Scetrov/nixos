@@ -49,4 +49,4 @@
 - [x] 5.5 Verify `curl -I https://homeassistant.net.scetrov.live/` reaches Home Assistant without Caddy forward-auth
 - [x] 5.6 Verify `curl -I https://homeassistant.net.scetrov.live/api/websocket` reaches Home Assistant
 - [x] 5.7 Verify Loki can query Home Assistant logs by `{container_name="homeassistant"}` or `{unit="podman-homeassistant.service"}`
-- [ ] 5.8 After Home Assistant internal integrations are configured, verify metrics in Mimir/Prometheus and traces through the Caddy `/otlp*` route into Tempo
+- [x] 5.8 After Home Assistant internal integrations are configured, verify metrics in Mimir/Prometheus and traces through the Caddy `/otlp*` route into Tempo
