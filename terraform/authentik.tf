@@ -214,11 +214,49 @@ resource "authentik_application" "homeassistant" {
   name              = "Home Assistant"
   slug              = "home-assistant"
   protocol_provider = authentik_provider_proxy.homeassistant.id
-  meta_icon         = "https://raw.githubusercontent.com/home-assistant/branding/master/logo/logo-pretty.png"
+  meta_icon         = "/static/dist/branding/home-assistant.png"
 }
 
 resource "authentik_policy_binding" "homeassistant_access" {
   target = authentik_application.homeassistant.uuid
+  group  = authentik_group.all_applications.id
+  order  = 0
+}
+
+resource "authentik_provider_oauth2" "homeassistant_oidc" {
+  name        = "Home Assistant OIDC"
+  client_id   = "home-assistant"
+  client_type = "public"
+  signing_key = data.authentik_certificate_key_pair.default.id
+
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+
+  allowed_redirect_uris = [
+    {
+      url           = "https://homeassistant.net.scetrov.live/auth/oidc/callback"
+      matching_mode = "strict"
+    }
+  ]
+
+  property_mappings = [
+    data.authentik_property_mapping_provider_scope.openid.id,
+    data.authentik_property_mapping_provider_scope.profile.id,
+    data.authentik_property_mapping_provider_scope.email.id,
+    authentik_property_mapping_provider_scope.groups.id,
+  ]
+}
+
+resource "authentik_application" "homeassistant_oidc" {
+  name              = "Home Assistant OIDC"
+  slug              = "home-assistant-oidc"
+  protocol_provider = authentik_provider_oauth2.homeassistant_oidc.id
+  meta_launch_url   = "blank://blank"
+  meta_icon         = "/static/dist/branding/home-assistant.png"
+}
+
+resource "authentik_policy_binding" "homeassistant_oidc_access" {
+  target = authentik_application.homeassistant_oidc.uuid
   group  = authentik_group.all_applications.id
   order  = 0
 }

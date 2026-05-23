@@ -59,7 +59,7 @@ The system SHALL expose Home Assistant at `homeassistant.net.scetrov.live` throu
 
 ### Requirement: Authentik Route Boundaries
 
-The system SHALL protect the Home Assistant root UI route through the existing Authentik Caddy forward-auth outpost while excluding webhook and WebSocket endpoints.
+The system SHALL protect the Home Assistant root UI route through the existing Authentik Caddy forward-auth outpost while excluding webhook, WebSocket, and native OIDC endpoints.
 
 #### Scenario: UI route requires Authentik
 
@@ -76,6 +76,11 @@ The system SHALL protect the Home Assistant root UI route through the existing A
 - **WHEN** a client requests `https://homeassistant.net.scetrov.live/api/websocket`
 - **THEN** the request bypasses Authentik forward-auth and is proxied directly to Home Assistant
 
+#### Scenario: OIDC route bypasses Authentik proxy auth
+
+- **WHEN** a client requests `https://homeassistant.net.scetrov.live/auth/oidc/callback`
+- **THEN** the request bypasses Authentik forward-auth and is proxied directly to Home Assistant
+
 ### Requirement: Reverse Proxy Header Policy
 
 The system SHALL forward Home Assistant traffic with a host header policy compatible with the upstream service.
@@ -83,16 +88,34 @@ The system SHALL forward Home Assistant traffic with a host header policy compat
 #### Scenario: Caddy proxies to Home Assistant
 
 - **WHEN** Caddy proxies a request to Home Assistant
-- **THEN** the reverse proxy uses `header_up Host {upstream_hostport}`
+- **THEN** the reverse proxy preserves the original request host
 
-### Requirement: Post-Deployment Home Assistant Proxy Configuration Reminder
+### Requirement: Managed Home Assistant Proxy Configuration
 
-The repository SHALL document that Home Assistant must trust the local Caddy proxy and internal proxy network in `/var/lib/homeassistant/configuration.yaml`.
+The system SHALL manage Home Assistant's reverse-proxy trust configuration in `/var/lib/homeassistant/configuration.yaml`.
 
-#### Scenario: Operator reviews deployment notes
+#### Scenario: Configuration includes trusted proxies
 
-- **WHEN** the change is implemented
-- **THEN** the repository includes a reminder to configure `http.use_x_forwarded_for = true` and trusted proxies `127.0.0.1` and `10.229.0.0/16`
+- **WHEN** the Home Assistant module is enabled
+- **THEN** `/var/lib/homeassistant/configuration.yaml` includes `http.use_x_forwarded_for = true` and trusted proxies `127.0.0.1`, `::1`, and `10.229.0.0/16`
+
+### Requirement: Native Home Assistant OIDC
+
+The system SHALL install `hass-oidc-auth` and configure Home Assistant to authenticate through Authentik using OpenID Connect.
+
+#### Scenario: Home Assistant OIDC configuration is managed
+
+- **WHEN** the Home Assistant module is enabled
+- **THEN** `/var/lib/homeassistant/custom_components/auth_oidc` contains the vendored `hass-oidc-auth` integration and `configuration.yaml` contains `auth_oidc.client_id = "home-assistant"` with discovery URL `https://identity.net.scetrov.live/application/o/home-assistant-oidc/.well-known/openid-configuration`
+
+### Requirement: Home Assistant Owner Bootstrap
+
+The system SHALL create an initial Home Assistant owner account declaratively when no non-system users exist, so native authentication can proceed without manual onboarding.
+
+#### Scenario: No users exist after first deployment
+
+- **WHEN** the Home Assistant container is running and `python -m homeassistant --script auth -c /config list` reports `Total users: 0`
+- **THEN** a systemd oneshot service generates `/var/lib/homeassistant/.bootstrap-owner-password` with mode `0600` if missing and creates the `scetrov-bootstrap` Home Assistant user
 
 ### Requirement: Runtime Verification
 
@@ -101,7 +124,7 @@ The implementation SHALL include verification steps for container health, host l
 #### Scenario: Post-deployment checks run
 
 - **WHEN** Home Assistant is deployed to `habiki`
-- **THEN** verification confirms the `homeassistant` container is active and healthy, `127.0.0.1:8123` is listening, UDP ports `1900` and `5353` are allowed, Caddy validates successfully, UI requests are challenged by Authentik, exempt API paths bypass Authentik, and logs are visible through the existing Loki pipeline
+- **THEN** verification confirms the `homeassistant` container is active/running, TCP port `8123` is listening, UDP ports `1900` and `5353` are allowed, Caddy validates successfully, UI requests are challenged by Authentik, exempt API paths bypass Authentik, and logs are visible through the existing Loki pipeline
 
 #### Scenario: Metrics and traces are enabled internally
 
@@ -125,3 +148,12 @@ The system SHALL register the Home Assistant proxy application in Authentik via 
 
 - WHEN `terraform/authentik.tf` is applied
 - THEN it creates an `authentik_provider_proxy` with external host `https://homeassistant.net.scetrov.live`, associates it with a new `authentik_application`, registers the provider in `authentik_outpost.proxy.protocol_providers`, and binds access to the `all_applications` group.
+
+### Requirement: Authentik OIDC Provider Declarative Provisioning
+
+The system SHALL register a public Authentik OAuth2/OpenID provider for Home Assistant native OIDC login via OpenTofu.
+
+#### Scenario: Apply OpenTofu OIDC configurations
+
+- WHEN `terraform/authentik.tf` is applied
+- THEN it creates an `authentik_provider_oauth2` with client ID `home-assistant`, strict redirect URI `https://homeassistant.net.scetrov.live/auth/oidc/callback`, and an application slug `home-assistant-oidc`.

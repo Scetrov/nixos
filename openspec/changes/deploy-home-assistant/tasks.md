@@ -8,7 +8,7 @@
 - [x] 1.4 Configure `/var/lib/homeassistant:/config`, `TZ = "Europe/London"`, and `extraOptions = [ "--network=host" ]`
 - [x] 1.5 Add a `systemd.tmpfiles.rules` entry for `/var/lib/homeassistant` with mode `0750` and ownership `root root`
 - [x] 1.6 Allow inbound UDP firewall ports `1900` and `5353` only while the Home Assistant module is enabled
-- [x] 1.7 Add a comment or markdown reminder for the required Home Assistant `http.use_x_forwarded_for` and `trusted_proxies` YAML
+- [x] 1.7 Manage the required Home Assistant `http.use_x_forwarded_for` and `trusted_proxies` YAML declaratively
 
 ## 2. Habiki Assignment
 
@@ -22,10 +22,15 @@
 - [x] 3.2 Guard the Home Assistant virtual host with `lib.mkIf config.scetrov.services.home-assistant.enable`
 - [x] 3.3 Set `useACMEHost = "scetrov.live";`
 - [x] 3.4 Configure Caddy to reverse proxy to `127.0.0.1:8123` while preserving the original request host
-- [x] 3.5 Add an `@auth_routes` matcher that applies to `/` while excluding `/api/webhook/*` and `/api/websocket`
+- [x] 3.5 Add an `@auth_routes` matcher that applies to `/` while excluding `/api/webhook/*`, `/api/websocket`, and `/auth/oidc/*`
 - [x] 3.6 Apply the existing Authentik Caddy `forward_auth` outpost pattern to `@auth_routes`
 - [x] 3.7 In `terraform/authentik.tf`, define the `authentik_provider_proxy.homeassistant`, `authentik_application.homeassistant`, and `authentik_policy_binding.homeassistant_access` resources
 - [x] 3.8 Append `authentik_provider_proxy.homeassistant.id` to the `protocol_providers` list within the `authentik_outpost.proxy` resource block in `terraform/authentik.tf`
+- [x] 3.9 Copy `home-assistant.png` into Authentik branding assets and set the Home Assistant application `meta_icon` to `/static/dist/branding/home-assistant.png`
+- [x] 3.10 Define `authentik_provider_oauth2.homeassistant_oidc`, `authentik_application.homeassistant_oidc`, and `authentik_policy_binding.homeassistant_oidc_access` for native Home Assistant OIDC
+- [x] 3.11 Vendor `hass-oidc-auth` v1.1.0 and install it into `/var/lib/homeassistant/custom_components/auth_oidc`
+- [x] 3.12 Configure Home Assistant `auth_oidc` with the Authentik discovery URL and group role mappings
+- [x] 3.13 Add a `home-assistant-bootstrap-owner` oneshot service that creates the first Home Assistant owner account only when `Total users: 0`
 
 ## 4. Static Verification
 

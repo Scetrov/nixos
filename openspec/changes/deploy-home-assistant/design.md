@@ -50,14 +50,14 @@ Home Assistant has requirements that differ from typical HTTP-only applications.
 
 - [Risk] Host networking increases container access to the host network namespace. Mitigation: keep the service scoped to `habiki`, avoid extra published ports, and rely on firewall and Caddy boundaries for external access.
 - [Risk] Authentik protection of only the root UI path may not cover every browser route if Home Assistant serves additional UI paths outside `/`. Mitigation: validate route behavior after deployment and adjust the Caddy matcher if Home Assistant UI routes require broader protection.
-- [Risk] Home Assistant may reject forwarded headers until `configuration.yaml` is updated. Mitigation: add a repository reminder and include post-deployment verification for the required `http.use_x_forwarded_for` and `trusted_proxies` settings.
+- [Risk] Home Assistant rejects forwarded headers unless its HTTP integration trusts Caddy. Mitigation: manage the required `http.use_x_forwarded_for` and `trusted_proxies` settings declaratively in `configuration.yaml`.
 - [Risk] Telemetry availability depends on Home Assistant internal integrations. Mitigation: require logs through the existing container journald/Loki path and document that Prometheus and OpenTelemetry become active once configured inside Home Assistant.
 
 ## Migration Plan
 
 1. Add the Home Assistant NixOS module, node import, service enablement, and Caddy virtual host.
 2. Deploy with a targeted run such as `./scripts/play.sh --limit habiki --tags nixos`.
-3. Add the Home Assistant `http.trusted_proxies` settings to `/var/lib/homeassistant/configuration.yaml`.
+3. Verify the managed Home Assistant `http.trusted_proxies` settings are present in `/var/lib/homeassistant/configuration.yaml`.
 4. Restart Home Assistant if the internal YAML changed.
 5. Verify the container, listener, firewall, Caddy syntax, Authentik route behavior, bypassed API paths, and observability queries.
 

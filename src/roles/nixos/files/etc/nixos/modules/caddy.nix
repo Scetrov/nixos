@@ -121,7 +121,7 @@ lib.mkIf config.services.grafana.enable {
           useACMEHost = "scetrov.live";
           extraConfig = ''
             @auth_routes {
-              not path /api/webhook/* /api/websocket
+              not path /api/webhook/* /api/websocket /auth/oidc/*
             }
 
             forward_auth @auth_routes http://127.0.0.1:9000 {
