@@ -295,5 +295,20 @@ in
         '';
       };
     };
+
+    services.prometheus.scrapeConfigs = lib.mkAfter [
+      {
+        job_name = "dependency-track";
+        metrics_path = "/metrics";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:${toString cfg.apiPort}" ];
+            labels = {
+              service = "dependency-track";
+            };
+          }
+        ];
+      }
+    ];
   };
 }

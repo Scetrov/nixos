@@ -3,6 +3,22 @@ resource "grafana_service_account" "oncall" {
   role = "Admin"
 }
 
+locals {
+  grafana_portal = {
+    source_root = "${path.module}/dashboards"
+    folders = {
+      platform = {
+        title = "Operations / Platform"
+        uid   = "ops-platform"
+      }
+      services = {
+        title = "Operations / Services"
+        uid   = "ops-services"
+      }
+    }
+  }
+}
+
 resource "grafana_service_account_token" "oncall" {
   name               = "oncall-token"
   service_account_id = grafana_service_account.oncall.id
@@ -62,11 +78,66 @@ output "dtrack_oidc_client_secret" {
   sensitive = true
 }
 
+resource "grafana_folder" "operations_platform" {
+  title = local.grafana_portal.folders.platform.title
+  uid   = local.grafana_portal.folders.platform.uid
+}
+
+resource "grafana_folder" "operations_services" {
+  title = local.grafana_portal.folders.services.title
+  uid   = local.grafana_portal.folders.services.uid
+}
+
+resource "grafana_dashboard" "platform_overview" {
+  folder      = grafana_folder.operations_platform.uid
+  config_json = file("${local.grafana_portal.source_root}/platform-overview.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "service_catalog" {
+  folder      = grafana_folder.operations_platform.uid
+  config_json = file("${local.grafana_portal.source_root}/service-catalog.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "frontier_indexer_service" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/frontier-indexer-service.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "dependency_track_service" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/dependency-track-service.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "oncall_service" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/oncall-service.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "hermes_service" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/hermes-service.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "home_assistant_service" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/home-assistant-service.json")
+  overwrite   = true
+}
+
 resource "grafana_dashboard" "frontier_indexer" {
-  config_json = file("${path.module}/dashboards/frontier-indexer.json")
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/frontier-indexer.json")
+  overwrite   = true
 }
 
 resource "grafana_dashboard" "system_resources" {
-  config_json = file("${path.module}/dashboards/system-resources.json")
+  folder      = grafana_folder.operations_platform.uid
+  config_json = file("${local.grafana_portal.source_root}/system-resources.json")
   overwrite   = true
 }

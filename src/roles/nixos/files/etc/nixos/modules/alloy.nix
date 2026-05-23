@@ -36,6 +36,41 @@
       }
 
       rule {
+        source_labels = ["__journal__systemd_unit"]
+        regex         = "(frontier-indexer-prepare-env|frontier-indexer-network|frontier-indexer-wait-for-db|podman-frontier-(indexer|timescaledb))\\.service"
+        replacement   = "frontier-indexer"
+        target_label  = "service"
+      }
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        regex         = "(dtrack-apiserver-prepare-env|dtrack-frontend-prepare-env|dtrack-network|podman-dtrack-(apiserver|frontend|db))\\.service"
+        replacement   = "dependency-track"
+        target_label  = "service"
+      }
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        regex         = "(oncall-prepare-env|oncall-migrate|podman-oncall-(engine|celery|postgres|redis))\\.service"
+        replacement   = "oncall"
+        target_label  = "service"
+      }
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        regex         = "(hermes-webui-oci-setup|podman-hermes-(agent|webui|dashboard|caddy))\\.service"
+        replacement   = "hermes"
+        target_label  = "service"
+      }
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        regex         = "(home-assistant-bootstrap-owner|podman-homeassistant)\\.service"
+        replacement   = "home-assistant"
+        target_label  = "service"
+      }
+
+      rule {
         source_labels = ["__journal_syslog_identifier"]
         target_label  = "syslog_identifier"
       }

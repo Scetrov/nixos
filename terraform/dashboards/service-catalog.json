@@ -1,0 +1,89 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "title": "Platform Overview",
+      "type": "link",
+      "url": "/grafana/d/ops-platform-overview/operations-platform-overview"
+    },
+    {
+      "title": "Grafana Explore",
+      "type": "link",
+      "url": "/grafana/explore"
+    },
+    {
+      "title": "OnCall",
+      "type": "link",
+      "url": "https://metrics.net.scetrov.live/oncall"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "Service Catalog",
+      "type": "row"
+    },
+    {
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "content": "# Phase-One Services\n\n| Service | Dashboard | Signals today | Notes |\n| --- | --- | --- | --- |\n| Platform host health | [System Resources](/grafana/d/system-resources/system-resources) | Metrics | Fleet and per-host resource drilldown. |\n| Frontier Indexer | [Frontier Indexer Service](/grafana/d/svc-frontier-indexer/frontier-indexer-service) | Metrics, logs | Uses the existing detailed frontier metrics dashboard as a linked deep dive. |\n| Dependency Track | [Dependency Track Service](/grafana/d/svc-dependency-track/dependency-track-service) | Metrics, logs | API metrics are scraped directly from the apiserver and logs are labeled in Alloy. |\n| Grafana OnCall | [OnCall Service](/grafana/d/svc-oncall/oncall-service) | Logs | Metrics exporter remains disabled and is surfaced as an explicit gap. |\n| Hermes | [Hermes Service](/grafana/d/svc-hermes/hermes-service) | Logs | External UI is linked directly while metrics and traces mature. |\n| Home Assistant | [Home Assistant Service](/grafana/d/svc-home-assistant/home-assistant-service) | Logs | Metrics and traces remain planned follow-up work and are called out in the dashboard. |\n\n## Conventions\n\n- Platform dashboards use the `ops-` UID prefix and live under `Operations / Platform`.\n- New service dashboards use the `svc-` UID prefix and live under `Operations / Services`.\n- Existing dashboard UIDs stay unchanged when already relied on by external links or prior changes.\n- Dashboard JSON under `terraform/dashboards` is the source of truth for the Grafana operations portal.\n- Cross-signal drilldown uses `service` plus `host` identity when the runtime emits those labels or attributes.\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.0.0",
+      "title": "Portal Index",
+      "transparent": true,
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "operations-portal",
+    "catalog"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Operations Service Catalog",
+  "uid": "ops-service-catalog",
+  "version": 1
+}
