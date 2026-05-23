@@ -5,6 +5,7 @@ Last reviewed: 2026-05-23
 ## Repository-managed state
 
 - `src/roles/nixos/files/etc/nixos/modules/home-assistant.nix` defines the Home Assistant container, host-network mode, `/var/lib/homeassistant:/config`, generated `configuration.yaml`, Authentik OIDC settings, onboarding bypass, bootstrap owner service, and SSDP/mDNS firewall allowances.
+- Matter support is implemented as the official `ghcr.io/matter-js/python-matter-server:stable` container, bound to `127.0.0.1:5580`, with persistent state in `/var/lib/matter-server` created as `0750 root root` so runtime artifacts remain host-managed and outside Git.
 - `src/roles/nixos/files/etc/nixos/home-assistant/hass-oidc-auth-v1.1.0.zip` is the only existing custom component artifact and remains the documented OIDC exception.
 - `automations.yaml`, `scripts.yaml`, and `scenes.yaml` are managed as reviewed placeholder files because the live files contain no user automation, script, or scene behavior.
 - `dashboards/` is reserved for reviewed declarative dashboard assets. No dashboard has been imported.
@@ -61,7 +62,8 @@ Matter and Thread:
 
 - `thread` is configured in live state.
 - No `matter` config entry was present.
-- Keep using official Home Assistant integrations for Thread and Matter. Document hardware and border-router ownership before adding Matter devices.
+- The managed Matter Server provides only the local controller websocket at `ws://localhost:5580/ws`; it is not a Thread border router and is not exposed through Caddy, Authentik, or any other public route.
+- Keep using official Home Assistant integrations for Thread and Matter. Document which external border router provides Thread connectivity before commissioning Thread-based Matter devices.
 
 Custom integration policy:
 

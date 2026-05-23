@@ -46,7 +46,10 @@
 
   scetrov.services.authentik.enable = true;
   scetrov.services.dependency-track.enable = true;
-  scetrov.services.home-assistant.enable = true;
+  scetrov.services.home-assistant = {
+    enable = true;
+    matter.enable = true;
+  };
   scetrov.services.frontier-indexer = {
     enable = true;
     firstCheckpoint = "302790346";

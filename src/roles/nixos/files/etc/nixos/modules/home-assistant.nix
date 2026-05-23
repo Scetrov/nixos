@@ -10,6 +10,10 @@ let
   oidcClientId = "home-assistant";
   oidcProviderSlug = "home-assistant-oidc";
   homeAssistantAssets = ../home-assistant;
+  homeAssistantStateDir = "/var/lib/homeassistant";
+  matterServerStateDir = "/var/lib/matter-server";
+  matterServerImage = "ghcr.io/matter-js/python-matter-server:stable";
+  matterServerPort = 5580;
   configurationYaml = pkgs.writeText "home-assistant-configuration.yaml" ''
     homeassistant:
       time_zone: "Europe/London"
@@ -50,38 +54,71 @@ in
 {
   options.scetrov.services.home-assistant = {
     enable = lib.mkEnableOption "Home Assistant service";
+
+    matter.enable = lib.mkEnableOption "Home Assistant Matter Server";
   };
 
   config = lib.mkIf cfg.enable {
-    virtualisation.oci-containers.containers.homeassistant = {
-      image = "ghcr.io/home-assistant/home-assistant:stable";
-      autoStart = true;
-      environment = {
-        TZ = "Europe/London";
+    virtualisation.oci-containers.containers = {
+      homeassistant = {
+        image = "ghcr.io/home-assistant/home-assistant:stable";
+        autoStart = true;
+        environment = {
+          TZ = "Europe/London";
+        };
+        volumes = [
+          "${homeAssistantStateDir}:/config"
+        ];
+        extraOptions = [
+          "--network=host"
+        ];
       };
-      volumes = [
-        "/var/lib/homeassistant:/config"
-      ];
-      extraOptions = [
-        "--network=host"
-      ];
+    }
+    // lib.optionalAttrs cfg.matter.enable {
+      "matter-server" = {
+        image = matterServerImage;
+        autoStart = true;
+        cmd = [
+          "--storage-path"
+          "/data"
+          "--paa-root-cert-dir"
+          "/data/credentials"
+          "--listen-address"
+          "127.0.0.1"
+          "--port"
+          (toString matterServerPort)
+        ];
+        volumes = [
+          "${matterServerStateDir}:/data"
+        ];
+        extraOptions = [
+          "--network=host"
+          "--security-opt=apparmor=unconfined"
+        ];
+      };
     };
 
     systemd.tmpfiles.rules = [
-      "d /var/lib/homeassistant 0750 root root -"
+      "d ${homeAssistantStateDir} 0750 root root -"
+    ]
+    ++ lib.optionals cfg.matter.enable [
+      "d ${matterServerStateDir} 0750 root root -"
     ];
 
     system.activationScripts.homeAssistantConfiguration = ''
-      install -d -m 0750 /var/lib/homeassistant
-      install -d -m 0755 /var/lib/homeassistant/custom_components/auth_oidc
-      rm -rf /var/lib/homeassistant/custom_components/auth_oidc/*
-      ${pkgs.unzip}/bin/unzip -q ${../home-assistant/hass-oidc-auth-v1.1.0.zip} -d /var/lib/homeassistant/custom_components/auth_oidc
-      install -m 0644 ${configurationYaml} /var/lib/homeassistant/configuration.yaml
-      install -m 0644 ${homeAssistantAssets}/automations.yaml /var/lib/homeassistant/automations.yaml
-      install -m 0644 ${homeAssistantAssets}/scripts.yaml /var/lib/homeassistant/scripts.yaml
-      install -m 0644 ${homeAssistantAssets}/scenes.yaml /var/lib/homeassistant/scenes.yaml
-      install -d -m 0755 /var/lib/homeassistant/.storage
-      cat > /var/lib/homeassistant/.storage/onboarding <<'EOF'
+      install -d -m 0750 ${homeAssistantStateDir}
+      install -d -m 0755 ${homeAssistantStateDir}/custom_components/auth_oidc
+      rm -rf ${homeAssistantStateDir}/custom_components/auth_oidc/*
+      ${pkgs.unzip}/bin/unzip -q ${../home-assistant/hass-oidc-auth-v1.1.0.zip} -d ${homeAssistantStateDir}/custom_components/auth_oidc
+      install -m 0644 ${configurationYaml} ${homeAssistantStateDir}/configuration.yaml
+      install -m 0644 ${homeAssistantAssets}/automations.yaml ${homeAssistantStateDir}/automations.yaml
+      install -m 0644 ${homeAssistantAssets}/scripts.yaml ${homeAssistantStateDir}/scripts.yaml
+      install -m 0644 ${homeAssistantAssets}/scenes.yaml ${homeAssistantStateDir}/scenes.yaml
+      install -d -m 0755 ${homeAssistantStateDir}/.storage
+      ${lib.optionalString cfg.matter.enable ''
+        install -d -m 0750 ${matterServerStateDir}
+      ''}
+      cat > ${homeAssistantStateDir}/.storage/onboarding <<'EOF'
       {
         "version": 4,
         "minor_version": 1,
@@ -96,7 +133,7 @@ in
         }
       }
       EOF
-      chmod 0600 /var/lib/homeassistant/.storage/onboarding
+      chmod 0600 ${homeAssistantStateDir}/.storage/onboarding
     '';
 
     systemd.services.home-assistant-bootstrap-owner = {
@@ -111,7 +148,7 @@ in
       script = ''
         set -euo pipefail
 
-        password_file=/var/lib/homeassistant/.bootstrap-owner-password
+        password_file=${homeAssistantStateDir}/.bootstrap-owner-password
         if [ ! -f "$password_file" ]; then
           ${pkgs.openssl}/bin/openssl rand -base64 36 > "$password_file"
           chmod 0600 "$password_file"
