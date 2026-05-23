@@ -9,6 +9,7 @@ let
   cfg = config.scetrov.services.home-assistant;
   oidcClientId = "home-assistant";
   oidcProviderSlug = "home-assistant-oidc";
+  homeAssistantAssets = ../home-assistant;
   configurationYaml = pkgs.writeText "home-assistant-configuration.yaml" ''
     homeassistant:
       time_zone: "Europe/London"
@@ -76,6 +77,9 @@ in
       rm -rf /var/lib/homeassistant/custom_components/auth_oidc/*
       ${pkgs.unzip}/bin/unzip -q ${../home-assistant/hass-oidc-auth-v1.1.0.zip} -d /var/lib/homeassistant/custom_components/auth_oidc
       install -m 0644 ${configurationYaml} /var/lib/homeassistant/configuration.yaml
+      install -m 0644 ${homeAssistantAssets}/automations.yaml /var/lib/homeassistant/automations.yaml
+      install -m 0644 ${homeAssistantAssets}/scripts.yaml /var/lib/homeassistant/scripts.yaml
+      install -m 0644 ${homeAssistantAssets}/scenes.yaml /var/lib/homeassistant/scenes.yaml
       install -d -m 0755 /var/lib/homeassistant/.storage
       cat > /var/lib/homeassistant/.storage/onboarding <<'EOF'
       {
