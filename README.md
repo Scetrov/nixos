@@ -1,3 +1,5 @@
+# NixOS Configuration and Deployment
+
 ## Abstract
 
 This repository stores the NixOS configuration and an Ansible Playbook used to push configuration to a machine, predominantly expected to be run locally but can be run against a remote target.
@@ -6,7 +8,7 @@ This repository stores the NixOS configuration and an Ansible Playbook used to p
 
 Ansible needs to be installed and you will need access to the vault password, which can be done initially with:
 
-```
+```sh
 nix-shell -p ansible python3
 echo "[INSERT PASSWORD]" > ~/.ansible/nixos_vault_password
 ```
@@ -16,7 +18,7 @@ echo "[INSERT PASSWORD]" > ~/.ansible/nixos_vault_password
 
 Then execute the playbook from the root:
 
-```
+```sh
 git add . && git commit && git push origin HEAD && ansible-playbook -i src/inventory.yml src/playbook.yml --vault-password-file ~/.ansible/nixos_vault_password
 ```
 
