@@ -201,6 +201,28 @@ resource "authentik_application" "metrics" {
   meta_launch_url   = "blank://blank"
 }
 
+# --- Home Assistant Proxy Provider ---
+resource "authentik_provider_proxy" "homeassistant" {
+  name               = "Home Assistant"
+  external_host      = "https://homeassistant.net.scetrov.live"
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  mode               = "forward_single"
+}
+
+resource "authentik_application" "homeassistant" {
+  name              = "Home Assistant"
+  slug              = "home-assistant"
+  protocol_provider = authentik_provider_proxy.homeassistant.id
+  meta_icon         = "https://raw.githubusercontent.com/home-assistant/branding/master/logo/logo-pretty.png"
+}
+
+resource "authentik_policy_binding" "homeassistant_access" {
+  target = authentik_application.homeassistant.uuid
+  group  = authentik_group.all_applications.id
+  order  = 0
+}
+
 # --- Branding ---
 resource "authentik_brand" "default" {
   domain         = "."
@@ -250,7 +272,8 @@ resource "authentik_outpost" "proxy" {
 
   protocol_providers = [
     authentik_provider_proxy.hermes.id,
-    authentik_provider_proxy.metrics.id
+    authentik_provider_proxy.metrics.id,
+    authentik_provider_proxy.homeassistant.id
   ]
 
   config = jsonencode({

@@ -15,12 +15,13 @@ Home Assistant has requirements that differ from typical HTTP-only applications.
 - Preserve local discovery behavior through host networking and explicit firewall openings for UDP ports `1900` and `5353`.
 - Expose `homeassistant.net.scetrov.live` through the existing Caddy wildcard certificate and Authentik forward-auth pattern.
 - Protect the root UI route while exempting webhook and WebSocket endpoints required by external automations and companion clients.
+- Declaratively provision the Authentik proxy provider, application, policy binding, and outpost binding in OpenTofu.
+- Register the Home Assistant DNS alias in local-networking.nix to ensure split-horizon LAN resolution.
 - Document post-deployment Home Assistant YAML that cannot be safely inferred by Caddy alone.
 
 **Non-Goals:**
 
 - Automating Home Assistant's internal onboarding, integrations, `configuration.yaml`, Prometheus component, or OpenTelemetry component.
-- Creating new Authentik applications, providers, users, or groups in OpenTofu as part of this change.
 - Changing the existing Caddy, Authentik, Alloy, Mimir, Tempo, or Loki architectures beyond adding the Home Assistant route.
 
 ## Decisions

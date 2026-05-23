@@ -32,6 +32,7 @@
         "hermes.net.scetrov.live"
         "dtrack.net.scetrov.live"
         "dtrack-api.net.scetrov.live"
+        "homeassistant.net.scetrov.live"
       ];
       "10.229.10.10" = [
         "bullit"

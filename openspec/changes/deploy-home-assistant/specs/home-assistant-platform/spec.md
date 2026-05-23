@@ -23,7 +23,7 @@ The system SHALL create `/var/lib/homeassistant` declaratively before the contai
 #### Scenario: NixOS activation prepares storage
 
 - **WHEN** the Home Assistant module is enabled and NixOS activation applies tmpfiles
-- **THEN** `/var/lib/homeassistant` exists with mode `0755` and ownership `root root`
+- **THEN** `/var/lib/homeassistant` exists with mode `0750` and ownership `root root`
 
 ### Requirement: LAN Discovery Firewall
 
@@ -107,3 +107,21 @@ The implementation SHALL include verification steps for container health, host l
 
 - **WHEN** Home Assistant's internal Prometheus and OpenTelemetry integrations are configured
 - **THEN** metrics are queryable through the existing Mimir/Prometheus path and traces sent through the Caddy `/otlp*` endpoint register in Tempo
+
+### Requirement: Local DNS Resolution
+
+The system SHALL ensure that `homeassistant.net.scetrov.live` is resolvable on the local network to the Habiki host.
+
+#### Scenario: Host resolution resolves locally
+
+- WHEN `local-networking.nix` is loaded
+- THEN `"homeassistant.net.scetrov.live"` is listed under Habiki's IP address (`10.229.10.2`)
+
+### Requirement: Authentik Ingress Declarative Provisioning
+
+The system SHALL register the Home Assistant proxy application in Authentik via OpenTofu.
+
+#### Scenario: Apply OpenTofu configurations
+
+- WHEN `terraform/authentik.tf` is applied
+- THEN it creates an `authentik_provider_proxy` with external host `https://homeassistant.net.scetrov.live`, associates it with a new `authentik_application`, registers the provider in `authentik_outpost.proxy.protocol_providers`, and binds access to the `all_applications` group.

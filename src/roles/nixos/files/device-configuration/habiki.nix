@@ -22,6 +22,7 @@
     ./modules/user-scetrov-filebrowser.nix
     ./modules/user-scetrov-syncthing.nix
     ./modules/grafana-mcp.nix
+    ./modules/home-assistant.nix
   ];
 
   services.hermes-webui = {
@@ -45,6 +46,7 @@
 
   scetrov.services.authentik.enable = true;
   scetrov.services.dependency-track.enable = true;
+  scetrov.services.home-assistant.enable = true;
   scetrov.services.frontier-indexer = {
     enable = true;
     firstCheckpoint = "302790346";
