@@ -10,6 +10,13 @@ let
   oidcClientId = "home-assistant";
   oidcProviderSlug = "home-assistant-oidc";
   configurationYaml = pkgs.writeText "home-assistant-configuration.yaml" ''
+    homeassistant:
+      time_zone: "Europe/London"
+      elevation: 50
+      currency: "GBP"
+      country: "GB"
+      language: "en-GB"
+
     # Loads default set of integrations. Do not remove.
     default_config:
 
@@ -69,6 +76,23 @@ in
       rm -rf /var/lib/homeassistant/custom_components/auth_oidc/*
       ${pkgs.unzip}/bin/unzip -q ${../home-assistant/hass-oidc-auth-v1.1.0.zip} -d /var/lib/homeassistant/custom_components/auth_oidc
       install -m 0644 ${configurationYaml} /var/lib/homeassistant/configuration.yaml
+      install -d -m 0755 /var/lib/homeassistant/.storage
+      cat > /var/lib/homeassistant/.storage/onboarding <<'EOF'
+      {
+        "version": 4,
+        "minor_version": 1,
+        "key": "onboarding",
+        "data": {
+          "done": [
+            "user",
+            "core_config",
+            "analytics",
+            "integration"
+          ]
+        }
+      }
+      EOF
+      chmod 0600 /var/lib/homeassistant/.storage/onboarding
     '';
 
     systemd.services.home-assistant-bootstrap-owner = {

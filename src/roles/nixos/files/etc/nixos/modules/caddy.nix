@@ -120,15 +120,6 @@ lib.mkIf config.services.grafana.enable {
         {
           useACMEHost = "scetrov.live";
           extraConfig = ''
-            @auth_routes {
-              not path /api/webhook/* /api/websocket /auth/oidc/*
-            }
-
-            forward_auth @auth_routes http://127.0.0.1:9000 {
-              uri /outpost.goauthentik.io/auth/caddy
-              copy_headers X-Authentik-Username X-Authentik-Groups X-Authentik-Email X-Authentik-Name X-Authentik-Uid
-            }
-
             encode zstd gzip
             reverse_proxy 127.0.0.1:8123
           '';

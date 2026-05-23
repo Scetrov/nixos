@@ -9,6 +9,7 @@
 - [x] 1.5 Add a `systemd.tmpfiles.rules` entry for `/var/lib/homeassistant` with mode `0750` and ownership `root root`
 - [x] 1.6 Allow inbound UDP firewall ports `1900` and `5353` only while the Home Assistant module is enabled
 - [x] 1.7 Manage the required Home Assistant `http.use_x_forwarded_for` and `trusted_proxies` YAML declaratively
+- [x] 1.8 Preconfigure Home Assistant core settings for London timezone, 50m elevation, GBP currency, GB country, and British English language
 
 ## 2. Habiki Assignment
 
@@ -22,8 +23,8 @@
 - [x] 3.2 Guard the Home Assistant virtual host with `lib.mkIf config.scetrov.services.home-assistant.enable`
 - [x] 3.3 Set `useACMEHost = "scetrov.live";`
 - [x] 3.4 Configure Caddy to reverse proxy to `127.0.0.1:8123` while preserving the original request host
-- [x] 3.5 Add an `@auth_routes` matcher that applies to `/` while excluding `/api/webhook/*`, `/api/websocket`, and `/auth/oidc/*`
-- [x] 3.6 Apply the existing Authentik Caddy `forward_auth` outpost pattern to `@auth_routes`
+- [x] 3.5 Configure Home Assistant Caddy ingress without forward-auth so native Home Assistant OIDC handles IdAM
+- [x] 3.6 Preserve webhook, WebSocket, and OIDC paths by proxying all Home Assistant routes directly to Home Assistant
 - [x] 3.7 In `terraform/authentik.tf`, define the `authentik_provider_proxy.homeassistant`, `authentik_application.homeassistant`, and `authentik_policy_binding.homeassistant_access` resources
 - [x] 3.8 Append `authentik_provider_proxy.homeassistant.id` to the `protocol_providers` list within the `authentik_outpost.proxy` resource block in `terraform/authentik.tf`
 - [x] 3.9 Copy `home-assistant.png` into Authentik branding assets and set the Home Assistant application `meta_icon` to `/static/dist/branding/home-assistant.png`
@@ -45,7 +46,7 @@
 - [x] 5.2 Verify the `homeassistant` OCI container reports active/running under Podman on `habiki`
 - [x] 5.3 Verify `ss -tulpn` shows Home Assistant listening on TCP port `8123`
 - [x] 5.4 Verify host firewall rules allow inbound UDP ports `1900` and `5353`
-- [x] 5.5 Verify `curl -I https://homeassistant.net.scetrov.live/` returns an Authentik challenge or redirect
-- [x] 5.6 Verify `curl -I https://homeassistant.net.scetrov.live/api/websocket` bypasses the Authentik challenge and reaches Home Assistant
+- [x] 5.5 Verify `curl -I https://homeassistant.net.scetrov.live/` reaches Home Assistant without Caddy forward-auth
+- [x] 5.6 Verify `curl -I https://homeassistant.net.scetrov.live/api/websocket` reaches Home Assistant
 - [x] 5.7 Verify Loki can query Home Assistant logs by `{container_name="homeassistant"}` or `{unit="podman-homeassistant.service"}`
 - [ ] 5.8 After Home Assistant internal integrations are configured, verify metrics in Mimir/Prometheus and traces through the Caddy `/otlp*` route into Tempo

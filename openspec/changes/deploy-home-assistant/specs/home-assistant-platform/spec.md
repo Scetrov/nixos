@@ -16,6 +16,11 @@ The system SHALL provide a NixOS module at `src/roles/nixos/files/etc/nixos/modu
 - **WHEN** `scetrov.services.home-assistant.enable` is true
 - **THEN** the module declares `virtualisation.oci-containers.containers.homeassistant` using `ghcr.io/home-assistant/home-assistant:stable`, `TZ = "Europe/London"`, `/var/lib/homeassistant:/config`, and `--network=host`
 
+#### Scenario: Core locale settings are preconfigured
+
+- **WHEN** Home Assistant starts from the declarative configuration
+- **THEN** core settings use `Europe/London`, elevation `50`, currency `GBP`, country `GB`, and language `en-GB`
+
 ### Requirement: Persistent State Directory
 
 The system SHALL create `/var/lib/homeassistant` declaratively before the container requires it.
@@ -57,29 +62,29 @@ The system SHALL expose Home Assistant at `homeassistant.net.scetrov.live` throu
 - **WHEN** `scetrov.services.home-assistant.enable` is false or unset
 - **THEN** Caddy does not declare the `homeassistant.net.scetrov.live` virtual host
 
-### Requirement: Authentik Route Boundaries
+### Requirement: Native OIDC Route Boundaries
 
-The system SHALL protect the Home Assistant root UI route through the existing Authentik Caddy forward-auth outpost while excluding webhook, WebSocket, and native OIDC endpoints.
+The system SHALL expose Home Assistant through Caddy without Authentik forward-auth because Home Assistant performs native Authentik OIDC authentication.
 
-#### Scenario: UI route requires Authentik
+#### Scenario: UI route reaches Home Assistant
 
-- **WHEN** an unauthenticated client requests `https://homeassistant.net.scetrov.live/`
-- **THEN** Caddy applies forward-auth to `http://127.0.0.1:9000/outpost.goauthentik.io/auth/caddy`
+- **WHEN** a client requests `https://homeassistant.net.scetrov.live/`
+- **THEN** Caddy proxies the request directly to Home Assistant
 
-#### Scenario: Webhook route bypasses Authentik
+#### Scenario: Webhook route reaches Home Assistant
 
 - **WHEN** a client requests `https://homeassistant.net.scetrov.live/api/webhook/<token>`
-- **THEN** the request bypasses Authentik forward-auth and is proxied directly to Home Assistant
+- **THEN** the request is proxied directly to Home Assistant
 
-#### Scenario: WebSocket route bypasses Authentik
+#### Scenario: WebSocket route reaches Home Assistant
 
 - **WHEN** a client requests `https://homeassistant.net.scetrov.live/api/websocket`
-- **THEN** the request bypasses Authentik forward-auth and is proxied directly to Home Assistant
+- **THEN** the request is proxied directly to Home Assistant
 
-#### Scenario: OIDC route bypasses Authentik proxy auth
+#### Scenario: OIDC route reaches Home Assistant
 
 - **WHEN** a client requests `https://homeassistant.net.scetrov.live/auth/oidc/callback`
-- **THEN** the request bypasses Authentik forward-auth and is proxied directly to Home Assistant
+- **THEN** the request is proxied directly to Home Assistant
 
 ### Requirement: Reverse Proxy Header Policy
 
@@ -124,7 +129,7 @@ The implementation SHALL include verification steps for container health, host l
 #### Scenario: Post-deployment checks run
 
 - **WHEN** Home Assistant is deployed to `habiki`
-- **THEN** verification confirms the `homeassistant` container is active/running, TCP port `8123` is listening, UDP ports `1900` and `5353` are allowed, Caddy validates successfully, UI requests are challenged by Authentik, exempt API paths bypass Authentik, and logs are visible through the existing Loki pipeline
+- **THEN** verification confirms the `homeassistant` container is active/running, TCP port `8123` is listening, UDP ports `1900` and `5353` are allowed, Caddy validates successfully, Home Assistant OIDC routes are reachable, and logs are visible through the existing Loki pipeline
 
 #### Scenario: Metrics and traces are enabled internally
 
