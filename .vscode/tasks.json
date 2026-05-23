@@ -35,6 +35,380 @@
         "clear": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Deploy authentik targeted",
+      "type": "shell",
+      "command": "./scripts/play.sh",
+      "args": [
+        "--limit",
+        "habiki",
+        "--tags",
+        "authentik"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Deploy authentik targeted overwrite",
+      "type": "shell",
+      "command": "./scripts/play.sh",
+      "args": [
+        "--limit",
+        "habiki",
+        "--tags",
+        "authentik"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Run tofu wrapper",
+      "type": "shell",
+      "command": "./scripts/tofu.sh",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Run tofu wrapper autoapprove",
+      "type": "shell",
+      "command": "sh",
+      "args": [
+        "-c",
+        "printf 'yes\n' | ./scripts/tofu.sh"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Run tofu wrapper autoapprove fixed",
+      "type": "shell",
+      "command": "printf 'yes\\n' | ./scripts/tofu.sh",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Check tofu processes",
+      "type": "shell",
+      "command": "pgrep -af 'tofu( |$)' || true",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Kill stale tofu apply",
+      "type": "shell",
+      "command": "pkill -f 'tofu apply'",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Recheck tofu processes",
+      "type": "shell",
+      "command": "pgrep -af 'tofu( |$)' || true",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Run tofu wrapper apply",
+      "type": "shell",
+      "command": "printf 'yes\\n' | ./scripts/tofu.sh",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Deploy nixos targeted",
+      "type": "shell",
+      "command": "./scripts/play.sh",
+      "args": [
+        "--limit",
+        "habiki",
+        "--tags",
+        "nixos"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Run tofu wrapper after nixos",
+      "type": "shell",
+      "command": "printf 'yes\\n' | ./scripts/tofu.sh",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Inspect remote grafana files",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "ls -la /etc/grafana; echo '---'; ls -la /etc/grafana/dashboards || true; echo '---'; find /etc/grafana/provisioning -maxdepth 3 -type f | sort || true",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Deploy nixos cleanup",
+      "type": "shell",
+      "command": "./scripts/play.sh",
+      "args": [
+        "--limit",
+        "habiki",
+        "--tags",
+        "nixos"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Check remote dashboard symlink",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "test -e /etc/grafana/dashboards/system-resources.json && echo present || echo absent",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Deploy nixos activation cleanup",
+      "type": "shell",
+      "command": "./scripts/play.sh",
+      "args": [
+        "--limit",
+        "habiki",
+        "--tags",
+        "nixos"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Check remote dashboard symlink after activation",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "test -e /etc/grafana/dashboards/system-resources.json && echo present || echo absent",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Run tofu wrapper final apply",
+      "type": "shell",
+      "command": "printf 'yes\\n' | ./scripts/tofu.sh",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Inspect grafana provisioning and service",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "find /etc/grafana/provisioning -maxdepth 3 -type f -print | sort; echo '---'; systemctl is-active grafana; echo '---'; systemctl status grafana --no-pager -n 20 | tail -n 20",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "List grafana provisioning files",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "find /etc/grafana/provisioning -maxdepth 3 -type f -print",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Check grafana active",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "systemctl is-active grafana",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Restart grafana service",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "service",
+        "-a",
+        "name=grafana state=restarted",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Check grafana after restart",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "systemctl is-active grafana",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Run tofu wrapper after grafana restart",
+      "type": "shell",
+      "command": "printf 'yes\\n' | ./scripts/tofu.sh",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Deploy nixos empty dashboard provider",
+      "type": "shell",
+      "command": "./scripts/play.sh",
+      "args": [
+        "--limit",
+        "habiki",
+        "--tags",
+        "nixos"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Deploy nixos matching provider",
+      "type": "shell",
+      "command": "./scripts/play.sh",
+      "args": [
+        "--limit",
+        "habiki",
+        "--tags",
+        "nixos"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Run tofu wrapper create dashboard",
+      "type": "shell",
+      "command": "printf 'yes\\n' | ./scripts/tofu.sh",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Deploy authentik final verify",
+      "type": "shell",
+      "command": "./scripts/play.sh",
+      "args": [
+        "--limit",
+        "habiki",
+        "--tags",
+        "authentik"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
     }
   ]
 }

@@ -65,3 +65,8 @@ output "dtrack_oidc_client_secret" {
 resource "grafana_dashboard" "frontier_indexer" {
   config_json = file("${path.module}/dashboards/frontier-indexer.json")
 }
+
+resource "grafana_dashboard" "system_resources" {
+  config_json = file("${path.module}/dashboards/system-resources.json")
+  overwrite   = true
+}

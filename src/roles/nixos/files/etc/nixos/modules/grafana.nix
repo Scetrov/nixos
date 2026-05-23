@@ -1,136 +1,5 @@
 { config, pkgs, ... }:
 
-let
-  dashboardJson = {
-    id = null;
-    uid = "system-resources";
-    title = "System Resources";
-    tags = [ ];
-    style = "dark";
-    timezone = "browser";
-    schemaVersion = 38;
-    version = 1;
-    refresh = "5s";
-    templating = {
-      list = [
-        {
-          current = { };
-          datasource = {
-            type = "prometheus";
-            uid = "mimir";
-          };
-          definition = "label_values(host)";
-          hide = 0;
-          includeAll = false;
-          multi = false;
-          name = "host";
-          options = [ ];
-          query = {
-            query = "label_values(host)";
-            refId = "StandardVariableQuery";
-          };
-          refresh = 1;
-          regex = "";
-          skipUrlSync = false;
-          sort = 1;
-          type = "query";
-        }
-      ];
-    };
-    panels = [
-      {
-        id = 1;
-        type = "timeseries";
-        title = "CPU Utilization";
-        gridPos = {
-          h = 8;
-          w = 8;
-          x = 0;
-          y = 0;
-        };
-        targets = [
-          {
-            datasource = {
-              type = "prometheus";
-              uid = "mimir";
-            };
-            editorMode = "code";
-            expr = "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\", host=\"$host\"}[5m])) * 100)";
-            legendFormat = "{{instance}}";
-            refId = "A";
-          }
-        ];
-        fieldConfig = {
-          defaults = {
-            unit = "percent";
-            min = 0;
-            max = 100;
-          };
-        };
-      }
-      {
-        id = 2;
-        type = "timeseries";
-        title = "Memory Usage";
-        gridPos = {
-          h = 8;
-          w = 8;
-          x = 8;
-          y = 0;
-        };
-        targets = [
-          {
-            datasource = {
-              type = "prometheus";
-              uid = "mimir";
-            };
-            editorMode = "code";
-            expr = "(node_memory_MemTotal_bytes{host=\"$host\"} - node_memory_MemAvailable_bytes{host=\"$host\"}) / node_memory_MemTotal_bytes{host=\"$host\"} * 100";
-            legendFormat = "{{instance}}";
-            refId = "A";
-          }
-        ];
-        fieldConfig = {
-          defaults = {
-            unit = "percent";
-            min = 0;
-            max = 100;
-          };
-        };
-      }
-      {
-        id = 3;
-        type = "timeseries";
-        title = "Disk Space Utilization";
-        gridPos = {
-          h = 8;
-          w = 8;
-          x = 16;
-          y = 0;
-        };
-        targets = [
-          {
-            datasource = {
-              type = "prometheus";
-              uid = "mimir";
-            };
-            editorMode = "code";
-            expr = "100 - (node_filesystem_free_bytes{fstype!=\"tmpfs\", mountpoint=\"/\", host=\"$host\"} / node_filesystem_size_bytes{fstype!=\"tmpfs\", mountpoint=\"/\", host=\"$host\"} * 100)";
-            legendFormat = "{{device}}";
-            refId = "A";
-          }
-        ];
-        fieldConfig = {
-          defaults = {
-            unit = "percent";
-            min = 0;
-            max = 100;
-          };
-        };
-      }
-    ];
-  };
-in
 {
   age.secrets.grafana_authentik_client_id.file = /root/secrets/grafana_authentik_client_id.age;
   age.secrets.grafana_authentik_client_secret.file = /root/secrets/grafana_authentik_client_secret.age;
@@ -270,6 +139,10 @@ in
     ];
   };
 
+  system.activationScripts.grafanaDashboardCleanup.text = ''
+    rm -f /etc/grafana/dashboards/system-resources.json
+  '';
+
   systemd.tmpfiles.rules = [
     "d /etc/grafana/provisioning/plugins 0750 grafana grafana - -"
     "L+ /etc/grafana/provisioning/plugins/oncall.yaml - - - - ${pkgs.writeText "oncall.yaml" ''
@@ -283,6 +156,5 @@ in
           disabled: false
     ''}"
     "d /etc/grafana/dashboards 0750 grafana grafana - -"
-    "L+ /etc/grafana/dashboards/system-resources.json - - - - ${pkgs.writeText "system-resources.json" (builtins.toJSON dashboardJson)}"
   ];
 }
