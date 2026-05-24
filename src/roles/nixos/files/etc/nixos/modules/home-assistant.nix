@@ -56,9 +56,16 @@ in
     enable = lib.mkEnableOption "Home Assistant service";
 
     matter.enable = lib.mkEnableOption "Home Assistant Matter Server";
+
+    bluetooth.enable = lib.mkEnableOption "Home Assistant Bluetooth access";
   };
 
   config = lib.mkIf cfg.enable {
+    hardware.bluetooth = lib.mkIf cfg.bluetooth.enable {
+      enable = true;
+      powerOnBoot = true;
+    };
+
     virtualisation.oci-containers.containers = {
       homeassistant = {
         image = "ghcr.io/home-assistant/home-assistant:stable";
@@ -68,9 +75,16 @@ in
         };
         volumes = [
           "${homeAssistantStateDir}:/config"
+        ]
+        ++ lib.optionals cfg.bluetooth.enable [
+          "/run/dbus:/run/dbus:ro"
         ];
         extraOptions = [
           "--network=host"
+        ]
+        ++ lib.optionals cfg.bluetooth.enable [
+          "--cap-add=NET_ADMIN"
+          "--cap-add=NET_RAW"
         ];
       };
     }

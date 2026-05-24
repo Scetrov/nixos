@@ -48,6 +48,7 @@
   scetrov.services.dependency-track.enable = true;
   scetrov.services.home-assistant = {
     enable = true;
+    bluetooth.enable = true;
     matter.enable = true;
   };
   scetrov.services.frontier-indexer = {
