@@ -12,6 +12,8 @@
     dest: /etc/nixos/
     recursive: true
     delete: true
+    ssh_connection_multiplexing: true
+    use_ssh_args: true
     rsync_opts:
       - "--exclude=*.j2"
       - "--chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r"

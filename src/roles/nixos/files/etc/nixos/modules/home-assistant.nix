@@ -14,41 +14,81 @@ let
   matterServerStateDir = "/var/lib/matter-server";
   matterServerImage = "ghcr.io/matter-js/python-matter-server:stable";
   matterServerPort = 5580;
+  homeAssistantPrometheusEntities = [
+    "sensor.utility_room_sensor_temperature"
+    "sensor.upstairs_hallway_sensor_temperature"
+    "sensor.kitchen_sensor_temperature"
+    "sensor.bathroom_sensor_temperature"
+    "sensor.wifi_smart_switch_temperature"
+    "sensor.wifi_smart_switch_humidity"
+    "sensor.wifi_smart_switch_carbon_dioxide"
+    "sensor.wifi_smart_switch_air_quality"
+    "sensor.wifi_smart_switch_temperature_2"
+    "sensor.wifi_smart_switch_humidity_2"
+    "sensor.wifi_smart_switch_pm2_5"
+    "sensor.wifi_smart_switch_pm10"
+    "sensor.wifi_smart_switch_air_quality_2"
+    "sensor.indoor_outdoor_meter_4bdd_temperature"
+    "sensor.indoor_outdoor_meter_4bdd_humidity"
+    "sensor.indoor_outdoor_meter_dbb6_temperature"
+    "sensor.indoor_outdoor_meter_dbb6_humidity"
+    "sensor.indoor_outdoor_meter_6d05_temperature"
+    "sensor.indoor_outdoor_meter_6d05_humidity"
+    "sensor.indoor_outdoor_meter_9aff_temperature"
+    "sensor.indoor_outdoor_meter_9aff_humidity"
+    "sensor.indoor_outdoor_meter_f2f6_temperature"
+    "sensor.indoor_outdoor_meter_f2f6_humidity"
+    "sensor.indoor_outdoor_meter_3393_temperature"
+    "sensor.indoor_outdoor_meter_3393_humidity"
+    "sensor.indoor_outdoor_meter_1d40_temperature"
+    "sensor.indoor_outdoor_meter_1d40_humidity"
+    "sensor.thermo_hygrometer_living_area_temperature"
+    "sensor.thermo_hygrometer_living_area_humidity"
+  ];
   configurationYaml = pkgs.writeText "home-assistant-configuration.yaml" ''
-    homeassistant:
-      time_zone: "Europe/London"
-      elevation: 50
-      currency: "GBP"
-      country: "GB"
-      language: "en-GB"
+        homeassistant:
+          time_zone: "Europe/London"
+          elevation: 50
+          currency: "GBP"
+          country: "GB"
+          language: "en-GB"
 
-    # Loads default set of integrations. Do not remove.
-    default_config:
+        # Loads default set of integrations. Do not remove.
+        default_config:
 
-    http:
-      use_x_forwarded_for: true
-      trusted_proxies:
-        - 127.0.0.1
-        - ::1
-        - 10.229.0.0/16
+        http:
+          use_x_forwarded_for: true
+          trusted_proxies:
+            - 127.0.0.1
+            - ::1
+            - 10.229.0.0/16
 
-    auth_oidc:
-      client_id: "${oidcClientId}"
-      discovery_url: "https://identity.net.scetrov.live/application/o/${oidcProviderSlug}/.well-known/openid-configuration"
-      display_name: "Authentik"
-      roles:
-        admin: "authentik Admins"
-        user: "All Applications"
-      features:
-        default_redirect: true
+        auth_oidc:
+          client_id: "${oidcClientId}"
+          discovery_url: "https://identity.net.scetrov.live/application/o/${oidcProviderSlug}/.well-known/openid-configuration"
+          display_name: "Authentik"
+          roles:
+            admin: "authentik Admins"
+            user: "All Applications"
+          features:
+            default_redirect: true
 
-    # Load frontend themes from the themes folder
-    frontend:
-      themes: !include_dir_merge_named themes
+        prometheus:
+          namespace: "homeassistant"
+          requires_auth: true
+          filter:
+            include_entities:
+    ${lib.concatMapStringsSep "\n" (
+      entityId: "          - ${entityId}"
+    ) homeAssistantPrometheusEntities}
 
-    automation: !include automations.yaml
-    script: !include scripts.yaml
-    scene: !include scenes.yaml
+        # Load frontend themes from the themes folder
+        frontend:
+          themes: !include_dir_merge_named themes
+
+        automation: !include automations.yaml
+        script: !include scripts.yaml
+        scene: !include scenes.yaml
   '';
 in
 {
@@ -61,6 +101,13 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    age.secrets.home_assistant_metrics_token = {
+      file = /root/secrets/home_assistant_metrics_token.age;
+      owner = "prometheus";
+      group = "prometheus";
+      mode = "0400";
+    };
+
     hardware.bluetooth = lib.mkIf cfg.bluetooth.enable {
       enable = true;
       powerOnBoot = true;
@@ -180,6 +227,28 @@ in
         fi
       '';
     };
+
+    services.prometheus.checkConfig = lib.mkDefault "syntax-only";
+
+    services.prometheus.scrapeConfigs = lib.mkAfter [
+      {
+        job_name = "home-assistant";
+        metrics_path = "/api/prometheus";
+        scheme = "http";
+        authorization = {
+          type = "Bearer";
+          credentials_file = config.age.secrets.home_assistant_metrics_token.path;
+        };
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:8123" ];
+            labels = {
+              service = "home-assistant";
+            };
+          }
+        ];
+      }
+    ];
 
     networking.firewall.allowedUDPPorts = [
       1900 # SSDP / UPnP discovery

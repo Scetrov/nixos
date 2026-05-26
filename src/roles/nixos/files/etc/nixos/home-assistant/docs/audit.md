@@ -5,10 +5,17 @@ Last reviewed: 2026-05-23
 ## Repository-managed state
 
 - `src/roles/nixos/files/etc/nixos/modules/home-assistant.nix` defines the Home Assistant container, host-network mode, `/var/lib/homeassistant:/config`, generated `configuration.yaml`, Authentik OIDC settings, onboarding bypass, bootstrap owner service, and SSDP/mDNS firewall allowances.
+- `src/roles/nixos/files/etc/nixos/modules/home-assistant.nix` also manages Home Assistant's `prometheus:` exporter configuration and the local Prometheus scrape job that authenticates with `/root/secrets/home_assistant_metrics_token.age`.
 - Matter support is implemented as the official `ghcr.io/matter-js/python-matter-server:stable` container, bound to `127.0.0.1:5580`, with persistent state in `/var/lib/matter-server` created as `0750 root root` so runtime artifacts remain host-managed and outside Git.
 - `src/roles/nixos/files/etc/nixos/home-assistant/hass-oidc-auth-v1.1.0.zip` is the only existing custom component artifact and remains the documented OIDC exception.
 - `automations.yaml`, `scripts.yaml`, and `scenes.yaml` are managed as reviewed placeholder files because the live files contain no user automation, script, or scene behavior.
 - `dashboards/` is reserved for reviewed declarative dashboard assets. No dashboard has been imported.
+
+## Prometheus token workflow
+
+- Create a Home Assistant long-lived access token from the user profile page in the Home Assistant UI and dedicate it to local Prometheus scraping on `habiki`.
+- Store the raw token value in the secret variable `home_assistant_metrics_token` so the secrets role renders `/root/secrets/home_assistant_metrics_token.age` and NixOS exposes it to the Prometheus service at deploy time.
+- Rotate the token by replacing `home_assistant_metrics_token`, redeploying the `secrets` and `nixos` flows for `habiki`, and then confirming the local `home-assistant` Prometheus target returns to `up=1`.
 
 ## Live runtime inventory
 

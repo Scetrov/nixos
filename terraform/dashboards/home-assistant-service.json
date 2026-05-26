@@ -30,6 +30,11 @@
       "url": "/grafana/d/ops-service-catalog/operations-service-catalog"
     },
     {
+      "title": "Environmental Telemetry",
+      "type": "link",
+      "url": "/grafana/d/svc-home-assistant-environment/home-assistant-environmental-telemetry"
+    },
+    {
       "title": "Home Assistant UI",
       "type": "link",
       "url": "https://homeassistant.net.scetrov.live"
@@ -56,19 +61,447 @@
       "type": "row"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Down"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Up"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
       "gridPos": {
-        "h": 5,
-        "w": 24,
+        "h": 4,
+        "w": 6,
         "x": 0,
         "y": 1
       },
       "id": 2,
       "options": {
-        "content": "## Signals\n\n- Logs: available below using the shared `service=home-assistant` label.\n- Metrics: not yet enabled in the runtime configuration.\n- Traces: planned follow-up work in the Home Assistant platform spec.\n- Profiles: not yet available.\n- External view: the Home Assistant UI is linked above.",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "max(up{job=\"home-assistant\",service=\"home-assistant\"})",
+          "instant": true,
+          "legendFormat": "Local target",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Target Up",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "max(scrape_duration_seconds{job=\"home-assistant\",service=\"home-assistant\"})",
+          "instant": true,
+          "legendFormat": "Scrape duration",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Latest Scrape Duration",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "decimals": 0,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "max(scrape_samples_post_metric_relabeling{job=\"home-assistant\",service=\"home-assistant\"})",
+          "instant": true,
+          "legendFormat": "Samples",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Samples Per Scrape",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "decimals": 0,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "count({__name__=~\"homeassistant_sensor_(temperature_celsius|humidity_percent|carbon_dioxide_ppm|pm25_.*|pm10_.*)\",job=\"home-assistant\",service=\"home-assistant\"})",
+          "instant": true,
+          "legendFormat": "Environmental series",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Environmental Series",
+      "type": "stat"
+    },
+    {
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 6,
+      "options": {
+        "content": "## Signals\n\n- Metrics: local scrape health is queried from the `prometheus` datasource using `job=home-assistant` and `service=home-assistant`.\n- Retained telemetry: environmental history is available from the Mimir-backed Environmental Telemetry dashboard linked above.\n- Logs: available below using the shared `service=home-assistant` label.\n- Traces: planned follow-up work in the Home Assistant platform spec.\n- Profiles: not yet available.",
         "mode": "markdown"
       },
       "title": "Signal Coverage",
       "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "up{job=\"home-assistant\",service=\"home-assistant\"}",
+          "legendFormat": "Local target",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Scrape Health",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "count({__name__=~\"homeassistant_sensor_(temperature_celsius|humidity_percent|carbon_dioxide_ppm|pm25_.*|pm10_.*)\",job=\"home-assistant\",service=\"home-assistant\"})",
+          "legendFormat": "Environmental series",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(homeassistant_state_change_total{job=\"home-assistant\",service=\"home-assistant\",domain=\"sensor\"}[5m]))",
+          "legendFormat": "State changes / second",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Exporter Activity",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -79,9 +512,9 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 16
       },
-      "id": 3,
+      "id": 9,
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,
@@ -126,5 +559,5 @@
   "timezone": "browser",
   "title": "Home Assistant Service",
   "uid": "svc-home-assistant",
-  "version": 1
+  "version": 2
 }

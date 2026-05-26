@@ -1,0 +1,686 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "Detailed Environmental Telemetry",
+      "type": "link",
+      "url": "/grafana/d/svc-home-assistant-environment/home-assistant-environmental-telemetry"
+    },
+    {
+      "title": "Home Assistant Service",
+      "type": "link",
+      "url": "/grafana/d/svc-home-assistant/home-assistant-service"
+    },
+    {
+      "title": "Home Assistant UI",
+      "type": "link",
+      "url": "https://homeassistant.net.scetrov.live"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "House Environment Overview",
+      "type": "row"
+    },
+    {
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "content": "## Scope\n\n- This dashboard summarizes house-wide indoor climate from the retained `mimir` datasource.\n- Temperature and humidity are aggregated across the curated indoor sensor allowlist.\n- Air quality is represented with CO2 plus PM2.5 and PM10 particulate measurements, because the `air_quality` entity names do not currently export value series.",
+        "mode": "markdown"
+      },
+      "title": "What This Shows",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "decimals": 1,
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 5
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "avg(homeassistant_sensor_temperature_celsius{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](utility_room_sensor_temperature|upstairs_hallway_sensor_temperature|kitchen_sensor_temperature|bathroom_sensor_temperature|wifi_smart_switch_temperature|wifi_smart_switch_temperature_2|indoor_outdoor_meter_4bdd_temperature|indoor_outdoor_meter_dbb6_temperature|indoor_outdoor_meter_6d05_temperature|indoor_outdoor_meter_9aff_temperature|indoor_outdoor_meter_f2f6_temperature|indoor_outdoor_meter_3393_temperature|indoor_outdoor_meter_1d40_temperature|thermo_hygrometer_living_area_temperature)\"})",
+          "instant": true,
+          "legendFormat": "Average indoor temperature",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Average Temperature",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "decimals": 1,
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 5,
+        "y": 5
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "avg(homeassistant_sensor_humidity_percent{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](wifi_smart_switch_humidity|wifi_smart_switch_humidity_2|indoor_outdoor_meter_4bdd_humidity|indoor_outdoor_meter_dbb6_humidity|indoor_outdoor_meter_6d05_humidity|indoor_outdoor_meter_9aff_humidity|indoor_outdoor_meter_f2f6_humidity|indoor_outdoor_meter_3393_humidity|indoor_outdoor_meter_1d40_humidity|thermo_hygrometer_living_area_humidity)\"})",
+          "instant": true,
+          "legendFormat": "Average indoor humidity",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Hydrology / Humidity",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "decimals": 0,
+          "unit": "ppm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 10,
+        "y": 5
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "max(homeassistant_sensor_carbon_dioxide_ppm{job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_carbon_dioxide\"})",
+          "instant": true,
+          "legendFormat": "CO2",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "CO2",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "decimals": 0,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 14,
+        "y": 5
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "max({__name__=~\"homeassistant_sensor_pm25_.*\",job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_pm2_5\"})",
+          "instant": true,
+          "legendFormat": "PM2.5",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "PM2.5",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "decimals": 0,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 5
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "max({__name__=~\"homeassistant_sensor_pm10_.*\",job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_pm10\"})",
+          "instant": true,
+          "legendFormat": "PM10",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "PM10",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "avg(homeassistant_sensor_temperature_celsius{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](utility_room_sensor_temperature|upstairs_hallway_sensor_temperature|kitchen_sensor_temperature|bathroom_sensor_temperature|wifi_smart_switch_temperature|wifi_smart_switch_temperature_2|indoor_outdoor_meter_4bdd_temperature|indoor_outdoor_meter_dbb6_temperature|indoor_outdoor_meter_6d05_temperature|indoor_outdoor_meter_9aff_temperature|indoor_outdoor_meter_f2f6_temperature|indoor_outdoor_meter_3393_temperature|indoor_outdoor_meter_1d40_temperature|thermo_hygrometer_living_area_temperature)\"})",
+          "legendFormat": "House average",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Temperature Trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "avg(homeassistant_sensor_humidity_percent{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](wifi_smart_switch_humidity|wifi_smart_switch_humidity_2|indoor_outdoor_meter_4bdd_humidity|indoor_outdoor_meter_dbb6_humidity|indoor_outdoor_meter_6d05_humidity|indoor_outdoor_meter_9aff_humidity|indoor_outdoor_meter_f2f6_humidity|indoor_outdoor_meter_3393_humidity|indoor_outdoor_meter_1d40_humidity|thermo_hygrometer_living_area_humidity)\"})",
+          "legendFormat": "House average",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Hydrology / Humidity Trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "ppm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "homeassistant_sensor_carbon_dioxide_ppm{job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_carbon_dioxide\"}",
+          "legendFormat": "CO2",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "CO2 Trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "{__name__=~\"homeassistant_sensor_pm25_.*\",job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_pm2_5\"}",
+          "legendFormat": "PM2.5",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "{__name__=~\"homeassistant_sensor_pm10_.*\",job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_pm10\"}",
+          "legendFormat": "PM10",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Air Quality Trend",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "operations-portal",
+    "service",
+    "home-assistant",
+    "environment",
+    "overview"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Home Assistant House Overview",
+  "uid": "svc-home-assistant-house-overview",
+  "version": 1
+}
