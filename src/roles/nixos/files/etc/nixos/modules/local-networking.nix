@@ -46,8 +46,8 @@
         "test-878ad223"
         "test-878ad223.net.scetrov.live"
         "id.reapers.local"
-        "cicd.reapers.local"
-        "lgtm.reapers.local"
+        "argo.reapers.local"
+        "grafana.reapers.local"
       ];
     };
   };

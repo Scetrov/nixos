@@ -409,6 +409,511 @@
       "isBackground": false,
       "problemMatcher": [],
       "group": "build"
+    },
+    {
+      "label": "Inspect Home Assistant storage",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "ls -1 /var/lib/homeassistant/.storage | sort | sed -n '1,200p'",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Inspect HA entity registry structure",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "python3 -c 'import json; d=json.load(open(\"/var/lib/homeassistant/.storage/core.entity_registry\")); print(sorted(d.keys())); print(type(d.get(\"data\")).__name__); print(len(d.get(\"data\", {}).get(\"entities\", [])))'",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Inspect HA restore state structure",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "python3 -c 'import json; d=json.load(open(\"/var/lib/homeassistant/.storage/core.restore_state\")); print(sorted(d.keys())); print(type(d.get(\"data\")).__name__); print(len(d.get(\"data\", [])))'",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Head HA entity registry",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "sed -n '1,80p' /var/lib/homeassistant/.storage/core.entity_registry",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Head HA restore state",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "sed -n '1,80p' /var/lib/homeassistant/.storage/core.restore_state",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Check jq on habiki",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "command -v jq || echo no-jq",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "List HA sensor states",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "jq -r '.data[] | .state | select(.entity_id|startswith(\"sensor.\")) | [.entity_id, (.attributes.friendly_name // \"\"), (.state // \"\"), (.attributes.unit_of_measurement // \"\"), (.attributes.device_class // \"\"), (.attributes.state_class // \"\")] | @tsv' /var/lib/homeassistant/.storage/core.restore_state | sort",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "List HA binary sensor states",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "jq -r '.data[] | .state | select(.entity_id|startswith(\"binary_sensor.\")) | [.entity_id, (.attributes.friendly_name // \"\"), (.state // \"\"), (.attributes.device_class // \"\")] | @tsv' /var/lib/homeassistant/.storage/core.restore_state | sort",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "List HA sensor states fixed",
+      "type": "shell",
+      "command": "sh",
+      "args": [
+        "-c",
+        "ansible -i src/inventory.yml habiki -b -m shell -a \"jq -r '.data[] | .state | select(.entity_id|startswith(\\\"sensor.\\\")) | [.entity_id, (.attributes.friendly_name // \\\"\\\"), (.state // \\\"\\\"), (.attributes.unit_of_measurement // \\\"\\\"), (.attributes.device_class // \\\"\\\"), (.attributes.state_class // \\\"\\\")] | @tsv' /var/lib/homeassistant/.storage/core.restore_state | sort\" --vault-password-file /home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dump full HA restore state",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "cat /var/lib/homeassistant/.storage/core.restore_state",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Grep HA environmental entities",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "grep -niE 'temperature|humidity|co2|air quality|pm2|pm10|aqi|voc|pressure' /var/lib/homeassistant/.storage/core.restore_state | sed -n '1,200p'",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Grep HA battery and env units",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "shell",
+        "-a",
+        "grep -niE 'unit_of_measurement|device_class|friendly_name' /var/lib/homeassistant/.storage/core.restore_state | grep -iE 'temperature|humidity|co2|air quality|pm2|pm10|aqi|voc|battery' | sed -n '1,200p'",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Test HA grep quoting",
+      "type": "shell",
+      "command": "sh",
+      "args": [
+        "-c",
+        "ansible -i src/inventory.yml habiki -b -m shell -a 'grep -ni \"co2\" /var/lib/homeassistant/.storage/core.restore_state | sed -n \"1,20p\"' --vault-password-file /home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Grep HA co2",
+      "type": "shell",
+      "command": "sh",
+      "args": [
+        "-c",
+        "ansible -i src/inventory.yml habiki -b -m shell -a 'grep -ni \"co2\" /var/lib/homeassistant/.storage/core.restore_state' --vault-password-file /home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Grep HA humidity",
+      "type": "shell",
+      "command": "sh",
+      "args": [
+        "-c",
+        "ansible -i src/inventory.yml habiki -b -m shell -a 'grep -ni \"humidity\" /var/lib/homeassistant/.storage/core.restore_state' --vault-password-file /home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Grep HA temperature",
+      "type": "shell",
+      "command": "sh",
+      "args": [
+        "-c",
+        "ansible -i src/inventory.yml habiki -b -m shell -a 'grep -ni \"temperature\" /var/lib/homeassistant/.storage/core.restore_state' --vault-password-file /home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Fetch HA restore state",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "fetch",
+        "-a",
+        "src=/var/lib/homeassistant/.storage/core.restore_state dest=scratch/ha-live/ flat=yes",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Fetch HA entity registry",
+      "type": "shell",
+      "command": "ansible",
+      "args": [
+        "-i",
+        "src/inventory.yml",
+        "habiki",
+        "-b",
+        "-m",
+        "fetch",
+        "-a",
+        "src=/var/lib/homeassistant/.storage/core.entity_registry dest=scratch/ha-live/ flat=yes",
+        "--vault-password-file",
+        "/home/scetrov/.ansible/nixos_vault_password"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Create OpenSpec change home-assistant-environmental-metrics",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "new",
+        "change",
+        "home-assistant-environmental-metrics"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec status home-assistant-environmental-metrics json",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "status",
+        "--change",
+        "home-assistant-environmental-metrics",
+        "--json"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec instructions proposal home-assistant-environmental-metrics",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "instructions",
+        "proposal",
+        "--change",
+        "home-assistant-environmental-metrics",
+        "--json"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec status after proposal home-assistant-environmental-metrics",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "status",
+        "--change",
+        "home-assistant-environmental-metrics",
+        "--json"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec instructions design home-assistant-environmental-metrics",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "instructions",
+        "design",
+        "--change",
+        "home-assistant-environmental-metrics",
+        "--json"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec instructions specs home-assistant-environmental-metrics",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "instructions",
+        "specs",
+        "--change",
+        "home-assistant-environmental-metrics",
+        "--json"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec status after design home-assistant-environmental-metrics",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "status",
+        "--change",
+        "home-assistant-environmental-metrics",
+        "--json"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec status after specs home-assistant-environmental-metrics",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "status",
+        "--change",
+        "home-assistant-environmental-metrics",
+        "--json"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec instructions tasks home-assistant-environmental-metrics",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "instructions",
+        "tasks",
+        "--change",
+        "home-assistant-environmental-metrics",
+        "--json"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec final status home-assistant-environmental-metrics json",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "status",
+        "--change",
+        "home-assistant-environmental-metrics",
+        "--json"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec final status home-assistant-environmental-metrics",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "status",
+        "--change",
+        "home-assistant-environmental-metrics"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec instructions apply home-assistant-environmental-metrics",
+      "type": "shell",
+      "command": "openspec",
+      "args": [
+        "instructions",
+        "apply",
+        "--change",
+        "home-assistant-environmental-metrics",
+        "--json"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Deploy secrets targeted",
+      "type": "shell",
+      "command": "./scripts/play.sh",
+      "args": [
+        "--limit",
+        "habiki",
+        "--tags",
+        "secrets"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
     }
   ]
 }
