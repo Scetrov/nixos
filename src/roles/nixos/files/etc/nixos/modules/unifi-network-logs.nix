@@ -55,7 +55,7 @@ in
             .host = "${cfg.deviceHostLabel}"
             .collector_host = "${config.networking.hostName}"
             .collector_source_ip = "${cfg.sourceAddress}"
-            .raw_message = to_string(.message ?? "")
+            .raw_message = to_string!(.message)
             .event_class = "system"
             .action = "unknown"
             .rule_name = null
@@ -72,7 +72,12 @@ in
             .threat_category = null
             .keep = false
 
-            severity_text = downcase(to_string(.severity ?? .severity_keyword ?? "info"))
+            severity_text = "info"
+            if .severity != null {
+              severity_text = downcase(to_string!(.severity))
+            } else if .severity_keyword != null {
+              severity_text = downcase(to_string!(.severity_keyword))
+            }
             if severity_text == "0" {
               .severity = "emerg"
             } else if severity_text == "1" {
@@ -104,10 +109,11 @@ in
             firewall_match = parse_regex(.raw_message, r'(?P<rule_block>\[[^\]]+\])?.*?(?:DESCR="(?P<rule_description>[^"]+)"\s+)?IN=(?P<in_interface>\S*)\s+OUT=(?P<out_interface>\S*)\s+.*?SRC=(?P<src_ip>\d+\.\d+\.\d+\.\d+)\s+DST=(?P<dst_ip>\d+\.\d+\.\d+\.\d+).*?PROTO=(?P<protocol>\w+)(?:\s+SPT=(?P<src_port>\d+))?(?:\s+DPT=(?P<dst_port>\d+))?.*?(?:\s+ID=(?P<flow_id>\S+))?') ?? null
             if firewall_match != null {
               .event_class = "firewall"
-              . = merge(., firewall_match)
+              . = merge!(., firewall_match)
             }
 
             action_match = parse_regex(.raw_message, r'\[(?P<rule_name>[A-Za-z0-9_.:-]+)-(?P<action_code>[ABR])\]') ?? null
+            message_downcase = downcase!(.raw_message)
             if action_match != null {
               .rule_name = action_match.rule_name
               if action_match.action_code == "A" {
@@ -117,13 +123,13 @@ in
               } else if action_match.action_code == "R" {
                 .action = "reject"
               }
-            } else if match(downcase(.raw_message), r'\b(block|drop|deny|reject)\b') {
+            } else if match!(message_downcase, r'\b(block|drop|deny|reject)\b') {
               .action = "block"
-            } else if match(downcase(.raw_message), r'\b(allow|accept|pass)\b') {
+            } else if match!(message_downcase, r'\b(allow|accept|pass)\b') {
               .action = "allow"
             }
 
-            threat_match = match(downcase(.raw_message), r'(threat|ids|ips|intrusion)')
+            threat_match = match!(message_downcase, r'(threat|ids|ips|intrusion)')
             if threat_match {
               .event_class = "threat"
             }
@@ -138,7 +144,7 @@ in
               .threat_category = threat_category_match.threat_category
             }
 
-            warning_or_higher = match(.severity, r'^(warning|warn|error|err|crit|critical|alert|emerg|emergency)$')
+            warning_or_higher = match!(.severity, r'^(warning|warn|error|err|crit|critical|alert|emerg|emergency)$')
             if .event_class == "firewall" || .event_class == "threat" || warning_or_higher {
               .keep = true
             }
