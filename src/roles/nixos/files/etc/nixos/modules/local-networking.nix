@@ -45,9 +45,9 @@
       "10.229.10.15" = [
         "test-878ad223"
         "test-878ad223.net.scetrov.live"
-        "id.reapers.local"
-        "argo.reapers.local"
-        "grafana.reapers.local"
+        "id.reapers.scetrov.live"
+        "argo.reapers.scetrov.live"
+        "grafana.reapers.scetrov.live"
       ];
     };
   };
