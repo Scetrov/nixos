@@ -53,6 +53,7 @@ in
         nmap
         pkg-config
         powershell
+        ripgrep
         rustup
         tmux
         unstable.chezmoi
