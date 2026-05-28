@@ -142,6 +142,12 @@ resource "grafana_dashboard" "home_assistant_house_overview" {
   overwrite   = true
 }
 
+resource "grafana_dashboard" "unifi_network_logs" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/unifi-network-logs.json")
+  overwrite   = true
+}
+
 resource "grafana_dashboard" "frontier_indexer" {
   folder      = grafana_folder.operations_services.uid
   config_json = file("${local.grafana_portal.source_root}/frontier-indexer.json")

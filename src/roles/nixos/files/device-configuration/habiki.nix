@@ -23,6 +23,7 @@
     ./modules/user-scetrov-syncthing.nix
     ./modules/grafana-mcp.nix
     ./modules/home-assistant.nix
+    ./modules/unifi-network-logs.nix
   ];
 
   services.hermes-webui = {
@@ -51,6 +52,7 @@
     bluetooth.enable = true;
     matter.enable = true;
   };
+  scetrov.services.unifi-network-logs.enable = true;
   scetrov.services.frontier-indexer = {
     enable = true;
     firstCheckpoint = "302790346";
