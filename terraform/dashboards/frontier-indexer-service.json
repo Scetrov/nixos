@@ -69,7 +69,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#008791",
                 "value": null
               }
             ]
@@ -130,15 +130,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#008791",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#E6C65B",
                 "value": 15
               },
               {
-                "color": "red",
+                "color": "#FF3E8D",
                 "value": 60
               }
             ]
@@ -199,7 +199,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#008791",
                 "value": null
               }
             ]
