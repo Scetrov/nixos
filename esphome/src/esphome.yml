@@ -1,0 +1,232 @@
+esphome:
+  name: waveshare-c6-display-proxy
+  friendly_name: "SwitchBot Monitor & Proxy"
+  on_boot:
+    priority: -100.0
+    then:
+      - script.execute: wake_display
+      - light.turn_off: status_led
+
+esp32:
+  board: esp32-c6-devkitc-1
+  flash_size: 8MB
+  # Reduce heat/power. ESP32-C6 supports 80/120/160 MHz.
+  cpu_frequency: 80MHz
+  framework:
+    type: esp-idf
+
+logger:
+  hardware_uart: USB_CDC
+  level: WARN
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: NONE
+
+api:
+
+ota:
+  - platform: esphome
+
+external_components:
+  - source: github://widget/esphome-components
+    components: [axs5106]
+    refresh: 0s
+
+safe_mode:
+  boot_is_good_after: 10s
+
+esp32_ble_tracker:
+  scan_parameters:
+    # Continuous passive scanning for reliable nearby BLE sensors.
+    interval: 320ms
+    window: 300ms
+    active: false
+
+bluetooth_proxy:
+  active: true
+
+time:
+  - platform: homeassistant
+    id: esptime
+
+# ESP32-C6-Touch-LCD-1.47 factory BSP pins: SCLK=GPIO1, MOSI=GPIO2.
+spi:
+  clk_pin: GPIO1
+  mosi_pin: GPIO2
+
+# Factory touch I2C pins from Waveshare demo: SDA=GPIO18, SCL=GPIO19.
+i2c:
+  sda: GPIO18
+  scl: GPIO19
+  frequency: 400kHz
+  scan: false
+  id: touch_bus
+
+script:
+  - id: wake_display
+    mode: restart
+    then:
+      - output.set_level:
+          id: display_backlight
+          level: 35%
+      - delay: 30s
+      - output.set_level:
+          id: display_backlight
+          level: 0%
+
+font:
+  - file: "typefaces/Disket-Mono-Bold.ttf"
+    id: font_header
+    size: 18
+  - file: "typefaces/Disket-Mono-Bold.ttf"
+    id: font_data
+    size: 26
+  - file: "typefaces/Disket-Mono-Regular.ttf"
+    id: font_sub
+    size: 13
+
+sensor:
+  - platform: homeassistant
+    id: switchbot_temp_ha
+    entity_id: sensor.thermo_hygrometer_outside_shed_temperature
+  - platform: homeassistant
+    id: switchbot_hum_ha
+    entity_id: sensor.thermo_hygrometer_outside_shed_humidity
+
+color:
+  - id: my_dark_grey
+    red: 30%
+    green: 30%
+    blue: 30%
+  - id: my_light_grey
+    red: 70%
+    green: 70%
+    blue: 70%
+  - id: my_green
+    red: 0%
+    green: 100%
+    blue: 0%
+  - id: my_blue
+    red: 0%
+    green: 50%
+    blue: 100%
+  - id: my_yellow
+    red: 100%
+    green: 80%
+    blue: 0%
+
+light:
+  - platform: esp32_rmt_led_strip
+    chipset: WS2812
+    rgb_order: GRB
+    pin:
+      number: GPIO8
+      ignore_strapping_warning: true
+    num_leds: 1
+    id: status_led
+    name: "Proxy Status LED"
+
+# Touch variant uses a JD9853-compatible panel with a custom init sequence.
+display:
+  - platform: mipi_spi
+    id: onboard_display
+    model: CUSTOM
+    cs_pin: GPIO14
+    dc_pin: GPIO15
+    reset_pin: GPIO22
+    rotation: 90
+    # Do not use transform here: final orientation is driven by manual MADCTL 0x68.
+    # Local mipi_spi patch preserves manual MADCTL instead of post-init override.
+    invert_colors: true
+    color_order: BGR
+    data_rate: 40MHz
+    update_interval: 30s
+    dimensions:
+      width: 172
+      height: 320
+      offset_width: 34
+      offset_height: 0
+    # Match Waveshare's JD9853 driver ordering: SLPOUT first, then vendor banks.
+    # ESPHome appends pixel format, inversion, MADCTL/rotation, SLPOUT and DISPON after this.
+    init_sequence:
+      - [0x11]
+      - delay 120ms
+      - [0xDF, 0x98, 0x53]
+      - [0xDF, 0x98, 0x53]
+      - [0xB2, 0x23]
+      - [0xB7, 0x00, 0x47, 0x00, 0x6F]
+      - [0xBB, 0x1C, 0x1A, 0x55, 0x73, 0x63, 0xF0]
+      - [0xC0, 0x44, 0xA4]
+      - [0xC1, 0x16]
+      - [0xC3, 0x7D, 0x07, 0x14, 0x06, 0xCF, 0x71, 0x72, 0x77]
+      - [0xC4, 0x00, 0x00, 0xA0, 0x79, 0x0B, 0x0A, 0x16, 0x79, 0x0B, 0x0A, 0x16, 0x82]
+      - [0xC8, 0x3F, 0x32, 0x29, 0x29, 0x27, 0x2B, 0x27, 0x28, 0x28, 0x26, 0x25, 0x17, 0x12, 0x0D, 0x04, 0x00, 0x3F, 0x32, 0x29, 0x29, 0x27, 0x2B, 0x27, 0x28, 0x28, 0x26, 0x25, 0x17, 0x12, 0x0D, 0x04, 0x00]
+      - [0xD0, 0x04, 0x06, 0x6B, 0x0F, 0x00]
+      - [0xD7, 0x00, 0x30]
+      - [0xE6, 0x14]
+      - [0xDE, 0x01]
+      - [0xB7, 0x03, 0x13, 0xEF, 0x35, 0x35]
+      - [0xC1, 0x14, 0x15, 0xC0]
+      - [0xC2, 0x06, 0x3A]
+      - [0xC4, 0x72, 0x12]
+      - [0xBE, 0x00]
+      - [0xDE, 0x02]
+      - [0xE5, 0x00, 0x02, 0x00]
+      - [0xE5, 0x01, 0x02, 0x00]
+      - [0xDE, 0x00]
+      - [0x35, 0x00]
+      - [0x2A, 0x00, 0x22, 0x00, 0xCD]
+      - [0x2B, 0x00, 0x00, 0x01, 0x3F]
+      - [0xDE, 0x02]
+      - [0xE5, 0x00, 0x02, 0x00]
+      - [0xDE, 0x00]
+      - [0x21]
+      - [0x36, 0x68]
+
+    lambda: |-
+      it.fill(Color::BLACK);
+      
+      // Top Status Bar Layout
+      it.print(15, 12, id(font_header), Color::WHITE, "BLE PROXY ACTIVE");
+      it.line(15, 38, 305, 38, id(my_dark_grey));
+      
+      // Render Temperature String
+      it.print(20, 55, id(font_sub), id(my_light_grey), "OUTSIDE SHED TEMP");
+      if (id(switchbot_temp_ha).has_state()) {
+        it.printf(20, 72, id(font_data), id(my_green), "%.1f°C", id(switchbot_temp_ha).state);
+      } else {
+        it.print(20, 72, id(font_data), id(my_yellow), "NO HA TEMP");
+      }
+      
+      // Render Humidity String
+      it.print(20, 115, id(font_sub), id(my_light_grey), "OUTSIDE SHED HUMIDITY");
+      if (id(switchbot_hum_ha).has_state()) {
+        it.printf(20, 132, id(font_data), id(my_blue), "%.0f%%", id(switchbot_hum_ha).state);
+      } else {
+        it.print(20, 132, id(font_data), id(my_yellow), "NO HA HUM");
+      }
+
+touchscreen:
+  - platform: axs5106
+    id: onboard_touch
+    display: onboard_display
+    interrupt_pin: GPIO21
+    reset_pin: GPIO20
+    calibration:
+      x_min: 0
+      x_max: 172
+      y_min: 0
+      y_max: 320
+    transform:
+      mirror_x: true
+    on_touch:
+      then:
+        - script.execute: wake_display
+
+output:
+  - platform: ledc
+    pin: GPIO23
+    id: display_backlight
+    frequency: 1000Hz
