@@ -1,0 +1,13 @@
+esphome_action: validate
+esphome_repo_root: "{{ playbook_dir | dirname }}"
+esphome_binary: "{{ esphome_repo_root }}/.venv/bin/esphome"
+esphome_pip_binary: "{{ esphome_repo_root }}/.venv/bin/pip"
+esphome_project_dir: "{{ esphome_repo_root }}/esphome"
+esphome_config_path: src/esphome.yml
+esphome_requirements_path: "{{ esphome_project_dir }}/requirements.txt"
+esphome_secrets_path: "{{ esphome_project_dir }}/src/secrets.yaml"
+esphome_secret_wifi_ssid: "{{ wireless_ssid }}"
+esphome_secret_wifi_password: "{{ wireless_pskraw }}"
+esphome_manage_cli: true
+esphome_deploy_extra_args:
+  - --no-logs

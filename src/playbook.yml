@@ -14,6 +14,8 @@
       tags: [ 'secrets', 'nixos', 'authentik', 'hermes', 'dependency-track', 'frontier-indexer' ]
     - role: nixos
       tags: [ 'nixos', 'hermes', 'dependency-track', 'frontier-indexer' ]
+    - role: esphome
+      tags: [ 'esphome' ]
     - role: authentik-config
       tags: [ 'authentik', 'hermes', 'dependency-track' ]
     - role: user-scetrov

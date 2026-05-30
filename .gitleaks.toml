@@ -1,0 +1,11 @@
+title = "nixos repo gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Ignore local ESPHome generated secret artifacts"
+paths = [
+  '''^esphome/src/secrets\.yaml$''',
+  '''^esphome/src/\.esphome/.*$''',
+]

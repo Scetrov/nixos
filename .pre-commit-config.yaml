@@ -21,6 +21,12 @@ repos:
 
   - repo: local
     hooks:
+      - id: gitleaks
+        name: gitleaks
+        entry: gitleaks dir . --redact --no-banner
+        language: system
+        pass_filenames: false
+
       - id: nixfmt
         name: nixfmt
         entry: nixfmt

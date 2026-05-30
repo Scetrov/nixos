@@ -1,0 +1,89 @@
+- name: ESPHome workflow block
+  when: esphome_enabled | default(false)
+  block:
+    - name: Assert ESPHome workflow variables are defined
+      ansible.builtin.assert:
+        that:
+          - esphome_action in ['validate', 'compile', 'deploy']
+          - esphome_project_dir | length > 0
+          - esphome_config_path | length > 0
+          - esphome_requirements_path | length > 0
+          - esphome_secrets_path | length > 0
+          - esphome_secret_wifi_ssid | length > 0
+          - esphome_secret_wifi_password | length > 0
+        quiet: true
+
+    - name: Ensure pinned ESPHome CLI is installed in the repo virtualenv
+      when: esphome_manage_cli | bool
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - "{{ esphome_pip_binary }}"
+          - install
+          - --requirement
+          - "{{ esphome_requirements_path }}"
+      args:
+        chdir: "{{ esphome_repo_root }}"
+      register: esphome_pip_install
+      changed_when: >-
+        'Requirement already satisfied' not in (esphome_pip_install.stdout | default(''))
+
+    - name: Ensure ESPHome secret directory exists
+      delegate_to: localhost
+      ansible.builtin.file:
+        path: "{{ esphome_secrets_path | dirname }}"
+        state: directory
+        mode: '0755'
+
+    - name: Render ESPHome secrets.yaml
+      delegate_to: localhost
+      ansible.builtin.template:
+        src: secrets.yaml.j2
+        dest: "{{ esphome_secrets_path }}"
+        mode: '0600'
+      no_log: true
+
+    - name: Validate ESPHome configuration
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - "{{ esphome_binary }}"
+          - config
+          - "{{ esphome_config_path }}"
+      args:
+        chdir: "{{ esphome_project_dir }}"
+      register: esphome_validate
+      changed_when: false
+
+    - name: Compile ESPHome firmware
+      when: esphome_action in ['compile', 'deploy']
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - "{{ esphome_binary }}"
+          - compile
+          - "{{ esphome_config_path }}"
+      args:
+        chdir: "{{ esphome_project_dir }}"
+      register: esphome_compile
+
+    - name: Assert ESPHome deploy target is defined
+      when: esphome_action == 'deploy'
+      ansible.builtin.assert:
+        that:
+          - esphome_device_host is defined
+          - esphome_device_host | length > 0
+        quiet: true
+
+    - name: Deploy ESPHome firmware over OTA
+      when: esphome_action == 'deploy'
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv: >-
+          {{
+            [esphome_binary, 'run', esphome_config_path, '--device', esphome_device_host]
+            + esphome_deploy_extra_args
+          }}
+      args:
+        chdir: "{{ esphome_project_dir }}"
+      register: esphome_deploy
