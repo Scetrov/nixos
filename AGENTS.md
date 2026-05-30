@@ -26,6 +26,27 @@ We use **OpenTofu** for declarative management of application-level resources (A
 
 We use **Grafana** and **Loki** for central observability.
 
+### **Dashboard Color Scheme**
+
+* **Preferred Palette for Frontier Indexer:** Use the Heart Pumps Neon family as the base palette for detailed Grafana dashboards.
+* **Approved Core Colors:**
+  * `#FF3E8D` for hot/error-prone or fast-moving series.
+  * `#BB5191` for primary highlight and indexed-state series.
+  * `#855F90` for muted status/support usage.
+  * `#4B678C` for cool secondary/reference usage.
+  * `#008791` for healthy/current/head-state series.
+* **Approved Bridge Color:**
+  * `#E6C65B` as the yellow-amber midpoint between the pink/red side and the teal/green side of the palette.
+  * Prefer this for mid-thresholds, smoothed 5-minute series, or limit/reference lines where the dashboard needs a warmer transition color.
+* **Complementary Extension Colors:**
+  * `#6F5D86` for a softer blue-violet support tone when another cool series is needed.
+  * `#C86B8F` for a softer rose accent when another warm series is needed.
+  * `#6FAE9F` for a muted teal support tone when a second healthy-state color is needed.
+* **Usage Guidance:**
+  * Keep the palette legible on Grafana dark mode; do not reintroduce overly fluorescent lime-heavy schemes.
+  * Use teal/green for healthy or current state, amber-yellow for midpoint/reference, and pink/magenta for hot, lagging, or pressure-related signals.
+  * Reserve additional extension colors for multi-series charts only; avoid turning stat rows into rainbow grids.
+
 ### **1. Error Investigation**
 *   **Workflow:** Systematic investigation of system logs (Loki) should be performed whenever service degradation is suspected.
 *   **Instructions:** Detailed procedures are located in `.agents/instructions/grafana-error-investigator.instructions.md`.

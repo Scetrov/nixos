@@ -56,6 +56,8 @@
   scetrov.services.frontier-indexer = {
     enable = true;
     firstCheckpoint = "302790346";
+    ingestionSource = "fullnode";
+    ingestConcurrencyMax = 2;
   };
   services.grafana-mcp = {
     enable = true;

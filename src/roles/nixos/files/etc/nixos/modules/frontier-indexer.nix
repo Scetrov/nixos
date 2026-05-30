@@ -11,6 +11,80 @@ let
   timescaleDataDir = "${stateDir}/timescaledb-data";
   dbPasswordFile = "${stateDir}/db-password";
   indexerEnvFile = "${stateDir}/indexer.env";
+  defaultSuiRpcUrl =
+    if cfg.suiNetwork == "mainnet" then
+      "https://fullnode.mainnet.sui.io:443"
+    else
+      "https://fullnode.testnet.sui.io:443";
+  chainHeadExporterScript = pkgs.writeText "frontier-indexer-chain-head-exporter.py" ''
+    import json
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    from urllib.error import URLError
+    from urllib.request import Request, urlopen
+
+    RPC_URL = ${builtins.toJSON cfg.suiRpcUrl}
+    NETWORK = ${builtins.toJSON cfg.suiNetwork}
+    PORT = ${toString cfg.chainHeadMetricsPort}
+
+    def render_metrics():
+      labels = '{service="frontier-indexer",network="%s"}' % NETWORK
+      lines = [
+        "# HELP frontier_indexer_chain_head_scrape_success Whether the Sui chain head scrape succeeded.",
+        "# TYPE frontier_indexer_chain_head_scrape_success gauge",
+      ]
+
+      payload = json.dumps(
+        {
+          "jsonrpc": "2.0",
+          "id": 1,
+          "method": "sui_getLatestCheckpointSequenceNumber",
+          "params": [],
+        }
+      ).encode()
+      request = Request(
+        RPC_URL,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+      )
+
+      try:
+        with urlopen(request, timeout=10) as response:
+          body = json.load(response)
+        checkpoint = int(body["result"])
+        lines.extend(
+          [
+            "# HELP frontier_indexer_chain_head_checkpoint Latest Sui checkpoint at the configured chain head.",
+            "# TYPE frontier_indexer_chain_head_checkpoint gauge",
+            f"frontier_indexer_chain_head_checkpoint{labels} {checkpoint}",
+            f"frontier_indexer_chain_head_scrape_success{labels} 1",
+          ]
+        )
+      except (KeyError, TypeError, ValueError, URLError, TimeoutError, OSError, json.JSONDecodeError):
+        lines.append(f"frontier_indexer_chain_head_scrape_success{labels} 0")
+
+      return "\n".join(lines) + "\n"
+
+    class Handler(BaseHTTPRequestHandler):
+      def do_GET(self):
+        if self.path != "/metrics":
+          self.send_response(404)
+          self.end_headers()
+          return
+
+        payload = render_metrics().encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+      def log_message(self, format, *args):
+        return
+
+    if __name__ == "__main__":
+      ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+  '';
   indexerPrepareEnvScript = pkgs.writeShellScript "frontier-indexer-prepare-env" ''
     set -euo pipefail
 
@@ -29,6 +103,10 @@ let
       printf 'SUI_NETWORK=%s\n' ${lib.escapeShellArg cfg.suiNetwork}
       printf 'PACKAGES=app,world\n'
       printf 'METRICS_ADDRESS=0.0.0.0:9184\n'
+      printf 'INGESTION_SOURCE=%s\n' ${lib.escapeShellArg cfg.ingestionSource}
+      ${lib.optionalString (cfg.ingestConcurrencyMax != null) ''
+        printf 'INGEST_CONCURRENCY_MAX=%s\n' ${lib.escapeShellArg (toString cfg.ingestConcurrencyMax)}
+      ''}
       ${lib.optionalString (cfg.firstCheckpoint != null) ''
         printf 'FIRST_CHECKPOINT=%s\n' ${lib.escapeShellArg cfg.firstCheckpoint}
       ''}
@@ -57,6 +135,12 @@ in
       description = "Local host port for Frontier Indexer Prometheus metrics.";
     };
 
+    chainHeadMetricsPort = lib.mkOption {
+      type = lib.types.port;
+      default = 9185;
+      description = "Local host port for the Sui chain head exporter used by Frontier Indexer dashboards.";
+    };
+
     allowedDatabaseCidr = lib.mkOption {
       type = lib.types.str;
       default = "10.229.0.0/16";
@@ -71,7 +155,7 @@ in
 
     indexerImage = lib.mkOption {
       type = lib.types.str;
-      default = "ghcr.io/ocky-public/frontier-indexer:v0.3.4";
+      default = "ghcr.io/ocky-public/frontier-indexer:v0.3.5";
       description = "Container image for Frontier Indexer.";
     };
 
@@ -90,10 +174,32 @@ in
       description = "Sui network Frontier Indexer should process.";
     };
 
+    suiRpcUrl = lib.mkOption {
+      type = lib.types.str;
+      default = defaultSuiRpcUrl;
+      description = "Sui JSON-RPC endpoint used to read the latest chain head checkpoint.";
+    };
+
     firstCheckpoint = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "The first checkpoint sequence number to start indexing from.";
+    };
+
+    ingestionSource = lib.mkOption {
+      type = lib.types.enum [
+        "store"
+        "fullnode"
+        "local"
+      ];
+      default = "store";
+      description = "Checkpoint ingestion mode used by Frontier Indexer.";
+    };
+
+    ingestConcurrencyMax = lib.mkOption {
+      type = lib.types.nullOr lib.types.int;
+      default = null;
+      description = "Optional maximum checkpoint ingestion concurrency override.";
     };
   };
 
@@ -132,6 +238,23 @@ in
         RemainAfterExit = true;
         ExecStart = "${pkgs.podman}/bin/podman network create --ignore ${lib.escapeShellArg cfg.network}";
         ExecStop = "${pkgs.podman}/bin/podman network rm -f ${lib.escapeShellArg cfg.network}";
+      };
+    };
+
+    systemd.services.frontier-indexer-chain-head-exporter = {
+      description = "Expose the latest Sui chain head checkpoint for Frontier Indexer dashboards";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.python3}/bin/python ${chainHeadExporterScript}";
+        Restart = "always";
+        RestartSec = "10s";
+        DynamicUser = true;
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+        ProtectHome = true;
+        ProtectSystem = "strict";
       };
     };
 
@@ -246,6 +369,19 @@ in
             targets = [ "127.0.0.1:${toString cfg.metricsPort}" ];
             labels = {
               service = "frontier-indexer";
+            };
+          }
+        ];
+      }
+      {
+        job_name = "frontier-chain-head";
+        metrics_path = "/metrics";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:${toString cfg.chainHeadMetricsPort}" ];
+            labels = {
+              service = "frontier-indexer";
+              network = cfg.suiNetwork;
             };
           }
         ];

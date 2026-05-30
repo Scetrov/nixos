@@ -186,10 +186,95 @@
       "type": "stat"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
       "gridPos": {
         "h": 4,
-        "w": 12,
+        "w": 6,
         "x": 12,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "max(frontier_indexer_latest_processed_checkpoint{service=\"frontier-indexer\"})",
+          "instant": true,
+          "legendFormat": "Indexed",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "max(frontier_indexer_chain_head_checkpoint{service=\"frontier-indexer\"})",
+          "instant": true,
+          "legendFormat": "Chain Head",
+          "range": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "scalar(max(frontier_indexer_chain_head_checkpoint{service=\"frontier-indexer\"})) - scalar(max(frontier_indexer_latest_processed_checkpoint{service=\"frontier-indexer\"}))",
+          "instant": true,
+          "legendFormat": "Gap",
+          "range": false,
+          "refId": "C"
+        }
+      ],
+      "title": "Indexed vs Chain Head",
+      "type": "stat"
+    },
+    {
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
         "y": 1
       },
       "id": 4,
