@@ -13,14 +13,64 @@
           - esphome_secret_wifi_password | length > 0
         quiet: true
 
-    - name: Ensure repo virtualenv exists and pinned ESPHome CLI is installed
+    - name: Check whether repo virtualenv Python is runnable
       when: esphome_manage_cli | bool
       delegate_to: localhost
-      ansible.builtin.pip:
-        requirements: "{{ esphome_requirements_path }}"
-        virtualenv: "{{ esphome_venv_path }}"
-        virtualenv_command: "{{ ansible_playbook_python }} -m venv"
+      ansible.builtin.command:
+        argv:
+          - "{{ esphome_venv_path }}/bin/python"
+          - --version
+      args:
         chdir: "{{ esphome_repo_root }}"
+      register: esphome_venv_python_check
+      changed_when: false
+      failed_when: false
+
+    - name: Ensure repo virtualenv exists and is healthy
+      when:
+        - esphome_manage_cli | bool
+        - esphome_venv_python_check.rc != 0
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - -m
+          - venv
+          - --clear
+          - "{{ esphome_venv_path }}"
+      args:
+        chdir: "{{ esphome_repo_root }}"
+
+    - name: Ensure pip is available in the repo virtualenv
+      when: esphome_manage_cli | bool
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - "{{ esphome_venv_path }}/bin/python"
+          - -m
+          - ensurepip
+          - --upgrade
+      args:
+        chdir: "{{ esphome_repo_root }}"
+      changed_when: false
+
+    - name: Ensure pinned ESPHome CLI is installed in the repo virtualenv
+      when: esphome_manage_cli | bool
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - "{{ esphome_venv_path }}/bin/python"
+          - -m
+          - pip
+          - install
+          - --requirement
+          - "{{ esphome_requirements_path }}"
+      args:
+        chdir: "{{ esphome_repo_root }}"
+      register: esphome_pip_install
+      changed_when: >-
+        'Successfully installed' in ((esphome_pip_install.stdout | default('')) ~ (esphome_pip_install.stderr | default('')))
+        or 'Installing collected packages' in ((esphome_pip_install.stdout | default('')) ~ (esphome_pip_install.stderr | default('')))
 
     - name: Ensure ESPHome secret directory exists
       delegate_to: localhost
