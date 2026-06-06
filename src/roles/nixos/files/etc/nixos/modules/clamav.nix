@@ -1,12 +1,8 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 
 let
   mutableScanDirectories = [
-    "/etc"
-    "/home"
-    "/tmp"
-    "/var/lib"
-    "/var/tmp"
+    "/home/scetrov"
   ];
 
   lowValueExclusions = [
@@ -18,6 +14,11 @@ let
     "^/var/lib/frontier-indexer/timescaledb-data(/|$)"
     "^/var/lib/authentik/postgresql-data(/|$)"
     "^/var/lib/dependency-track/postgresql-data(/|$)"
+  ];
+
+  clamavDatabaseConditions = [
+    "/var/lib/clamav/main.{c[vl]d,inc}"
+    "/var/lib/clamav/daily.{c[vl]d,inc}"
   ];
 in
 {
@@ -65,9 +66,26 @@ in
   };
 
   systemd.services = {
-    clamav-daemon.serviceConfig = {
-      Restart = "on-failure";
-      RestartSec = "30s";
+    clamav-daemon = {
+      wants = lib.mkForce [ ];
+      unitConfig.ConditionPathExistsGlob = clamavDatabaseConditions;
+      serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = "30s";
+      };
+    };
+
+    clamav-freshclam.wants = [ "clamav-daemon.service" ];
+
+    clamav-init-database = {
+      description = "Bootstrap ClamAV signature database";
+      wantedBy = [ "clamav-daemon.service" ];
+      before = [ "clamav-daemon.service" ];
+      unitConfig.ConditionPathExistsGlob = map (path: "!${path}") clamavDatabaseConditions;
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.systemd}/bin/systemctl start clamav-freshclam.service";
+      };
     };
 
     clamdscan.serviceConfig = {
