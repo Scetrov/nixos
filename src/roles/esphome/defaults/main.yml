@@ -1,7 +1,7 @@
 esphome_action: validate
 esphome_repo_root: "{{ playbook_dir | dirname }}"
-esphome_binary: "{{ esphome_repo_root }}/.venv/bin/esphome"
-esphome_pip_binary: "{{ esphome_repo_root }}/.venv/bin/pip"
+esphome_venv_path: "{{ esphome_repo_root }}/.venv"
+esphome_binary: "{{ esphome_venv_path }}/bin/esphome"
 esphome_project_dir: "{{ esphome_repo_root }}/esphome"
 esphome_config_path: src/esphome.yml
 esphome_requirements_path: "{{ esphome_project_dir }}/requirements.txt"

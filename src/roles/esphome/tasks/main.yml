@@ -13,20 +13,14 @@
           - esphome_secret_wifi_password | length > 0
         quiet: true
 
-    - name: Ensure pinned ESPHome CLI is installed in the repo virtualenv
+    - name: Ensure repo virtualenv exists and pinned ESPHome CLI is installed
       when: esphome_manage_cli | bool
       delegate_to: localhost
-      ansible.builtin.command:
-        argv:
-          - "{{ esphome_pip_binary }}"
-          - install
-          - --requirement
-          - "{{ esphome_requirements_path }}"
-      args:
+      ansible.builtin.pip:
+        requirements: "{{ esphome_requirements_path }}"
+        virtualenv: "{{ esphome_venv_path }}"
+        virtualenv_command: "{{ ansible_playbook_python }} -m venv"
         chdir: "{{ esphome_repo_root }}"
-      register: esphome_pip_install
-      changed_when: >-
-        'Requirement already satisfied' not in (esphome_pip_install.stdout | default(''))
 
     - name: Ensure ESPHome secret directory exists
       delegate_to: localhost

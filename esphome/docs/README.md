@@ -16,7 +16,8 @@ All commands below assume you are running from the repository root.
 
 - Use the project virtualenv at `.venv/`. The current known-good environment validates with ESPHome 2026.5.1.
 - Ensure `git` is installed. ESPHome fetches the external `axs5106` touch component from `github://widget/esphome-components` during config/build.
-- Install the pinned CLI dependency with `.venv/bin/pip install -r esphome/requirements.txt` if you are running ESPHome commands directly outside the Ansible workflow.
+- If `.venv/` does not exist yet, create it with `python3 -m venv .venv`.
+- Install the pinned CLI dependency with `.venv/bin/python -m pip install -r esphome/requirements.txt` if you are running ESPHome commands directly outside the Ansible workflow.
 - Create a local `src/secrets.yaml` before validating, compiling, or deploying. This file is git-ignored.
 
 Example `src/secrets.yaml`:
@@ -32,7 +33,7 @@ If you provision secrets from Ansible or NixOS, render those same keys into `src
 
 The repository now provides an `esphome` Ansible tag for the validated local workflow. The role is owned through the `habiki` inventory path, but phase 1 execution stays on the controller via `delegate_to: localhost` so it can reuse this checked-in project and `.venv` toolchain.
 
-The role also bootstraps the pinned ESPHome CLI from `esphome/requirements.txt` into the repo `.venv` before it validates, compiles, or deploys.
+The role creates the repo `.venv` if needed, then installs the pinned ESPHome CLI from `esphome/requirements.txt` before it validates, compiles, or deploys.
 
 Validate the configuration and render `src/secrets.yaml` from vault-backed variables:
 
