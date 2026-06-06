@@ -83,6 +83,12 @@ let
   '';
 
   frontendEnvFile = "${stateDir}/frontend.env";
+  caddyProxyHostAliases = [
+    "identity.net.scetrov.live"
+    "dtrack.net.scetrov.live"
+    "dtrack-api.net.scetrov.live"
+  ];
+  caddyProxyAddHosts = map (host: "--add-host=${host}:host-gateway") caddyProxyHostAliases;
   frontendPrepareEnvScript = pkgs.writeShellScript "dtrack-frontend-prepare-env" ''
         set -euo pipefail
 
@@ -252,10 +258,8 @@ in
           "--network=authentik"
           "--memory=4g"
           "--cpus=2.0"
-          "--add-host=identity.net.scetrov.live:10.89.0.1"
-          "--add-host=dtrack.net.scetrov.live:10.89.0.1"
-          "--add-host=dtrack-api.net.scetrov.live:10.89.0.1"
-        ];
+        ]
+        ++ caddyProxyAddHosts;
         ports = [ "127.0.0.1:${toString cfg.apiPort}:8080" ];
         volumes = [
           "${dataDir}:/data:U"
@@ -270,10 +274,8 @@ in
         environmentFiles = [ frontendEnvFile ];
         extraOptions = [
           "--network=authentik"
-          "--add-host=identity.net.scetrov.live:10.89.0.1"
-          "--add-host=dtrack.net.scetrov.live:10.89.0.1"
-          "--add-host=dtrack-api.net.scetrov.live:10.89.0.1"
-        ];
+        ]
+        ++ caddyProxyAddHosts;
         ports = [ "127.0.0.1:${toString cfg.frontendPort}:8080" ];
         dependsOn = [ "dtrack-apiserver" ];
       };

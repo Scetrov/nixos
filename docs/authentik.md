@@ -565,5 +565,5 @@ For services where the frontend performs the authentication redirect (like Depen
 OCI containers must be able to reach the Authentik discovery endpoint at startup.
 
 - **Networking**: Move application containers to the `authentik` Podman network.
-- **DNS Mapping**: Use `--add-host` flags to map `identity.net.scetrov.live` to the network gateway IP (typically `10.89.0.1`). This ensures the container can reach the host-based Caddy proxy even if external DNS is unreachable.
+- **DNS Mapping**: Use `--add-host=<fqdn>:host-gateway` (or `host.containers.internal` where appropriate) instead of hardcoding a bridge IP. Podman resolves `host-gateway` to the active network gateway, which avoids breakage when bridge subnets change and still lets containers reach the host-based Caddy proxy reliably.
 - **Validation**: Verified through `GET /api/v1/oidc/available` returning `true`.
