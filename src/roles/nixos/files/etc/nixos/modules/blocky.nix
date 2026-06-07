@@ -49,6 +49,37 @@
           piracy = [ "https://blocklistproject.github.io/Lists/piracy.txt" ];
           porn = [ "https://blocklistproject.github.io/Lists/porn.txt" ];
           scam = [ "https://blocklistproject.github.io/Lists/scam.txt" ];
+          "miasma-mini-shai-hulud" = [
+            ''
+              # Miasma / Mini Shai-Hulud C2 domains and response IPs.
+              # Use a wildcard for getsession.org to match the apex and subdomains.
+              *.getsession.org
+              t.m-kosche.com
+              m-kosche.com
+              api.masscan.cloud
+              git-tanstack.com
+              litter.catbox.moe
+              audit.checkmarx.cx
+              checkmarx.cx
+              216.126.225.129
+              185.95.159.32
+              94.154.172.43
+              91.195.240.123
+            ''
+          ];
+        };
+        allowlists = {
+          "miasma-mini-shai-hulud" = [
+            ''
+              # Explicitly preserve legitimate developer infrastructure.
+              # In Blocky, allowlists in the same group take precedence over denylists.
+              github.com
+              api.github.com
+              anthropic.com
+              api.anthropic.com
+              registry.npmjs.org
+            ''
+          ];
         };
         clientGroupsBlock = {
           default = [
@@ -61,6 +92,7 @@
             "piracy"
             "porn"
             "scam"
+            "miasma-mini-shai-hulud"
           ];
         };
       };
