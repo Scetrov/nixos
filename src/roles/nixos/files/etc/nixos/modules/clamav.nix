@@ -38,9 +38,9 @@ in
       enable = true;
       interval = "hourly";
       frequency = 12;
-      settings = {
-        NotifyClamd = "/etc/clamav/clamd.conf";
-      };
+      # Deliberately rely on clamd SelfCheck for reloads instead of NotifyClamd.
+      # With socket activation, NotifyClamd can deadlock during first-run
+      # bootstrap when freshclam updates signatures before clamd has started.
     };
 
     scanner = {
@@ -75,8 +75,6 @@ in
       };
     };
 
-    clamav-freshclam.wants = [ "clamav-daemon.service" ];
-
     clamav-init-database = {
       description = "Bootstrap ClamAV signature database";
       wantedBy = [ "clamav-daemon.service" ];
@@ -84,7 +82,7 @@ in
       unitConfig.ConditionPathExistsGlob = map (path: "!${path}") clamavDatabaseConditions;
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = "${pkgs.systemd}/bin/systemctl start clamav-freshclam.service";
+        ExecStart = "${pkgs.systemd}/bin/systemctl start --wait clamav-freshclam.service";
       };
     };
 
