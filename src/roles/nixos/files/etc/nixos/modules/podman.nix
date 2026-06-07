@@ -25,8 +25,17 @@
       };
     };
 
+    containers.containersConf.settings.engine = {
+      runtime = "crun";
+      runtimes.crun = [
+        "${pkgs.crun}/bin/crun"
+        "/run/current-system/sw/bin/crun"
+      ];
+    };
     oci-containers.backend = "podman";
   };
+
+  environment.systemPackages = [ pkgs.crun ];
 
   # allow for DNS across the podman[0-9] interface
   networking.firewall.interfaces."podman+".allowedUDPPorts = [ 53 ];

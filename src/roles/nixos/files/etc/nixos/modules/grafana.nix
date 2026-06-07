@@ -3,6 +3,12 @@
 {
   age.secrets.grafana_authentik_client_id.file = /root/secrets/grafana_authentik_client_id.age;
   age.secrets.grafana_authentik_client_secret.file = /root/secrets/grafana_authentik_client_secret.age;
+  age.secrets.grafana_secret_key = {
+    file = /root/secrets/grafana_secret_key.age;
+    owner = "grafana";
+    group = "grafana";
+    mode = "0400";
+  };
 
   services.grafana = {
     enable = true;
@@ -23,6 +29,7 @@
       security = {
         cookie_secure = true;
         disable_gravatar = true;
+        secret_key = "$__file{${config.age.secrets.grafana_secret_key.path}}";
       };
       server = {
         domain = "metrics.net.scetrov.live";

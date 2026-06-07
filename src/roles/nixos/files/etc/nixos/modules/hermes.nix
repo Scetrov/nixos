@@ -102,13 +102,13 @@ in
 
     serviceUid = mkOption {
       type = types.int;
-      default = 989;
+      default = 992;
       description = "Static UID for the dedicated Hermes WebUI service user.";
     };
 
     serviceGid = mkOption {
       type = types.int;
-      default = 989;
+      default = 992;
       description = "Static GID for the dedicated Hermes WebUI service group.";
     };
 
@@ -346,10 +346,14 @@ in
     systemd.tmpfiles.rules =
       lib.optionals rootlessPodman [
         "d ${toString cfg.home} 0750 ${cfg.user} ${cfg.group} - -"
+        "Z ${toString cfg.home} 0750 ${cfg.user} ${cfg.group} - -"
       ]
       ++ lib.optional cfg.createWorkspace "d ${toString cfg.workspace} 0750 ${
         if rootlessPodman then cfg.user else toString cfg.uid
-      } ${if rootlessPodman then cfg.group else toString cfg.gid} - -";
+      } ${if rootlessPodman then cfg.group else toString cfg.gid} - -"
+      ++ lib.optional (
+        cfg.createWorkspace && rootlessPodman
+      ) "Z ${toString cfg.workspace} 0750 ${cfg.user} ${cfg.group} - -";
 
     systemd.services.hermes-webui-oci-setup = {
       description = "Create Hermes WebUI OCI network and volumes";
