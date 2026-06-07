@@ -47,7 +47,6 @@
     NIXOS_LABEL: "{{ clean_nixos_label }}"
   command: nixos-rebuild switch
   register: nixos_output
-  changed_when: "'switching' in nixos_output.stdout"
 
 - debug:
     var: nixos_output.stdout_lines

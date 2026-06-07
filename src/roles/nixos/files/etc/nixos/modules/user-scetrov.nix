@@ -49,7 +49,7 @@ in
         hugo
         llvmPackages.libclang
         lsb-release
-        nixfmt-rfc-style
+        nixfmt
         nmap
         pkg-config
         powershell

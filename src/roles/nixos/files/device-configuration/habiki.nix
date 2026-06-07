@@ -66,7 +66,6 @@
   blocky.bindAddr = "10.229.53.2:53";
 
   networking = {
-    wireless.enable = false;
     networkmanager = {
       enable = true;
       plugins = [ pkgs.networkmanager-openvpn ];

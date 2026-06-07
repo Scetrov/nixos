@@ -17,7 +17,7 @@ in
     niv
     nixos-generators
     nodejs_24
-    nodejs_24.pkgs.pnpm
+    pnpm
     networkmanager-openvpn
     opentofu
     openvpn
