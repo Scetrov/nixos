@@ -13,10 +13,11 @@ in
     bat
     dig
     gcc
+    go
     niv
     nixos-generators
     nodejs_24
-    nodejs_22.pkgs.pnpm
+    nodejs_24.pkgs.pnpm
     networkmanager-openvpn
     opentofu
     openvpn
