@@ -415,29 +415,55 @@ in
           esac
 
           home_mount="$(${backendBin} volume inspect ${lib.escapeShellArg cfg.homeVolume} --format '{{ .Mountpoint }}')"
-          ${backendBin} unshare ${shellBin} -c '
-            home_mount="$1"
-            default_model="$2"
-            provider="$3"
-            base_url="$4"
-            [ -d "$home_mount" ] || ${mkdirBin} -p "$home_mount"
-            ${catBin} > "$home_mount/config.yaml" <<EOF
+          if [ "${if rootlessPodman then "1" else "0"}" = "1" ]; then
+            ${backendBin} unshare ${shellBin} -c '
+              home_mount="$1"
+              default_model="$2"
+              provider="$3"
+              base_url="$4"
+              [ -d "$home_mount" ] || ${mkdirBin} -p "$home_mount"
+              ${catBin} > "$home_mount/config.yaml" <<EOF
         model:
           default: "$default_model"
           provider: $provider
           base_url: $base_url
         EOF
-            ${chownBin} ${toString containerUid}:${toString containerGid} "$home_mount/config.yaml"
-            ${chmodBin} 0640 "$home_mount/config.yaml"
-            ${catBin} > ${lib.escapeShellArg webuiEnvFile} <<EOF
+              ${chownBin} ${toString containerUid}:${toString containerGid} "$home_mount/config.yaml"
+              ${chmodBin} 0640 "$home_mount/config.yaml"
+              ${catBin} > ${lib.escapeShellArg webuiEnvFile} <<EOF
         HERMES_WEBUI_DEFAULT_MODEL="$default_model"
         EOF
-            ${chmodBin} 0644 ${lib.escapeShellArg webuiEnvFile}
-          ' -- "$home_mount" "$default_model" ${lib.escapeShellArg cfg.inferenceProvider} ${lib.escapeShellArg cfg.baseUrl}
+              ${chmodBin} 0644 ${lib.escapeShellArg webuiEnvFile}
+            ' -- "$home_mount" "$default_model" ${lib.escapeShellArg cfg.inferenceProvider} ${lib.escapeShellArg cfg.baseUrl}
+          else
+            ${shellBin} -c '
+              home_mount="$1"
+              default_model="$2"
+              provider="$3"
+              base_url="$4"
+              [ -d "$home_mount" ] || ${mkdirBin} -p "$home_mount"
+              ${catBin} > "$home_mount/config.yaml" <<EOF
+        model:
+          default: "$default_model"
+          provider: $provider
+          base_url: $base_url
+        EOF
+              ${chownBin} ${toString containerUid}:${toString containerGid} "$home_mount/config.yaml"
+              ${chmodBin} 0640 "$home_mount/config.yaml"
+              ${catBin} > ${lib.escapeShellArg webuiEnvFile} <<EOF
+        HERMES_WEBUI_DEFAULT_MODEL="$default_model"
+        EOF
+              ${chmodBin} 0644 ${lib.escapeShellArg webuiEnvFile}
+            ' -- "$home_mount" "$default_model" ${lib.escapeShellArg cfg.inferenceProvider} ${lib.escapeShellArg cfg.baseUrl}
+          fi
 
           ${lib.optionalString (cfg.environmentFile != null) ''
             if [ -r ${lib.escapeShellArg cfg.environmentFile} ]; then
-              ${backendBin} unshare ${installBin} -o ${toString containerUid} -g ${toString containerGid} -m0600 ${lib.escapeShellArg cfg.environmentFile} "$home_mount/.env"
+              if [ "${if rootlessPodman then "1" else "0"}" = "1" ]; then
+                ${backendBin} unshare ${installBin} -o ${toString containerUid} -g ${toString containerGid} -m0600 ${lib.escapeShellArg cfg.environmentFile} "$home_mount/.env"
+              else
+                ${installBin} -o ${toString containerUid} -g ${toString containerGid} -m0600 ${lib.escapeShellArg cfg.environmentFile} "$home_mount/.env"
+              fi
             fi
           ''}
         fi

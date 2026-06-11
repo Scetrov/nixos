@@ -28,6 +28,9 @@
 
   services.hermes-webui = {
     enable = true;
+    # Hermes WebUI's current image re-execs through su during startup and fails
+    # under rootless Podman on Habiki, so keep this stack rootful for now.
+    rootless = false;
     enableDashboard = false;
     enableCaddy = false;
     caddyListenAddress = "127.0.0.1";
@@ -43,7 +46,7 @@
 
   age.secrets.hermes_webui_env = {
     file = /root/secrets/hermes_webui_env.age;
-    owner = "hermes-webui";
+    owner = if config.services.hermes-webui.rootless then config.services.hermes-webui.user else "root";
   };
 
   scetrov.services.authentik.enable = true;

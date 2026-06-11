@@ -8,8 +8,25 @@
 let
   stateDir = "/var/lib/oncall";
   oncallEnvFile = "${stateDir}/oncall.env";
+  oncallDatabasePasswordPath = config.age.secrets.oncall_postgresql_password.path;
   oncallMigrateScript = pkgs.writeShellScript "oncall-migrate" ''
         set -euo pipefail
+
+        deadline=$((SECONDS + 60))
+        while ! ${pkgs.podman}/bin/podman exec --user postgres oncall-postgres \
+          psql -v ON_ERROR_STOP=1 -U oncall -d postgres -tAc 'select 1' >/dev/null 2>&1; do
+          if [ "$SECONDS" -ge "$deadline" ]; then
+            echo "Timed out waiting for oncall-postgres" >&2
+            exit 1
+          fi
+          sleep 1
+        done
+
+        db_pass=$(cat ${oncallDatabasePasswordPath})
+        ${pkgs.podman}/bin/podman exec --user postgres --env DB_PASS="$db_pass" oncall-postgres \
+          sh -ceu "
+            psql -v ON_ERROR_STOP=1 -U oncall -d postgres -c \"ALTER ROLE oncall WITH PASSWORD '\$DB_PASS';\"
+          "
 
         ${pkgs.podman}/bin/podman run --rm \
           --network=podman \
@@ -48,6 +65,7 @@ in
     restartTriggers = [
       config.age.secrets.oncall_secret_key.file
       config.age.secrets.grafana_oncall_api_key.file
+      config.age.secrets.oncall_postgresql_password.file
     ];
     before = [
       "oncall-migrate.service"
@@ -64,7 +82,7 @@ in
 
             secret_key=$(cat ${config.age.secrets.oncall_secret_key.path})
             grafana_api_key=$(cat ${config.age.secrets.grafana_oncall_api_key.path})
-            database_password=$(cat ${config.age.secrets.oncall_postgresql_password.path})
+            database_password=$(cat ${oncallDatabasePasswordPath})
 
             cat > ${oncallEnvFile} <<EOF
       DATABASE_TYPE=postgresql
@@ -114,6 +132,7 @@ in
       RemainAfterExit = true;
       ExecStart = oncallMigrateScript;
     };
+    restartTriggers = [ config.age.secrets.oncall_postgresql_password.file ];
   };
 
   systemd.services.podman-oncall-engine = {
@@ -150,11 +169,11 @@ in
       environment = {
         POSTGRES_USER = "oncall";
         POSTGRES_DB = "oncall";
-        POSTGRES_PASSWORD_FILE = "${config.age.secrets.oncall_postgresql_password.path}";
+        POSTGRES_PASSWORD_FILE = "${oncallDatabasePasswordPath}";
       };
       volumes = [
         "oncall-postgres-data:/var/lib/postgresql/data"
-        "${config.age.secrets.oncall_postgresql_password.path}:${config.age.secrets.oncall_postgresql_password.path}:ro"
+        "${oncallDatabasePasswordPath}:${oncallDatabasePasswordPath}:ro"
       ];
     };
 
