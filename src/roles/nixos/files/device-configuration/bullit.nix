@@ -6,7 +6,7 @@
     ./modules/local-networking.nix
     ./modules/user-scetrov-gui.nix
     ./modules/user-scetrov-syncthing.nix
-    ./modules/krdp.nix
+    ./modules/xrdp.nix
   ];
 
   networking = {
