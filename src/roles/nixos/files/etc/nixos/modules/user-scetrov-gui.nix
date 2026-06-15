@@ -64,7 +64,6 @@ in
       sqlite
       unstable.antigravity
       unstable.antigravity-cli
-      unstable.brave
       unstable.bun
       unstable.chromium
       unstable.code-cursor

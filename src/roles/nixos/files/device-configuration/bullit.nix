@@ -4,6 +4,7 @@
   imports = [
     ./modules/home-wifi.nix
     ./modules/local-networking.nix
+    ./modules/plasma6.nix
     ./modules/sunshine.nix
     ./modules/user-scetrov-gui.nix
     ./modules/user-scetrov-syncthing.nix
