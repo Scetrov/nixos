@@ -4,6 +4,8 @@
     konsole
     kate
     elisa
-    xterm
   ];
+
+  # Remove xterm from the X11 server default packages
+  services.xserver.excludePackages = [ pkgs.xterm ];
 }
