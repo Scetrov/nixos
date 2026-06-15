@@ -23,4 +23,4 @@
     - role: dependency-track-config
       tags: [ 'dependency-track' ]
     - role: secrets
-      tags: [ 'secrets-post', 'nixos', 'authentik', 'hermes', 'dependency-track', 'frontier-indexer' ]
+      tags: [ 'secrets-post' ]

@@ -4,6 +4,7 @@
   imports = [
     ./modules/home-wifi.nix
     ./modules/local-networking.nix
+    ./modules/sunshine.nix
     ./modules/user-scetrov-gui.nix
     ./modules/user-scetrov-syncthing.nix
     ./modules/xrdp.nix
