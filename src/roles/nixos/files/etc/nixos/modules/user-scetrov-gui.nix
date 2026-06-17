@@ -70,6 +70,7 @@ in
       unstable.codex
       unstable.cursor-cli
       unstable.dotnet-ef
+      unstable.figma-agent
       unstable.framesh
       unstable.insomnia
       unstable.keepassxc
