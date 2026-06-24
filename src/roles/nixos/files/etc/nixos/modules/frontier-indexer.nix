@@ -112,6 +112,69 @@ let
       ''}
     } > ${indexerEnvFile}
   '';
+  dbPreflightScript = pkgs.writeShellScript "frontier-indexer-db-preflight" ''
+        set -euo pipefail
+
+        if [ ! -s ${indexerEnvFile} ]; then
+          echo "Frontier Indexer database preflight failed: missing indexer environment file ${indexerEnvFile}" >&2
+          exit 1
+        fi
+
+        if [ ! -s ${dbPasswordFile} ]; then
+          echo "Frontier Indexer database preflight failed: missing database password file ${dbPasswordFile}" >&2
+          exit 1
+        fi
+
+        set -a
+        . ${indexerEnvFile}
+        set +a
+
+        for key in DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD DB_SCHEMA; do
+          if [ -z "''${!key:-}" ]; then
+            echo "Frontier Indexer database preflight failed: required env key $key is empty" >&2
+            exit 1
+          fi
+        done
+
+        test_connection() {
+          ${pkgs.podman}/bin/podman run --rm \
+            --network=${lib.escapeShellArg cfg.network} \
+            --env PGPASSWORD \
+            --entrypoint=psql \
+            ${lib.escapeShellArg cfg.timescaleImage} \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "$DB_NAME" \
+            -v ON_ERROR_STOP=1 \
+            -Atc "select current_database(), current_user;" >/dev/null
+        }
+
+        export PGPASSWORD="$DB_PASSWORD"
+        if test_connection; then
+          echo "Frontier Indexer database preflight succeeded for host=$DB_HOST port=$DB_PORT database=$DB_NAME user=$DB_USER schema=$DB_SCHEMA"
+          exit 0
+        fi
+
+        echo "Frontier Indexer database preflight: password authentication failed; synchronizing existing TimescaleDB role password from runtime secret" >&2
+        ${pkgs.python3}/bin/python - ${dbPasswordFile} <<'PY' \
+          | ${pkgs.podman}/bin/podman exec -i -u postgres frontier-timescaledb \
+            psql -d postgres -v ON_ERROR_STOP=1 >/dev/null
+    import sys
+    password = open(sys.argv[1]).read().rstrip("\n")
+    if "$frontier$" in password:
+        raise SystemExit("unsupported delimiter in database password")
+    print("ALTER USER postgres WITH PASSWORD $frontier$" + password + "$frontier$;")
+    PY
+
+        if test_connection; then
+          echo "Frontier Indexer database preflight succeeded after synchronizing database role password"
+          exit 0
+        fi
+
+        echo "Frontier Indexer database preflight failed: cannot authenticate to host=$DB_HOST port=$DB_PORT database=$DB_NAME user=$DB_USER from Podman network ${cfg.network}" >&2
+        exit 1
+  '';
 in
 {
   options.scetrov.services.frontier-indexer = {
@@ -310,7 +373,7 @@ in
         "frontier-indexer-network.service"
         "podman-frontier-timescaledb.service"
       ];
-      before = [ "podman-frontier-indexer.service" ];
+      before = [ "frontier-indexer-db-preflight.service" ];
       serviceConfig = {
         Type = "oneshot";
         ExecStart = pkgs.writeShellScript "frontier-indexer-wait-for-db" ''
@@ -334,7 +397,8 @@ in
       };
     };
 
-    systemd.services.podman-frontier-indexer = {
+    systemd.services.frontier-indexer-db-preflight = {
+      description = "Validate Frontier Indexer database setup";
       requires = [
         "frontier-indexer-prepare-env.service"
         "frontier-indexer-network.service"
@@ -346,6 +410,28 @@ in
         "frontier-indexer-network.service"
         "podman-frontier-timescaledb.service"
         "frontier-indexer-wait-for-db.service"
+      ];
+      before = [ "podman-frontier-indexer.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = dbPreflightScript;
+      };
+    };
+
+    systemd.services.podman-frontier-indexer = {
+      requires = [
+        "frontier-indexer-prepare-env.service"
+        "frontier-indexer-network.service"
+        "podman-frontier-timescaledb.service"
+        "frontier-indexer-wait-for-db.service"
+        "frontier-indexer-db-preflight.service"
+      ];
+      after = [
+        "frontier-indexer-prepare-env.service"
+        "frontier-indexer-network.service"
+        "podman-frontier-timescaledb.service"
+        "frontier-indexer-wait-for-db.service"
+        "frontier-indexer-db-preflight.service"
       ];
       serviceConfig = {
         Restart = lib.mkForce "on-failure";

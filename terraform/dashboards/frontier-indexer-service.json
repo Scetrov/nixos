@@ -279,7 +279,7 @@
       },
       "id": 4,
       "options": {
-        "content": "## Signals\n\n- Metrics: available on this dashboard and the linked frontier deep dive.\n- Logs: available below using the shared `service` label.\n- Traces: not yet available.\n- Profiles: not yet available.\n- Incidents: use the shared OnCall view.",
+        "content": "## Signals\n\n- Metrics: available on this dashboard and the linked frontier deep dive.\n- Logs: available below using the shared `service` label.\n- Database setup: the preflight-backed log stat below should stay at `0`; any non-zero value means the indexer is actively failing startup.\n- Traces: not yet available.\n- Profiles: not yet available.\n- Incidents: use the shared OnCall view.",
         "mode": "markdown"
       },
       "title": "Signal Coverage",
@@ -290,11 +290,79 @@
         "type": "loki",
         "uid": "loki"
       },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 1
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "valueAndName"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({service=\"frontier-indexer\"} |= \"Failed to get connection for database setup\" [15m]))",
+          "legendFormat": "DB setup failures (15m)",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Database Setup Failures (15m)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
       "gridPos": {
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 9
       },
       "id": 5,
       "options": {
