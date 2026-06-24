@@ -140,7 +140,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "homeassistant_sensor_temperature_celsius{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](utility_room_sensor_temperature|upstairs_hallway_sensor_temperature|kitchen_sensor_temperature|bathroom_sensor_temperature|wifi_smart_switch_temperature|wifi_smart_switch_temperature_2|indoor_outdoor_meter_4bdd_temperature|indoor_outdoor_meter_dbb6_temperature|indoor_outdoor_meter_6d05_temperature|indoor_outdoor_meter_9aff_temperature|indoor_outdoor_meter_f2f6_temperature|indoor_outdoor_meter_3393_temperature|indoor_outdoor_meter_1d40_temperature|thermo_hygrometer_living_area_temperature)\"}",
+          "expr": "homeassistant_sensor_temperature_celsius{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](utility_room_sensor_temperature|upstairs_hallway_sensor_temperature|kitchen_sensor_temperature|bathroom_sensor_temperature|wifi_smart_switch_temperature|wifi_smart_switch_temperature_2|indoor_outdoor_meter_4bdd_temperature|indoor_outdoor_meter_dbb6_temperature|indoor_outdoor_meter_6d05_temperature|indoor_outdoor_meter_9aff_temperature|thermo_hygrometer_office_temperature|indoor_outdoor_meter_3393_temperature|indoor_outdoor_meter_1d40_temperature|thermo_hygrometer_living_area_temperature)\"}",
           "legendFormat": "{{friendly_name}}",
           "range": true,
           "refId": "A"
@@ -219,7 +219,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "homeassistant_sensor_humidity_percent{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](wifi_smart_switch_humidity|wifi_smart_switch_humidity_2|indoor_outdoor_meter_4bdd_humidity|indoor_outdoor_meter_dbb6_humidity|indoor_outdoor_meter_6d05_humidity|indoor_outdoor_meter_9aff_humidity|indoor_outdoor_meter_f2f6_humidity|indoor_outdoor_meter_3393_humidity|indoor_outdoor_meter_1d40_humidity|thermo_hygrometer_living_area_humidity)\"}",
+          "expr": "homeassistant_sensor_humidity_percent{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](wifi_smart_switch_humidity|wifi_smart_switch_humidity_2|indoor_outdoor_meter_4bdd_humidity|indoor_outdoor_meter_dbb6_humidity|indoor_outdoor_meter_6d05_humidity|indoor_outdoor_meter_9aff_humidity|thermo_hygrometer_office_humidity|indoor_outdoor_meter_3393_humidity|indoor_outdoor_meter_1d40_humidity|thermo_hygrometer_living_area_humidity)\"}",
           "legendFormat": "{{friendly_name}}",
           "range": true,
           "refId": "A"

@@ -36,14 +36,16 @@ let
     "sensor.indoor_outdoor_meter_6d05_humidity"
     "sensor.indoor_outdoor_meter_9aff_temperature"
     "sensor.indoor_outdoor_meter_9aff_humidity"
-    "sensor.indoor_outdoor_meter_f2f6_temperature"
-    "sensor.indoor_outdoor_meter_f2f6_humidity"
+    "sensor.thermo_hygrometer_office_temperature"
+    "sensor.thermo_hygrometer_office_humidity"
     "sensor.indoor_outdoor_meter_3393_temperature"
     "sensor.indoor_outdoor_meter_3393_humidity"
     "sensor.indoor_outdoor_meter_1d40_temperature"
     "sensor.indoor_outdoor_meter_1d40_humidity"
     "sensor.thermo_hygrometer_living_area_temperature"
     "sensor.thermo_hygrometer_living_area_humidity"
+    "sensor.thermo_hygrometer_outside_shed_temperature"
+    "sensor.thermo_hygrometer_outside_shed_humidity"
   ];
   configurationYaml = pkgs.writeText "home-assistant-configuration.yaml" ''
         homeassistant:
