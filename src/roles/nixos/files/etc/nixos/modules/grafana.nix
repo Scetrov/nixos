@@ -127,6 +127,10 @@
   };
 
   systemd.services.grafana = {
+    restartTriggers = [
+      config.age.secrets.grafana_authentik_client_id.file
+      config.age.secrets.grafana_authentik_client_secret.file
+    ];
     environment = {
       GF_AUTH_GENERIC_OAUTH_ENABLED = "true";
       GF_AUTH_GENERIC_OAUTH_NAME = "authentik";

@@ -17,6 +17,8 @@ Options:
                            - dependency-track : Dependency Track deployment & configuration
                            - esphome          : ESPHome secret rendering, validation, build, and OTA deploy
                            - secrets          : Secrets generation and deployment
+      --skip-generated-refresh
+                         Skip pre-flight refresh of OpenTofu generated OIDC secrets.
   -h, --help             Show this help message and exit
 
 Examples:
@@ -33,6 +35,7 @@ EOF
 # Default values
 LIMIT=""
 TAGS=""
+SKIP_GENERATED_REFRESH=false
 EXTRA_ARGS=()
 
 # Parse arguments
@@ -53,6 +56,10 @@ while [[ $# -gt 0 ]]; do
             fi
             TAGS="$2"
             shift 2
+            ;;
+        --skip-generated-refresh)
+            SKIP_GENERATED_REFRESH=true
+            shift
             ;;
         -h|--help)
             usage
@@ -84,6 +91,31 @@ fi
 
 if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
     ANSIBLE_ARGS+=("${EXTRA_ARGS[@]}")
+fi
+
+needs_generated_refresh() {
+    local tags="$1"
+
+    if [[ -z "$tags" ]]; then
+        return 0
+    fi
+
+    IFS=',' read -ra tag_list <<< "$tags"
+    for tag in "${tag_list[@]}"; do
+        case "${tag// /}" in
+            authentik|nixos|dependency-track|secrets)
+                return 0
+                ;;
+        esac
+    done
+
+    return 1
+}
+
+if [[ "$SKIP_GENERATED_REFRESH" == false ]] && needs_generated_refresh "$TAGS"; then
+    echo "Refreshing OpenTofu generated OIDC secrets before Ansible loads vars_files..."
+    "$(dirname "$0")/tofu.sh" --refresh-generated-secrets
+    echo ""
 fi
 
 echo "Running deploy with command:"

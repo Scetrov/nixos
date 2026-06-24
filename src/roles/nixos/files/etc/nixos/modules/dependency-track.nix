@@ -201,6 +201,10 @@ in
     systemd.services.dtrack-apiserver-prepare-env = {
       description = "Prepare Dependency Track API Server environment file";
       wantedBy = [ "multi-user.target" ];
+      restartTriggers = [
+        config.age.secrets.dtrack_oidc_client_id.file
+        config.age.secrets.dtrack_oidc_client_secret.file
+      ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -211,6 +215,9 @@ in
     systemd.services.dtrack-frontend-prepare-env = {
       description = "Prepare Dependency Track Frontend environment file";
       wantedBy = [ "multi-user.target" ];
+      restartTriggers = [
+        config.age.secrets.dtrack_oidc_client_id.file
+      ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -232,6 +239,23 @@ in
         ExecStart = "${pkgs.podman}/bin/podman network create --ignore dtrack";
         ExecStop = "${pkgs.podman}/bin/podman network rm -f dtrack";
       };
+    };
+
+    systemd.services.podman-dtrack-apiserver = {
+      requires = [ "dtrack-apiserver-prepare-env.service" ];
+      after = [ "dtrack-apiserver-prepare-env.service" ];
+      restartTriggers = [
+        config.age.secrets.dtrack_oidc_client_id.file
+        config.age.secrets.dtrack_oidc_client_secret.file
+      ];
+    };
+
+    systemd.services.podman-dtrack-frontend = {
+      requires = [ "dtrack-frontend-prepare-env.service" ];
+      after = [ "dtrack-frontend-prepare-env.service" ];
+      restartTriggers = [
+        config.age.secrets.dtrack_oidc_client_id.file
+      ];
     };
 
     virtualisation.oci-containers.containers = {
