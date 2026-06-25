@@ -9,9 +9,8 @@
     ./modules/user-scetrov-syncthing.nix
   ];
 
-  # nixos-hardware/master currently builds the Pi kernel via structuredExtraConfig,
-  # which can drift out of sync with the host's nixpkgs kernel builder.
-  boot.kernelPackages = pkgs.linuxPackages_rpi4;
+  # Raspberry Pi kernel packages are provided by the nixos-hardware module above.
+  # Avoid overriding this with the deprecated nixpkgs Raspberry Pi kernel package set.
 
   blocky.bindAddr = "10.229.53.1:53";
 

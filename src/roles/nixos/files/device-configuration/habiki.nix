@@ -26,6 +26,8 @@
     ./modules/unifi-network-logs.nix
   ];
 
+  boot.kernelParams = [ "pcie_aspm=performance" ];
+
   services.hermes-webui = {
     enable = true;
     # Hermes WebUI's current image re-execs through su during startup and fails
