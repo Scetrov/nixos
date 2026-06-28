@@ -54,6 +54,16 @@ resource "random_password" "dtrack_client_secret" {
   special = false
 }
 
+resource "random_password" "flyingfire_password" {
+  length  = 24
+  special = false
+}
+
+resource "random_password" "pinkgiraffes_password" {
+  length  = 24
+  special = false
+}
+
 # --- Certificates ---
 data "authentik_certificate_key_pair" "default" {
   name = "authentik Self-signed Certificate"
@@ -111,6 +121,17 @@ resource "authentik_application_entitlement" "grafana_editors" {
 resource "authentik_policy_binding" "grafana_editors_binding" {
   target = authentik_application_entitlement.grafana_editors.id
   group  = authentik_group.all_applications.id
+  order  = 0
+}
+
+resource "authentik_application_entitlement" "grafana_viewers" {
+  name        = "Grafana Viewers"
+  application = authentik_application.grafana.uuid
+}
+
+resource "authentik_policy_binding" "grafana_viewers_binding" {
+  target = authentik_application_entitlement.grafana_viewers.id
+  group  = authentik_group.general_user.id
   order  = 0
 }
 
@@ -179,6 +200,32 @@ resource "authentik_group" "all_applications" {
   ]
 }
 
+resource "authentik_user" "flyingfire" {
+  username  = "flyingfire"
+  name      = "FlyingFire"
+  path      = "users"
+  type      = "internal"
+  is_active = true
+  password  = random_password.flyingfire_password.result
+}
+
+resource "authentik_user" "pinkgiraffes" {
+  username  = "pinkgiraffes"
+  name      = "Pink Giraffes"
+  path      = "users"
+  type      = "internal"
+  is_active = true
+  password  = random_password.pinkgiraffes_password.result
+}
+
+resource "authentik_group" "general_user" {
+  name = "General User"
+  users = [
+    authentik_user.flyingfire.id,
+    authentik_user.pinkgiraffes.id,
+  ]
+}
+
 resource "authentik_policy_binding" "dependency_track_access" {
   target = authentik_application.dependency_track.uuid
   group  = authentik_group.all_applications.id
@@ -223,6 +270,12 @@ resource "authentik_policy_binding" "homeassistant_access" {
   order  = 0
 }
 
+resource "authentik_policy_binding" "homeassistant_general_user_access" {
+  target = authentik_application.homeassistant.uuid
+  group  = authentik_group.general_user.id
+  order  = 10
+}
+
 resource "authentik_provider_oauth2" "homeassistant_oidc" {
   name        = "Home Assistant OIDC"
   client_id   = "home-assistant"
@@ -259,6 +312,12 @@ resource "authentik_policy_binding" "homeassistant_oidc_access" {
   target = authentik_application.homeassistant_oidc.uuid
   group  = authentik_group.all_applications.id
   order  = 0
+}
+
+resource "authentik_policy_binding" "homeassistant_oidc_general_user_access" {
+  target = authentik_application.homeassistant_oidc.uuid
+  group  = authentik_group.general_user.id
+  order  = 10
 }
 
 # --- Branding ---

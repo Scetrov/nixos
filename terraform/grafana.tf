@@ -78,6 +78,16 @@ output "dtrack_oidc_client_secret" {
   sensitive = true
 }
 
+output "flyingfire_initial_password" {
+  value     = random_password.flyingfire_password.result
+  sensitive = true
+}
+
+output "pinkgiraffes_initial_password" {
+  value     = random_password.pinkgiraffes_password.result
+  sensitive = true
+}
+
 resource "grafana_folder" "operations_platform" {
   title = local.grafana_portal.folders.platform.title
   uid   = local.grafana_portal.folders.platform.uid

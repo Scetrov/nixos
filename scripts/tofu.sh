@@ -84,7 +84,9 @@ refresh_generated_secrets() {
         "grafana_authentik_client_id: \"" + (required("grafana_oidc_client_id")) + "\"",
         "grafana_authentik_client_secret: |",
         "  " + (required("grafana_oidc_client_secret")),
-        "grafana_mcp_token: \"" + (required("grafana_mcp_token")) + "\""
+        "grafana_mcp_token: \"" + (required("grafana_mcp_token")) + "\"",
+        "flyingfire_initial_password: \"" + (required("flyingfire_initial_password")) + "\"",
+        "pinkgiraffes_initial_password: \"" + (required("pinkgiraffes_initial_password")) + "\""
       ] | .[]
     ' <<< "$json_outputs" > "$tmp_sec_file"
 

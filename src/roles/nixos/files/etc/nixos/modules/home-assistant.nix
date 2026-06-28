@@ -71,7 +71,7 @@ let
           display_name: "Authentik"
           roles:
             admin: "authentik Admins"
-            user: "All Applications"
+            user: "General User"
           features:
             default_redirect: true
 
