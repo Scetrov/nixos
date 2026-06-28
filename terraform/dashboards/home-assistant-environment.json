@@ -108,8 +108,33 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 15
+              },
+              {
+                "color": "#008791",
+                "value": 18
+              },
+              {
+                "color": "#E6C65B",
+                "value": 25
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 30
+              }
+            ]
           }
         },
         "overrides": []
@@ -187,8 +212,33 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 25
+              },
+              {
+                "color": "#008791",
+                "value": 40
+              },
+              {
+                "color": "#E6C65B",
+                "value": 56
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 70
+              }
+            ]
           }
         },
         "overrides": []
@@ -266,8 +316,25 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 801
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 1201
+              }
+            ]
           }
         },
         "overrides": []
@@ -345,8 +412,25 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 12.1
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 35.5
+              }
+            ]
           }
         },
         "overrides": []
@@ -424,8 +508,25 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 55
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 155
+              }
+            ]
           }
         },
         "overrides": []

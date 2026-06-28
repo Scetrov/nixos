@@ -51,7 +51,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#008791",
                 "value": null
               }
             ]
