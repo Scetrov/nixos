@@ -63,7 +63,6 @@
     enable = true;
     indexerImage = "ghcr.io/ocky-public/frontier-indexer:v0.3.7";
     firstCheckpoint = "352596413";
-    ingestionSource = "fullnode";
     ingestConcurrencyMax = 2;
     resetSchemaGeneration = 6;
   };
