@@ -37,7 +37,7 @@
 
       rule {
         source_labels = ["__journal__systemd_unit"]
-        regex         = "(frontier-indexer-prepare-env|frontier-indexer-network|frontier-indexer-wait-for-db|podman-frontier-(indexer|timescaledb))\\.service"
+        regex         = "(frontier-indexer-prepare-env|frontier-indexer-network|frontier-indexer-wait-for-db|frontier-indexer-schema-reset|frontier-indexer-db-preflight|podman-frontier-(indexer|timescaledb))\\.service"
         replacement   = "frontier-indexer"
         target_label  = "service"
       }

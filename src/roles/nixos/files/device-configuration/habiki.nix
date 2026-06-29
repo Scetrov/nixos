@@ -61,9 +61,11 @@
   scetrov.services.unifi-network-logs.enable = true;
   scetrov.services.frontier-indexer = {
     enable = true;
-    firstCheckpoint = "302790346";
+    indexerImage = "ghcr.io/ocky-public/frontier-indexer:v0.3.7";
+    firstCheckpoint = "352596413";
     ingestionSource = "fullnode";
     ingestConcurrencyMax = 2;
+    resetSchemaGeneration = 6;
   };
   services.grafana-mcp = {
     enable = true;

@@ -11,6 +11,9 @@ let
   timescaleDataDir = "${stateDir}/timescaledb-data";
   dbPasswordFile = "${stateDir}/db-password";
   indexerEnvFile = "${stateDir}/indexer.env";
+  schemaResetMarkerFile = "${stateDir}/schema-reset-generation";
+  schemaResetGeneration =
+    if cfg.resetSchemaGeneration == null then "" else toString cfg.resetSchemaGeneration;
   defaultSuiRpcUrl =
     if cfg.suiNetwork == "mainnet" then
       "https://fullnode.mainnet.sui.io:443"
@@ -111,6 +114,64 @@ let
         printf 'FIRST_CHECKPOINT=%s\n' ${lib.escapeShellArg cfg.firstCheckpoint}
       ''}
     } > ${indexerEnvFile}
+  '';
+  schemaResetScript = pkgs.writeShellScript "frontier-indexer-schema-reset" ''
+    set -euo pipefail
+
+    reset_generation=${lib.escapeShellArg schemaResetGeneration}
+    if [ -z "$reset_generation" ]; then
+      echo "Frontier Indexer schema reset skipped: no reset generation configured"
+      exit 0
+    fi
+
+    if [ ! -s ${indexerEnvFile} ]; then
+      echo "Frontier Indexer schema reset failed: missing indexer environment file ${indexerEnvFile}" >&2
+      exit 1
+    fi
+
+    set -a
+    . ${indexerEnvFile}
+    set +a
+
+    for key in DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD DB_SCHEMA; do
+      if [ -z "''${!key:-}" ]; then
+        echo "Frontier Indexer schema reset failed: required env key $key is empty" >&2
+        exit 1
+      fi
+    done
+
+    if [ "$DB_SCHEMA" != "indexer" ]; then
+      echo "Frontier Indexer schema reset failed: refusing to reset unexpected schema '$DB_SCHEMA'" >&2
+      exit 1
+    fi
+
+    if [ -s ${schemaResetMarkerFile} ] && [ "$(${pkgs.coreutils}/bin/cat ${schemaResetMarkerFile})" = "$reset_generation" ]; then
+      echo "Frontier Indexer schema reset skipped: generation $reset_generation already applied"
+      exit 0
+    fi
+
+    export PGPASSWORD="$DB_PASSWORD"
+    ${pkgs.podman}/bin/podman run --rm \
+      --network=${lib.escapeShellArg cfg.network} \
+      --env PGPASSWORD \
+      --entrypoint=psql \
+      ${lib.escapeShellArg cfg.timescaleImage} \
+      -h "$DB_HOST" \
+      -p "$DB_PORT" \
+      -U "$DB_USER" \
+      -d "$DB_NAME" \
+      -v ON_ERROR_STOP=1 \
+      -v schema="$DB_SCHEMA" \
+      -v owner="$DB_USER" <<'SQL'
+    SELECT format('DROP SCHEMA IF EXISTS %I CASCADE', :'schema');
+    \gexec
+    SELECT format('CREATE SCHEMA %I AUTHORIZATION %I', :'schema', :'owner');
+    \gexec
+    SQL
+
+    umask 027
+    printf '%s' "$reset_generation" > ${schemaResetMarkerFile}
+    echo "Frontier Indexer schema reset applied generation $reset_generation for schema=$DB_SCHEMA"
   '';
   dbPreflightScript = pkgs.writeShellScript "frontier-indexer-db-preflight" ''
         set -euo pipefail
@@ -264,6 +325,12 @@ in
       default = null;
       description = "Optional maximum checkpoint ingestion concurrency override.";
     };
+
+    resetSchemaGeneration = lib.mkOption {
+      type = lib.types.nullOr lib.types.int;
+      default = null;
+      description = "Optional schema reset generation. When set, the configured indexer schema is dropped and recreated once before the indexer starts.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -373,7 +440,10 @@ in
         "frontier-indexer-network.service"
         "podman-frontier-timescaledb.service"
       ];
-      before = [ "frontier-indexer-db-preflight.service" ];
+      before = [
+        "frontier-indexer-schema-reset.service"
+        "frontier-indexer-db-preflight.service"
+      ];
       serviceConfig = {
         Type = "oneshot";
         ExecStart = pkgs.writeShellScript "frontier-indexer-wait-for-db" ''
@@ -397,8 +467,8 @@ in
       };
     };
 
-    systemd.services.frontier-indexer-db-preflight = {
-      description = "Validate Frontier Indexer database setup";
+    systemd.services.frontier-indexer-schema-reset = {
+      description = "Reset Frontier Indexer schema for declared cycle generation";
       requires = [
         "frontier-indexer-prepare-env.service"
         "frontier-indexer-network.service"
@@ -410,6 +480,32 @@ in
         "frontier-indexer-network.service"
         "podman-frontier-timescaledb.service"
         "frontier-indexer-wait-for-db.service"
+      ];
+      before = [
+        "frontier-indexer-db-preflight.service"
+        "podman-frontier-indexer.service"
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = schemaResetScript;
+      };
+    };
+
+    systemd.services.frontier-indexer-db-preflight = {
+      description = "Validate Frontier Indexer database setup";
+      requires = [
+        "frontier-indexer-prepare-env.service"
+        "frontier-indexer-network.service"
+        "podman-frontier-timescaledb.service"
+        "frontier-indexer-wait-for-db.service"
+        "frontier-indexer-schema-reset.service"
+      ];
+      after = [
+        "frontier-indexer-prepare-env.service"
+        "frontier-indexer-network.service"
+        "podman-frontier-timescaledb.service"
+        "frontier-indexer-wait-for-db.service"
+        "frontier-indexer-schema-reset.service"
       ];
       before = [ "podman-frontier-indexer.service" ];
       serviceConfig = {
@@ -424,6 +520,7 @@ in
         "frontier-indexer-network.service"
         "podman-frontier-timescaledb.service"
         "frontier-indexer-wait-for-db.service"
+        "frontier-indexer-schema-reset.service"
         "frontier-indexer-db-preflight.service"
       ];
       after = [
@@ -431,6 +528,7 @@ in
         "frontier-indexer-network.service"
         "podman-frontier-timescaledb.service"
         "frontier-indexer-wait-for-db.service"
+        "frontier-indexer-schema-reset.service"
         "frontier-indexer-db-preflight.service"
       ];
       serviceConfig = {
