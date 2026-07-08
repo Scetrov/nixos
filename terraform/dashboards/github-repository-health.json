@@ -406,6 +406,166 @@
       }
     },
     {
+      "id": 13,
+      "type": "barchart",
+      "title": "Open PRs by Repository",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 8,
+        "h": 16
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(github_repository_open_pull_requests, \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Open PRs",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "owner": true,
+              "repository": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "service": true
+            },
+            "renameByName": {
+              "repo": "Repository",
+              "Value": "Open PRs",
+              "Value #A": "Open PRs"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "axisCenteredZero": false,
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 1
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Open PRs"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open pull requests for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/pulls"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Repository"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 220
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Repository",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "showValue": "auto",
+        "stacking": "none",
+        "groupWidth": 0.7,
+        "barWidth": 0.97,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        }
+      },
+      "links": [
+        {
+          "title": "GitHub pull requests",
+          "url": "https://github.com/${__data.fields.Repository}/pulls",
+          "targetBlank": true
+        }
+      ]
+    },
+    {
       "id": 11,
       "type": "barchart",
       "title": "Dependabot Alerts by Repository / Severity",
@@ -414,9 +574,9 @@
         "uid": "mimir"
       },
       "gridPos": {
-        "x": 0,
+        "x": 8,
         "y": 4,
-        "w": 12,
+        "w": 8,
         "h": 16
       },
       "targets": [
@@ -775,9 +935,9 @@
         "uid": "mimir"
       },
       "gridPos": {
-        "x": 12,
+        "x": 16,
         "y": 4,
-        "w": 12,
+        "w": 8,
         "h": 16
       },
       "targets": [
@@ -1145,6 +1305,6 @@
   "timezone": "browser",
   "title": "GitHub Repository Health",
   "uid": "github-repo-health",
-  "version": 8,
+  "version": 9,
   "weekStart": ""
 }
