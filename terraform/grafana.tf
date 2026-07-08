@@ -122,6 +122,12 @@ resource "grafana_dashboard" "dependency_track_service" {
   overwrite   = true
 }
 
+resource "grafana_dashboard" "github_repository_health" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/github-repository-health.json")
+  overwrite   = true
+}
+
 resource "grafana_dashboard" "oncall_service" {
   folder      = grafana_folder.operations_services.uid
   config_json = file("${local.grafana_portal.source_root}/oncall-service.json")

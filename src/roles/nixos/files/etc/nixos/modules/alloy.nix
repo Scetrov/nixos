@@ -71,6 +71,13 @@
       }
 
       rule {
+        source_labels = ["__journal__systemd_unit"]
+        regex         = "github-repository-observability\\.service"
+        replacement   = "github-repository-observability"
+        target_label  = "service"
+      }
+
+      rule {
         source_labels = ["__journal_syslog_identifier"]
         target_label  = "syslog_identifier"
       }

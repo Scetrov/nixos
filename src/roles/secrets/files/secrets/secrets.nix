@@ -52,4 +52,6 @@ in
   "frontier_indexer_db_password.age".publicKeys = users ++ systems;
   "mcp_client_token.age".publicKeys = users ++ systems;
   "grafana_mcp_token.age".publicKeys = users ++ systems;
+  "github_repository_observability_app_id.age".publicKeys = users ++ systems;
+  "github_repository_observability_private_key.age".publicKeys = users ++ systems;
 }

@@ -93,6 +93,18 @@
           }
         ];
       }
+      {
+        job_name = "github-repository-observability";
+        scrape_interval = "60s";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:9177" ];
+            labels = {
+              service = "github-repository-observability";
+            };
+          }
+        ];
+      }
     ];
   };
 }

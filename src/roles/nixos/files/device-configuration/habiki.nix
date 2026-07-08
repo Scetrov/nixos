@@ -22,6 +22,7 @@
     ./modules/user-scetrov-filebrowser.nix
     ./modules/user-scetrov-syncthing.nix
     ./modules/grafana-mcp.nix
+    ./modules/github-repository-observability.nix
     ./modules/home-assistant.nix
     ./modules/unifi-network-logs.nix
   ];
@@ -68,6 +69,18 @@
   };
   services.grafana-mcp = {
     enable = true;
+  };
+  scetrov.services.github-repository-observability = {
+    enable = true;
+    owners = [
+      "Scetrov"
+      "RichardSlater"
+    ];
+    includeArchived = false;
+    includeForks = false;
+    excludeRepositories = [ ];
+    collectionIntervalSeconds = 900;
+    listenAddress = "127.0.0.1:9177";
   };
 
   blocky.bindAddr = "10.229.53.2:53";

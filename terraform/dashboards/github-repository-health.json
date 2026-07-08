@@ -1,0 +1,1150 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "title": "Operations Platform Overview",
+      "url": "/d/ops-platform-overview/operations-platform-overview",
+      "type": "link"
+    }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Collector",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "max(up{job=\"github-repository-observability\"})",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Collector",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": null
+              },
+              {
+                "color": "#008791",
+                "value": 1
+              }
+            ]
+          },
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Down",
+                  "color": "#FF3E8D",
+                  "index": 0
+                },
+                "1": {
+                  "text": "Up",
+                  "color": "#008791",
+                  "index": 1
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Repositories",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "github_repository_observability_repositories_seen",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Repositories",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#008791"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Open PRs",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 9,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "sum(github_repository_open_pull_requests)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Open PRs",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 5
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 20
+              }
+            ]
+          },
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Dependabot Alerts",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "sum(github_repository_dependabot_open_alerts)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Dependabot Alerts",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 1
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 10
+              }
+            ]
+          },
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Code Quality Alerts",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 19,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "sum(github_repository_code_scanning_open_alerts)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Code Quality Alerts",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 1
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 10
+              }
+            ]
+          },
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 11,
+      "type": "barchart",
+      "title": "Dependabot Alerts by Repository / Severity",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 16
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (owner, repository) (github_repository_dependabot_open_alerts{severity=\"critical\"}), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Critical",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (owner, repository) (github_repository_dependabot_open_alerts{severity=\"high\"}), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "High",
+          "range": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (owner, repository) (github_repository_dependabot_open_alerts{severity=\"medium\"}), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Medium",
+          "range": false,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (owner, repository) (github_repository_dependabot_open_alerts{severity=\"low\"}), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Low",
+          "range": false,
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (owner, repository) (github_repository_dependabot_open_alerts{severity=\"unknown\"}), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Unknown",
+          "range": false,
+          "refId": "E"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "repo",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "owner": true,
+              "repository": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "service": true
+            },
+            "renameByName": {
+              "repo": "Repository",
+              "Value #A": "Critical",
+              "Value #B": "High",
+              "Value #C": "Medium",
+              "Value #D": "Low",
+              "Value #E": "Unknown"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "axisCenteredZero": false,
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Critical"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF3E8D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "High"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF3E8D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Medium"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#E6C65B"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Low"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#008791"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Unknown"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#855F90"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Critical"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open Dependabot alerts for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/security/dependabot"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "High"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open Dependabot alerts for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/security/dependabot"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Medium"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open Dependabot alerts for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/security/dependabot"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Low"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open Dependabot alerts for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/security/dependabot"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Unknown"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open Dependabot alerts for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/security/dependabot"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Repository"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 260
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Repository",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "showValue": "auto",
+        "stacking": "normal",
+        "groupWidth": 0.7,
+        "barWidth": 0.97,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        }
+      },
+      "links": [
+        {
+          "title": "GitHub repositories",
+          "url": "https://github.com/${__data.fields.Repository}",
+          "targetBlank": true
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "barchart",
+      "title": "Code Quality Alerts by Repository / Severity",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 16
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (owner, repository) (github_repository_code_scanning_open_alerts{severity=\"critical\"}), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Critical",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (owner, repository) (github_repository_code_scanning_open_alerts{severity=\"high\"}), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "High",
+          "range": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (owner, repository) (github_repository_code_scanning_open_alerts{severity=\"medium\"}), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Medium",
+          "range": false,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (owner, repository) (github_repository_code_scanning_open_alerts{severity=\"low\"}), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Low",
+          "range": false,
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join(sum by (owner, repository) (github_repository_code_scanning_open_alerts{severity=\"unknown\"}), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Unknown",
+          "range": false,
+          "refId": "E"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "repo",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "owner": true,
+              "repository": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "service": true
+            },
+            "renameByName": {
+              "repo": "Repository",
+              "Value #A": "Critical",
+              "Value #B": "High",
+              "Value #C": "Medium",
+              "Value #D": "Low",
+              "Value #E": "Unknown"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "axisCenteredZero": false,
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Critical"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF3E8D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "High"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF3E8D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Medium"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#E6C65B"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Low"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#008791"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Unknown"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#855F90"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Critical"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open code scanning alerts for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/security/code-scanning"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "High"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open code scanning alerts for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/security/code-scanning"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Medium"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open code scanning alerts for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/security/code-scanning"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Low"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open code scanning alerts for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/security/code-scanning"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Unknown"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open code scanning alerts for ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}/security/code-scanning"
+                  },
+                  {
+                    "title": "Open repository ${__data.fields.Repository}",
+                    "url": "https://github.com/${__data.fields.Repository}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Repository"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 260
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Repository",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "showValue": "auto",
+        "stacking": "normal",
+        "groupWidth": 0.7,
+        "barWidth": 0.97,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        }
+      },
+      "links": [
+        {
+          "title": "GitHub repositories",
+          "url": "https://github.com/${__data.fields.Repository}",
+          "targetBlank": true
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "operations",
+    "github",
+    "supply-chain"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "GitHub Repository Health",
+  "uid": "github-repo-health",
+  "version": 8,
+  "weekStart": ""
+}
