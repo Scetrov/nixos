@@ -142,7 +142,7 @@
           "refId": "A"
         }
       ],
-      "title": "",
+      "title": "Grafana",
       "type": "stat"
     },
     {
@@ -226,7 +226,7 @@
           "refId": "A"
         }
       ],
-      "title": "",
+      "title": "Mimir",
       "type": "stat"
     },
     {
@@ -310,7 +310,7 @@
           "refId": "A"
         }
       ],
-      "title": "",
+      "title": "Loki",
       "type": "stat"
     },
     {
@@ -394,7 +394,7 @@
           "refId": "A"
         }
       ],
-      "title": "",
+      "title": "Tempo",
       "type": "stat"
     },
     {
@@ -478,7 +478,7 @@
           "refId": "A"
         }
       ],
-      "title": "",
+      "title": "Prometheus",
       "type": "stat"
     },
     {
@@ -548,7 +548,7 @@
           "refId": "A"
         }
       ],
-      "title": "",
+      "title": "Hosts Reporting",
       "type": "stat"
     },
     {
