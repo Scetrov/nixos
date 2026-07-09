@@ -27,7 +27,7 @@ in
 
     pollInterval = lib.mkOption {
       type = lib.types.ints.positive;
-      default = 60;
+      default = 900;
       description = "Polling interval in seconds for Codex and OpenRouter APIs.";
     };
 
