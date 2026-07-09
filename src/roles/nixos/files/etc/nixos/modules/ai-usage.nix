@@ -39,7 +39,7 @@ in
 
     openrouterEnvFile = lib.mkOption {
       type = lib.types.path;
-      default = config.age.secrets.openrouter_api_key.path;
+      default = config.age.secrets.openrouter_management_env.path;
       description = "Runtime environment file containing OPENROUTER_API_KEY for OpenRouter credits polling.";
     };
   };
@@ -52,8 +52,8 @@ in
       mode = "0400";
     };
 
-    age.secrets.openrouter_api_key = {
-      file = /root/secrets/openrouter_api_key.age;
+    age.secrets.openrouter_management_env = {
+      file = /root/secrets/openrouter_management_env.age;
       owner = "ai-usage-exporter";
       group = "ai-usage-exporter";
       mode = "0400";

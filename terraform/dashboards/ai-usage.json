@@ -163,7 +163,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "Credits Remaining",
+      "title": "Monthly Spend (All Keys)",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
@@ -181,28 +181,17 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "ai_openrouter_credits_total - ai_openrouter_credits_used",
+          "expr": "ai_openrouter_total_usage_monthly",
           "instant": true,
-          "legendFormat": "Remaining",
+          "legendFormat": "Monthly",
           "range": false,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "ai_openrouter_credits_total",
-          "instant": true,
-          "legendFormat": "Total",
-          "range": false,
-          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "unit": "currencyUSD",
+          "decimals": 2,
           "color": {
             "fixedColor": "#BB5191",
             "mode": "fixed"
@@ -219,35 +208,11 @@
           "mappings": [],
           "noValue": "N/A"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Total"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#855F90",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.hideFrom.tooltip",
-                "value": false
-              },
-              {
-                "id": "custom.hideFrom.legend",
-                "value": true
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
         "colorMode": "value",
-        "graphMode": "none",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -263,13 +228,78 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "Rate Limit",
+      "title": "This Week (All Keys)",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
       },
       "gridPos": {
         "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "ai_openrouter_total_usage_weekly",
+          "instant": true,
+          "legendFormat": "Weekly",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": {
+            "fixedColor": "#855F90",
+            "mode": "fixed"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#855F90",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [],
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Rate Limit",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 16,
         "y": 0,
         "w": 4,
         "h": 5
@@ -344,73 +374,9 @@
       }
     },
     {
-      "id": 5,
-      "type": "stat",
-      "title": "5H Resets In",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "gridPos": {
-        "x": 16,
-        "y": 0,
-        "w": 4,
-        "h": 5
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "ai_codex_window_reset_seconds{window=\"5h\"}",
-          "instant": true,
-          "legendFormat": "Reset",
-          "range": false,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "color": {
-            "fixedColor": "#4B678C",
-            "mode": "fixed"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#4B678C",
-                "value": null
-              }
-            ]
-          },
-          "mappings": [],
-          "noValue": "N/A"
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      }
-    },
-    {
       "id": 6,
       "type": "stat",
-      "title": "7D Resets In",
+      "title": "5H Resets In / 7D Resets In",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
@@ -428,11 +394,23 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "ai_codex_window_reset_seconds{window=\"7d\"}",
+          "expr": "ai_codex_window_reset_seconds{window=\"5h\"}",
           "instant": true,
-          "legendFormat": "Reset",
+          "legendFormat": "5H",
           "range": false,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "ai_codex_window_reset_seconds{window=\"7d\"}",
+          "instant": true,
+          "legendFormat": "7D",
+          "range": false,
+          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -454,13 +432,29 @@
           "mappings": [],
           "noValue": "N/A"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "7D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#6FAE9F",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "auto",
+        "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -638,6 +632,135 @@
       }
     },
     {
+      "id": 13,
+      "type": "stat",
+      "title": "Keys Enabled",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 6,
+        "h": 3
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "ai_openrouter_keys_enabled",
+          "instant": true,
+          "legendFormat": "Enabled",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "fixedColor": "#008791",
+            "mode": "fixed"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [],
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Lifetime Total (All Keys)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 5,
+        "w": 6,
+        "h": 3
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "ai_openrouter_total_usage",
+          "instant": true,
+          "legendFormat": "Total",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": {
+            "fixedColor": "#6F5D86",
+            "mode": "fixed"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#6F5D86",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [],
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
       "id": 7,
       "type": "timeseries",
       "title": "Codex Usage Over Time",
@@ -646,8 +769,8 @@
         "uid": "mimir"
       },
       "gridPos": {
-        "x": 12,
-        "y": 5,
+        "x": 0,
+        "y": 8,
         "w": 12,
         "h": 8
       },
@@ -691,7 +814,6 @@
             "gradientMode": "scheme",
             "showPoints": "never",
             "axisPlacement": "auto",
-            "axisLabel": "",
             "scaleDistribution": {
               "type": "linear"
             }
@@ -749,13 +871,13 @@
     {
       "id": 8,
       "type": "timeseries",
-      "title": "OpenRouter Credit Consumption Over Time",
+      "title": "OpenRouter Per-Key Usage (Lifetime)",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
       },
       "gridPos": {
-        "x": 0,
+        "x": 12,
         "y": 8,
         "w": 12,
         "h": 8
@@ -767,39 +889,17 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "ai_openrouter_credits_used",
-          "legendFormat": "Credits Used",
+          "expr": "ai_openrouter_key_usage",
+          "legendFormat": "{{key}}",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "ai_openrouter_credits_total",
-          "legendFormat": "Total Credits",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "ai_openrouter_credits_total - ai_openrouter_credits_used",
-          "legendFormat": "Credits Remaining",
-          "range": true,
-          "refId": "C"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "unit": "currencyUSD",
           "color": {
-            "mode": "fixed"
+            "mode": "palette-classic"
           },
           "custom": {
             "drawStyle": "line",
@@ -809,73 +909,12 @@
             "gradientMode": "scheme",
             "showPoints": "never",
             "axisPlacement": "auto",
-            "axisLabel": "",
             "scaleDistribution": {
               "type": "linear"
             }
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Credits Used"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#6F5D86",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Total Credits"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#E6C65B",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Credits Remaining"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#008791",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
         "tooltip": {
@@ -894,112 +933,6 @@
       }
     },
     {
-      "id": 9,
-      "type": "timeseries",
-      "title": "Window Reset Countdowns",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 16,
-        "w": 12,
-        "h": 8
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "ai_codex_window_reset_seconds{window=\"5h\"}",
-          "legendFormat": "5-Hour Window Reset",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "ai_codex_window_reset_seconds{window=\"7d\"}",
-          "legendFormat": "7-Day Window Reset",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "color": {
-            "mode": "fixed"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 5,
-            "gradientMode": "none",
-            "showPoints": "never",
-            "axisPlacement": "auto",
-            "axisLabel": "",
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "5-Hour Window Reset"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#4B678C",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "7-Day Window Reset"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#6FAE9F",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "showLegend": true,
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      }
-    },
-    {
       "id": 12,
       "type": "timeseries",
       "title": "Scrape Duration",
@@ -1008,8 +941,8 @@
         "uid": "mimir"
       },
       "gridPos": {
-        "x": 12,
-        "y": 13,
+        "x": 0,
+        "y": 16,
         "w": 12,
         "h": 8
       },
@@ -1051,7 +984,6 @@
             "gradientMode": "none",
             "showPoints": "never",
             "axisPlacement": "auto",
-            "axisLabel": "",
             "scaleDistribution": {
               "type": "linear"
             }
@@ -1105,6 +1037,69 @@
           ]
         }
       }
+    },
+    {
+      "id": 15,
+      "type": "table",
+      "title": "OpenRouter Keys (All Workstations)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "ai_openrouter_key_usage",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{key}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "countRows": false,
+          "fields": ""
+        }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "cluster": true,
+              "host": true,
+              "instance": true,
+              "job": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "key": "Key",
+              "Value": "Lifetime USD"
+            }
+          }
+        }
+      ]
     }
   ],
   "schemaVersion": 39,

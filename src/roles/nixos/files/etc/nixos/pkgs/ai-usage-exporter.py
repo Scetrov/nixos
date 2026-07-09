@@ -35,7 +35,7 @@ REQUEST_TIMEOUT = 10
 TOKEN_REFRESH_MARGIN = 300  # 5 minutes in seconds
 
 CODEX_USAGE_URL = "https://chatgpt.com/backend-api/wham/usage"
-OPENROUTER_CREDITS_URL = "https://openrouter.ai/api/v1/credits"
+OPENROUTER_KEYS_URL = "https://openrouter.ai/api/v1/keys"
 
 
 # ---------------------------------------------------------------------------
@@ -219,22 +219,31 @@ class CodexClient:
 
 
 class OpenRouterClient:
-    """Polls the OpenRouter /credits endpoint."""
+    """Polls the OpenRouter /keys endpoint using a management key.
 
-    def __init__(self, api_key: str):
-        self._api_key = api_key
+    A management key (as opposed to a regular API key) grants access to
+    the keys-management API, which lists *all* keys in the organisation
+    with per-key usage breakdowns, spend limits, and enabled status.
+    This gives a complete picture of OpenRouter consumption across all
+    workstations and services, not just the single key used to make the request.
+    """
 
-    def poll(self) -> dict[str, Any] | None:
-        """Poll the credits endpoint. Returns parsed response or None on failure."""
+    def __init__(self, management_key: str):
+        self._management_key = management_key
+
+    def poll(self) -> list[dict[str, Any]] | None:
+        """Poll the /keys endpoint. Returns list of key dicts or None on failure."""
         headers = {
-            "Authorization": f"Bearer {self._api_key}",
+            "Authorization": f"Bearer {self._management_key}",
             "User-Agent": "ai-usage-exporter/1.0",
             "Accept": "application/json",
         }
         try:
-            return http_get_json(OPENROUTER_CREDITS_URL, headers)
+            data = http_get_json(OPENROUTER_KEYS_URL, headers)
+            # Response shape: {"data": [key1, key2, ...]}
+            return data.get("data") if isinstance(data, dict) else None
         except Exception:
-            LOG.exception("openrouter /credits request failed")
+            LOG.exception("openrouter /keys request failed")
             return None
 
 
@@ -276,8 +285,17 @@ class Collector:
         self._codex_7d_reset: float = 0.0
         self._codex_limit_reached: int = 0
         self._codex_plan_type: str = "unknown"
-        self._openrouter_total: float = 0.0
-        self._openrouter_used: float = 0.0
+        # OpenRouter per-key state: list of dicts {name, usage, usage_daily, ...}
+        self._openrouter_keys: list[dict[str, Any]] = []
+        self._openrouter_total_usage: float = 0.0
+        self._openrouter_total_usage_daily: float = 0.0
+        self._openrouter_total_usage_weekly: float = 0.0
+        self._openrouter_total_usage_monthly: float = 0.0
+        self._openrouter_total_byok_usage: float = 0.0
+        self._openrouter_total_byok_usage_daily: float = 0.0
+        self._openrouter_total_byok_usage_weekly: float = 0.0
+        self._openrouter_total_byok_usage_monthly: float = 0.0
+        self._openrouter_keys_enabled: int = 0
         self._codex_scrape_success: int = 0
         self._openrouter_scrape_success: int = 0
         self._codex_scrape_duration: float = 0.0
@@ -346,17 +364,25 @@ class Collector:
     def _scrape_openrouter(self) -> None:
         started = time.time()
         try:
-            data = self._openrouter.poll()
-            if data is None:
+            keys = self._openrouter.poll()
+            if keys is None:
                 self._openrouter_scrape_success = 0
                 self._openrouter_scrape_duration = time.time() - started
                 return
 
             self._openrouter_scrape_success = 1
-            # Response wraps credits in a "data" object
-            credits_data = data.get("data") or data
-            self._openrouter_total = float(credits_data.get("total_credits", 0))
-            self._openrouter_used = float(credits_data.get("total_usage", 0))
+            self._openrouter_keys = keys
+
+            # Compute account-level aggregates from per-key data
+            self._openrouter_total_usage = sum(float(k.get("usage") or 0) for k in keys)
+            self._openrouter_total_usage_daily = sum(float(k.get("usage_daily") or 0) for k in keys)
+            self._openrouter_total_usage_weekly = sum(float(k.get("usage_weekly") or 0) for k in keys)
+            self._openrouter_total_usage_monthly = sum(float(k.get("usage_monthly") or 0) for k in keys)
+            self._openrouter_total_byok_usage = sum(float(k.get("byok_usage") or 0) for k in keys)
+            self._openrouter_total_byok_usage_daily = sum(float(k.get("byok_usage_daily") or 0) for k in keys)
+            self._openrouter_total_byok_usage_weekly = sum(float(k.get("byok_usage_weekly") or 0) for k in keys)
+            self._openrouter_total_byok_usage_monthly = sum(float(k.get("byok_usage_monthly") or 0) for k in keys)
+            self._openrouter_keys_enabled = sum(1 for k in keys if not k.get("disabled"))
 
         except Exception:
             self._openrouter_scrape_success = 0
@@ -384,13 +410,77 @@ class Collector:
             "# TYPE ai_codex_plan_type gauge",
             f'ai_codex_plan_type{labels(plan_type=self._codex_plan_type)} 1',
 
-            "# HELP ai_openrouter_credits_total Total OpenRouter credits purchased.",
-            "# TYPE ai_openrouter_credits_total gauge",
-            f"ai_openrouter_credits_total {self._openrouter_total}",
+            # OpenRouter per-key metrics
+            "# HELP ai_openrouter_key_usage Lifetime OpenRouter spend for each key (USD, management-key view).",
+            "# TYPE ai_openrouter_key_usage gauge",
+            "# HELP ai_openrouter_key_usage_daily OpenRouter spend today for each key (USD).",
+            "# TYPE ai_openrouter_key_usage_daily gauge",
+            "# HELP ai_openrouter_key_usage_weekly OpenRouter spend this week for each key (USD).",
+            "# TYPE ai_openrouter_key_usage_weekly gauge",
+            "# HELP ai_openrouter_key_usage_monthly OpenRouter spend this month for each key (USD).",
+            "# TYPE ai_openrouter_key_usage_monthly gauge",
+            "# HELP ai_openrouter_key_byok_usage Lifetime BYOK spend for each key (USD, user-owned model keys).",
+            "# TYPE ai_openrouter_key_byok_usage gauge",
+            "# HELP ai_openrouter_key_limit Spend limit configured for each key (USD, 0 = unlimited).",
+            "# TYPE ai_openrouter_key_limit gauge",
+            "# HELP ai_openrouter_key_limit_remaining Remaining spend budget in current period for each key (USD, 0 = unlimited).",
+            "# TYPE ai_openrouter_key_limit_remaining gauge",
+            "# HELP ai_openrouter_key_enabled Whether the key is enabled (1) or disabled (0).",
+            "# TYPE ai_openrouter_key_enabled gauge",
+        ]
 
-            "# HELP ai_openrouter_credits_used OpenRouter credits consumed.",
-            "# TYPE ai_openrouter_credits_used gauge",
-            f"ai_openrouter_credits_used {self._openrouter_used}",
+        # Per-key series (only emitted when we have data)
+        for k in self._openrouter_keys:
+            name = prom_escape(str(k.get("name") or "unknown"))
+            lbl = labels(key=name)
+            lines.extend([
+                f"ai_openrouter_key_usage{lbl} {float(k.get('usage') or 0)}",
+                f"ai_openrouter_key_usage_daily{lbl} {float(k.get('usage_daily') or 0)}",
+                f"ai_openrouter_key_usage_weekly{lbl} {float(k.get('usage_weekly') or 0)}",
+                f"ai_openrouter_key_usage_monthly{lbl} {float(k.get('usage_monthly') or 0)}",
+                f"ai_openrouter_key_byok_usage{lbl} {float(k.get('byok_usage') or 0)}",
+                f"ai_openrouter_key_limit{lbl} {float(k.get('limit') or 0)}",
+                f"ai_openrouter_key_limit_remaining{lbl} {float(k.get('limit_remaining') or 0)}",
+                f"ai_openrouter_key_enabled{lbl} {0 if k.get('disabled') else 1}",
+            ])
+
+        # Account-level aggregates (sum across all keys)
+        lines.extend([
+            "# HELP ai_openrouter_total_usage Total OpenRouter spend across all keys (USD).",
+            "# TYPE ai_openrouter_total_usage gauge",
+            f"ai_openrouter_total_usage {self._openrouter_total_usage}",
+
+            "# HELP ai_openrouter_total_usage_daily Aggregated OpenRouter spend today across all keys (USD).",
+            "# TYPE ai_openrouter_total_usage_daily gauge",
+            f"ai_openrouter_total_usage_daily {self._openrouter_total_usage_daily}",
+
+            "# HELP ai_openrouter_total_usage_weekly Aggregated OpenRouter spend this week across all keys (USD).",
+            "# TYPE ai_openrouter_total_usage_weekly gauge",
+            f"ai_openrouter_total_usage_weekly {self._openrouter_total_usage_weekly}",
+
+            "# HELP ai_openrouter_total_usage_monthly Aggregated OpenRouter spend this month across all keys (USD).",
+            "# TYPE ai_openrouter_total_usage_monthly gauge",
+            f"ai_openrouter_total_usage_monthly {self._openrouter_total_usage_monthly}",
+
+            "# HELP ai_openrouter_total_byok_usage Total BYOK spend across all keys (USD, user-owned model keys).",
+            "# TYPE ai_openrouter_total_byok_usage gauge",
+            f"ai_openrouter_total_byok_usage {self._openrouter_total_byok_usage}",
+
+            "# HELP ai_openrouter_total_byok_usage_daily Aggregated BYOK spend today across all keys (USD).",
+            "# TYPE ai_openrouter_total_byok_usage_daily gauge",
+            f"ai_openrouter_total_byok_usage_daily {self._openrouter_total_byok_usage_daily}",
+
+            "# HELP ai_openrouter_total_byok_usage_weekly Aggregated BYOK spend this week across all keys (USD).",
+            "# TYPE ai_openrouter_total_byok_usage_weekly gauge",
+            f"ai_openrouter_total_byok_usage_weekly {self._openrouter_total_byok_usage_weekly}",
+
+            "# HELP ai_openrouter_total_byok_usage_monthly Aggregated BYOK spend this month across all keys (USD).",
+            "# TYPE ai_openrouter_total_byok_usage_monthly gauge",
+            f"ai_openrouter_total_byok_usage_monthly {self._openrouter_total_byok_usage_monthly}",
+
+            "# HELP ai_openrouter_keys_enabled Number of enabled OpenRouter keys in the organisation.",
+            "# TYPE ai_openrouter_keys_enabled gauge",
+            f"ai_openrouter_keys_enabled {self._openrouter_keys_enabled}",
 
             "# HELP ai_exporter_scrape_success Whether the last scrape of each source succeeded.",
             "# TYPE ai_exporter_scrape_success gauge",
@@ -401,7 +491,7 @@ class Collector:
             "# TYPE ai_exporter_scrape_duration_seconds gauge",
             f'ai_exporter_scrape_duration_seconds{labels(source="codex")} {self._codex_scrape_duration:.3f}',
             f'ai_exporter_scrape_duration_seconds{labels(source="openrouter")} {self._openrouter_scrape_duration:.3f}',
-        ]
+        ])
         return "\n".join(lines) + "\n"
 
 
@@ -443,7 +533,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--codex-secret-file", required=True,
                    help="Path to age-decrypted Codex OAuth JSON credential file")
     p.add_argument("--openrouter-env-file", required=False, default=None,
-                   help="Path to file containing OPENROUTER_API_KEY=<key>")
+                   help="Path to file containing OPENROUTER_MANAGEMENT_KEY=<key>")
     p.add_argument("--listen-address", default="127.0.0.1:9188",
                    help="Metrics listen address (default: 127.0.0.1:9188)")
     p.add_argument("--poll-interval", type=int, default=DEFAULT_POLL_INTERVAL,
@@ -458,13 +548,14 @@ def main() -> None:
     # Load Codex OAuth credential
     token_mgr = OAuthTokenManager(args.codex_secret_file)
 
-    # Load OpenRouter API key
+    # Load OpenRouter management key
     openrouter_key = ""
     if args.openrouter_env_file:
         env = parse_env_file(args.openrouter_env_file)
-        openrouter_key = env.get("OPENROUTER_API_KEY", "")
+        # Prefer the management key; fall back to regular API key for backward compat
+        openrouter_key = env.get("OPENROUTER_MANAGEMENT_KEY") or env.get("OPENROUTER_API_KEY", "")
         if not openrouter_key:
-            LOG.warning("OPENROUTER_API_KEY not found in %s; OpenRouter metrics will fail",
+            LOG.warning("OPENROUTER_MANAGEMENT_KEY not found in %s; OpenRouter metrics will fail",
                         args.openrouter_env_file)
     else:
         LOG.warning("No OpenRouter env file provided; OpenRouter metrics will be unavailable")
