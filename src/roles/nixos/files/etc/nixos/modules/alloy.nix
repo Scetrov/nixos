@@ -78,6 +78,13 @@
       }
 
       rule {
+        source_labels = ["__journal__systemd_unit"]
+        regex         = "ai-usage-exporter\\.service"
+        replacement   = "ai-usage-exporter"
+        target_label  = "service"
+      }
+
+      rule {
         source_labels = ["__journal_syslog_identifier"]
         target_label  = "syslog_identifier"
       }
@@ -124,6 +131,15 @@
       clustering {
         enabled = false
       }
+    }
+
+    prometheus.scrape "ai_usage" {
+      targets = [{
+        __address__ = "127.0.0.1:9188",
+      }]
+      forward_to = [prometheus.remote_write.central.receiver]
+      job_name = "ai-usage"
+      scrape_interval = "15s"
     }
 
     prometheus.remote_write "central" {

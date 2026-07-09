@@ -175,3 +175,9 @@ resource "grafana_dashboard" "system_resources" {
   config_json = file("${local.grafana_portal.source_root}/system-resources.json")
   overwrite   = true
 }
+
+resource "grafana_dashboard" "ai_usage" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/ai-usage.json")
+  overwrite   = true
+}

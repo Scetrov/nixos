@@ -23,6 +23,7 @@
     ./modules/user-scetrov-syncthing.nix
     ./modules/grafana-mcp.nix
     ./modules/github-repository-observability.nix
+    ./modules/ai-usage.nix
     ./modules/home-assistant.nix
     ./modules/unifi-network-logs.nix
   ];
@@ -70,6 +71,8 @@
   services.grafana-mcp = {
     enable = true;
   };
+  scetrov.services.ai-usage.enable = true;
+
   scetrov.services.github-repository-observability = {
     enable = true;
     owners = [
