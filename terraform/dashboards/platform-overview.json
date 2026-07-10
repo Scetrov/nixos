@@ -4,11 +4,12 @@
       {
         "builtIn": 1,
         "datasource": {
-          "type": "datasource",
+          "type": "grafana",
           "uid": "grafana"
         },
         "enable": true,
         "hide": true,
+        "iconColor": "",
         "name": "Annotations & Alerts",
         "type": "dashboard"
       }
@@ -17,20 +18,40 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": null,
   "links": [
     {
+      "asDropdown": false,
+      "icon": "",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": false,
       "title": "Service Catalog",
+      "tooltip": "",
       "type": "link",
       "url": "/grafana/d/ops-service-catalog/operations-service-catalog"
     },
     {
+      "asDropdown": false,
+      "icon": "",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": false,
       "title": "System Resources",
+      "tooltip": "",
       "type": "link",
       "url": "/grafana/d/system-resources/system-resources"
     },
     {
+      "asDropdown": false,
+      "icon": "",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": false,
       "title": "Grafana Explore",
+      "tooltip": "",
       "type": "link",
       "url": "/grafana/explore"
     },
@@ -95,7 +116,7 @@
             "steps": [
               {
                 "color": "#FF3E8D",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#008791",
@@ -104,14 +125,13 @@
             ]
           },
           "unit": "none"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "x": 0,
-        "y": 0,
+        "h": 4,
         "w": 4,
-        "h": 4
+        "x": 0,
+        "y": 0
       },
       "id": 2,
       "options": {
@@ -119,6 +139,7 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -126,8 +147,11 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -179,7 +203,7 @@
             "steps": [
               {
                 "color": "#FF3E8D",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#008791",
@@ -188,14 +212,13 @@
             ]
           },
           "unit": "none"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "x": 4,
-        "y": 0,
+        "h": 4,
         "w": 4,
-        "h": 4
+        "x": 4,
+        "y": 0
       },
       "id": 3,
       "options": {
@@ -203,6 +226,7 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -210,8 +234,11 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -263,7 +290,7 @@
             "steps": [
               {
                 "color": "#FF3E8D",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#008791",
@@ -272,14 +299,13 @@
             ]
           },
           "unit": "none"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "x": 8,
-        "y": 0,
+        "h": 4,
         "w": 4,
-        "h": 4
+        "x": 8,
+        "y": 0
       },
       "id": 4,
       "options": {
@@ -287,6 +313,7 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -294,8 +321,11 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -347,7 +377,7 @@
             "steps": [
               {
                 "color": "#FF3E8D",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#008791",
@@ -356,14 +386,13 @@
             ]
           },
           "unit": "none"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "x": 12,
-        "y": 0,
+        "h": 4,
         "w": 4,
-        "h": 4
+        "x": 12,
+        "y": 0
       },
       "id": 5,
       "options": {
@@ -371,6 +400,7 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -378,8 +408,11 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -431,7 +464,7 @@
             "steps": [
               {
                 "color": "#FF3E8D",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#008791",
@@ -440,14 +473,13 @@
             ]
           },
           "unit": "none"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "x": 16,
-        "y": 0,
+        "h": 4,
         "w": 4,
-        "h": 4
+        "x": 16,
+        "y": 0
       },
       "id": 10,
       "options": {
@@ -455,6 +487,7 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -462,8 +495,11 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -497,7 +533,7 @@
             "steps": [
               {
                 "color": "#FF3E8D",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#E6C65B",
@@ -510,14 +546,13 @@
             ]
           },
           "unit": "none"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "x": 20,
-        "y": 0,
+        "h": 4,
         "w": 4,
-        "h": 4
+        "x": 20,
+        "y": 0
       },
       "id": 6,
       "options": {
@@ -525,6 +560,7 @@
         "graphMode": "area",
         "justifyMode": "center",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -532,8 +568,11 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -565,10 +604,19 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisLabel": "",
             "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 4,
@@ -576,6 +624,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -585,20 +634,36 @@
               "mode": "off"
             }
           },
-          "min": 0,
           "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "percent"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "x": 0,
-        "y": 4,
+        "h": 8,
         "w": 12,
-        "h": 8
+        "x": 0,
+        "y": 4
       },
       "id": 8,
       "options": {
+        "annotations": {
+          "clustering": -1,
+          "multiLane": false
+        },
         "legend": {
           "calcs": [],
           "displayMode": "list",
@@ -606,10 +671,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -633,57 +700,48 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "fixedColor": "#855F90",
+            "mode": "fixed"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisPlacement": "auto",
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 4,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+          "decimals": 2,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#855F90",
+                "value": 0
+              }
+            ]
           },
-          "min": 0,
-          "max": 100,
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "x": 6,
-        "y": 12,
-        "w": 6,
-        "h": 8
-      },
-      "id": 9,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "unit": "currencyUSD"
         }
       },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 12,
+        "y": 4
+      },
+      "id": 31,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -691,13 +749,469 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))",
-          "legendFormat": "{{host}}",
+          "expr": "ai_openrouter_total_usage_weekly",
+          "instant": true,
+          "legendFormat": "Weekly",
+          "range": false,
           "refId": "A"
         }
       ],
-      "title": "Memory Used by Host",
-      "type": "timeseries"
+      "title": "This Week (All Keys)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#BB5191",
+            "mode": "fixed"
+          },
+          "decimals": 2,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#BB5191",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 15,
+        "y": 4
+      },
+      "id": 32,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "ai_openrouter_total_usage_monthly",
+          "instant": true,
+          "legendFormat": "Monthly",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Monthly Spend (All Keys)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "max": 100,
+          "min": 0,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 20
+              },
+              {
+                "color": "#008791",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 4
+      },
+      "id": 33,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "100 - ai_codex_window_used_percent{window=\"5h\"}",
+          "instant": true,
+          "legendFormat": "5H Remaining",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "5-Hour Window",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "max": 100,
+          "min": 0,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 20
+              },
+              {
+                "color": "#008791",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 4
+      },
+      "id": 34,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "100 - ai_codex_window_used_percent{window=\"7d\"}",
+          "instant": true,
+          "legendFormat": "7D Remaining",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "7-Day Window",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 1
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 8
+      },
+      "id": 28,
+      "links": [
+        {
+          "targetBlank": false,
+          "title": "GitHub Repository Health",
+          "url": "/d/github-repo-health/github-repository-health"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "sum(github_repository_open_pull_requests)",
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "GitHub Open PRs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 1
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 8
+      },
+      "id": 29,
+      "links": [
+        {
+          "targetBlank": false,
+          "title": "GitHub Repository Health",
+          "url": "/d/github-repo-health/github-repository-health"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "sum(github_repository_dependabot_open_alerts)",
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Dependabot Alerts",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 1
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 8
+      },
+      "id": 30,
+      "links": [
+        {
+          "targetBlank": false,
+          "title": "GitHub Repository Health",
+          "url": "/d/github-repo-health/github-repository-health"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "sum(github_repository_code_scanning_open_alerts)",
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Code Scan Alerts",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -713,10 +1227,19 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisLabel": "",
             "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 3,
@@ -724,6 +1247,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -733,20 +1257,36 @@
               "mode": "off"
             }
           },
-          "unit": "percent",
+          "max": 100,
           "min": 0,
-          "max": 100
-        },
-        "overrides": []
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        }
       },
       "gridPos": {
-        "x": 0,
-        "y": 12,
+        "h": 8,
         "w": 6,
-        "h": 8
+        "x": 0,
+        "y": 12
       },
       "id": 11,
       "options": {
+        "annotations": {
+          "clustering": -1,
+          "multiLane": false
+        },
         "legend": {
           "calcs": [],
           "displayMode": "list",
@@ -754,10 +1294,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -785,20 +1327,30 @@
           },
           "custom": {
             "axisBorderShow": false,
-            "axisCenteredZero": true,
+            "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisLabel": "",
             "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 12,
+            "fillOpacity": 10,
             "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 3,
+            "pointSize": 4,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
-            "spanNulls": true,
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -807,18 +1359,36 @@
               "mode": "off"
             }
           },
-          "unit": "Bps"
-        },
-        "overrides": []
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        }
       },
       "gridPos": {
-        "x": 6,
-        "y": 20,
+        "h": 8,
         "w": 6,
-        "h": 8
+        "x": 6,
+        "y": 12
       },
-      "id": 12,
+      "id": 9,
       "options": {
+        "annotations": {
+          "clustering": -1,
+          "multiLane": false
+        },
         "legend": {
           "calcs": [],
           "displayMode": "list",
@@ -826,10 +1396,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -837,23 +1409,629 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by (host, device) (rate(node_disk_read_bytes_total{device!~\"loop.*|ram.*|fd.*|sr.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} read",
+          "expr": "100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))",
+          "legendFormat": "{{host}}",
           "refId": "A"
+        }
+      ],
+      "title": "Memory Used by Host",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 801
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 1201
+              }
+            ]
+          },
+          "unit": "ppm"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 12,
+        "y": 12
+      },
+      "id": 22,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "-sum by (host, device) (rate(node_disk_written_bytes_total{device!~\"loop.*|ram.*|fd.*|sr.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} write",
-          "refId": "B"
+          "expr": "max(homeassistant_sensor_carbon_dioxide_ppm{job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_carbon_dioxide\"})",
+          "legendFormat": "CO2",
+          "range": true,
+          "refId": "A"
         }
       ],
-      "title": "Disk Throughput by Host / Device",
-      "type": "timeseries"
+      "title": "CO2",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 12.1
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 35.5
+              }
+            ]
+          },
+          "unit": "\u00b5g/m\u00b3"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 15,
+        "y": 12
+      },
+      "id": 23,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "max({__name__=~\"homeassistant_sensor_pm25_.*\",job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_pm2_5\"})",
+          "legendFormat": "PM2.5",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "PM2.5",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#008791",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 55
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 155
+              }
+            ]
+          },
+          "unit": "\u00b5g/m\u00b3"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 12
+      },
+      "id": 24,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "max({__name__=~\"homeassistant_sensor_pm10_.*\",job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_pm10\"})",
+          "legendFormat": "PM10",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "PM10",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 15
+              },
+              {
+                "color": "#008791",
+                "value": 18
+              },
+              {
+                "color": "#E6C65B",
+                "value": 25
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 30
+              }
+            ]
+          },
+          "unit": "celsius"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 12
+      },
+      "id": 25,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "avg(homeassistant_sensor_temperature_celsius{job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.thermo_hygrometer_office_temperature\"})",
+          "legendFormat": "Office",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Office Temperature",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 15
+              },
+              {
+                "color": "#008791",
+                "value": 18
+              },
+              {
+                "color": "#E6C65B",
+                "value": 25
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 30
+              }
+            ]
+          },
+          "unit": "celsius"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 12,
+        "y": 16
+      },
+      "id": 18,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "avg(homeassistant_sensor_temperature_celsius{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](utility_room_sensor_temperature|upstairs_hallway_sensor_temperature|kitchen_sensor_temperature|bathroom_sensor_temperature|wifi_smart_switch_temperature|wifi_smart_switch_temperature_2|thermo_hygrometer_living_area_temperature)\"})",
+          "legendFormat": "Avg Indoor Temperature",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Avg Indoor Temperature",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": -5
+              },
+              {
+                "color": "#008791",
+                "value": 10
+              },
+              {
+                "color": "#E6C65B",
+                "value": 26
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 35
+              }
+            ]
+          },
+          "unit": "celsius"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 15,
+        "y": 16
+      },
+      "id": 19,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "avg(homeassistant_sensor_temperature_celsius{job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.thermo_hygrometer_outside_shed_temperature\"})",
+          "legendFormat": "Outside Shed",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Avg Outdoor Temperature",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 25
+              },
+              {
+                "color": "#008791",
+                "value": 40
+              },
+              {
+                "color": "#E6C65B",
+                "value": 56
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 70
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 16
+      },
+      "id": 20,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "avg(homeassistant_sensor_humidity_percent{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](wifi_smart_switch_humidity|wifi_smart_switch_humidity_2|thermo_hygrometer_living_area_humidity)\"})",
+          "legendFormat": "Avg Indoor Humidity",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Avg Indoor Humidity",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 15
+              },
+              {
+                "color": "#008791",
+                "value": 30
+              },
+              {
+                "color": "#E6C65B",
+                "value": 71
+              },
+              {
+                "color": "#FF3E8D",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 16
+      },
+      "id": 21,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "avg(homeassistant_sensor_humidity_percent{job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.thermo_hygrometer_outside_shed_humidity\"})",
+          "legendFormat": "Outside Shed",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Avg Outdoor Humidity",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -869,10 +2047,19 @@
             "axisBorderShow": false,
             "axisCenteredZero": true,
             "axisColorMode": "text",
+            "axisLabel": "",
             "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 12,
             "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 3,
@@ -880,6 +2067,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -889,18 +2077,34 @@
               "mode": "off"
             }
           },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "ops"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "x": 0,
-        "y": 20,
+        "h": 8,
         "w": 6,
-        "h": 8
+        "x": 0,
+        "y": 20
       },
       "id": 13,
       "options": {
+        "annotations": {
+          "clustering": -1,
+          "multiLane": false
+        },
         "legend": {
           "calcs": [],
           "displayMode": "list",
@@ -908,10 +2112,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -949,12 +2155,21 @@
           },
           "custom": {
             "axisBorderShow": false,
-            "axisCenteredZero": false,
+            "axisCenteredZero": true,
             "axisColorMode": "text",
+            "axisLabel": "",
             "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 12,
             "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 3,
@@ -962,6 +2177,117 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "Bps"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 20
+      },
+      "id": 12,
+      "options": {
+        "annotations": {
+          "clustering": -1,
+          "multiLane": false
+        },
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "13.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "sum by (host, device) (rate(node_disk_read_bytes_total{device!~\"loop.*|ram.*|fd.*|sr.*\"}[$__rate_interval]))",
+          "legendFormat": "{{host}} / {{device}} read",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "-sum by (host, device) (rate(node_disk_written_bytes_total{device!~\"loop.*|ram.*|fd.*|sr.*\"}[$__rate_interval]))",
+          "legendFormat": "{{host}} / {{device}} write",
+          "refId": "B"
+        }
+      ],
+      "title": "Disk Throughput by Host / Device",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 3,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -971,20 +2297,36 @@
               "mode": "off"
             }
           },
-          "unit": "percent",
+          "max": 100,
           "min": 0,
-          "max": 100
-        },
-        "overrides": []
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        }
       },
       "gridPos": {
-        "x": 12,
-        "y": 16,
+        "h": 8,
         "w": 6,
-        "h": 8
+        "x": 12,
+        "y": 20
       },
       "id": 14,
       "options": {
+        "annotations": {
+          "clustering": -1,
+          "multiLane": false
+        },
         "legend": {
           "calcs": [],
           "displayMode": "list",
@@ -992,10 +2334,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -1025,10 +2369,19 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisLabel": "",
             "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 3,
@@ -1036,6 +2389,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1045,18 +2399,34 @@
               "mode": "off"
             }
           },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "ops"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "x": 18,
-        "y": 16,
+        "h": 8,
         "w": 6,
-        "h": 8
+        "x": 18,
+        "y": 20
       },
       "id": 15,
       "options": {
+        "annotations": {
+          "clustering": -1,
+          "multiLane": false
+        },
         "legend": {
           "calcs": [],
           "displayMode": "list",
@@ -1064,10 +2434,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "13.0.3",
       "targets": [
         {
           "datasource": {
@@ -1112,870 +2484,15 @@
       ],
       "title": "Network Errors / Drops by Host / Device",
       "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 1,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#FF3E8D",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": 15
-              },
-              {
-                "color": "#008791",
-                "value": 18
-              },
-              {
-                "color": "#E6C65B",
-                "value": 25
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 30
-              }
-            ]
-          },
-          "unit": "celsius"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 12,
-        "w": 3,
-        "h": 4
-      },
-      "id": 18,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "avg(homeassistant_sensor_temperature_celsius{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](utility_room_sensor_temperature|upstairs_hallway_sensor_temperature|kitchen_sensor_temperature|bathroom_sensor_temperature|wifi_smart_switch_temperature|wifi_smart_switch_temperature_2|thermo_hygrometer_living_area_temperature)\"})",
-          "legendFormat": "Avg Indoor Temperature",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Avg Indoor Temperature",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 1,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#FF3E8D",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": -5
-              },
-              {
-                "color": "#008791",
-                "value": 10
-              },
-              {
-                "color": "#E6C65B",
-                "value": 26
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 35
-              }
-            ]
-          },
-          "unit": "celsius"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "x": 15,
-        "y": 12,
-        "w": 3,
-        "h": 4
-      },
-      "id": 19,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "avg(homeassistant_sensor_temperature_celsius{job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.thermo_hygrometer_outside_shed_temperature\"})",
-          "legendFormat": "Outside Shed",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Avg Outdoor Temperature",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 0,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#FF3E8D",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": 25
-              },
-              {
-                "color": "#008791",
-                "value": 40
-              },
-              {
-                "color": "#E6C65B",
-                "value": 56
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 70
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "x": 18,
-        "y": 12,
-        "w": 3,
-        "h": 4
-      },
-      "id": 20,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "avg(homeassistant_sensor_humidity_percent{job=\"home-assistant\",service=\"home-assistant\",entity=~\"sensor[.](wifi_smart_switch_humidity|wifi_smart_switch_humidity_2|thermo_hygrometer_living_area_humidity)\"})",
-          "legendFormat": "Avg Indoor Humidity",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Avg Indoor Humidity",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 0,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#FF3E8D",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": 15
-              },
-              {
-                "color": "#008791",
-                "value": 30
-              },
-              {
-                "color": "#E6C65B",
-                "value": 71
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "x": 21,
-        "y": 12,
-        "w": 3,
-        "h": 4
-      },
-      "id": 21,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "avg(homeassistant_sensor_humidity_percent{job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.thermo_hygrometer_outside_shed_humidity\"})",
-          "legendFormat": "Outside Shed",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Avg Outdoor Humidity",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 0,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#008791",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": 801
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 1201
-              }
-            ]
-          },
-          "unit": "ppm"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 8,
-        "w": 3,
-        "h": 4
-      },
-      "id": 22,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "max(homeassistant_sensor_carbon_dioxide_ppm{job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_carbon_dioxide\"})",
-          "legendFormat": "CO2",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "CO2",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 1,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#008791",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": 12.1
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 35.5
-              }
-            ]
-          },
-          "unit": "\u00b5g/m\u00b3"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "x": 15,
-        "y": 8,
-        "w": 3,
-        "h": 4
-      },
-      "id": 23,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "max({__name__=~\"homeassistant_sensor_pm25_.*\",job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_pm2_5\"})",
-          "legendFormat": "PM2.5",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "PM2.5",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 1,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#008791",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": 55
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 155
-              }
-            ]
-          },
-          "unit": "\u00b5g/m\u00b3"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "x": 18,
-        "y": 8,
-        "w": 3,
-        "h": 4
-      },
-      "id": 24,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "max({__name__=~\"homeassistant_sensor_pm10_.*\",job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.wifi_smart_switch_pm10\"})",
-          "legendFormat": "PM10",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "PM10",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 1,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#FF3E8D",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": 15
-              },
-              {
-                "color": "#008791",
-                "value": 18
-              },
-              {
-                "color": "#E6C65B",
-                "value": 25
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 30
-              }
-            ]
-          },
-          "unit": "celsius"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "x": 21,
-        "y": 8,
-        "w": 3,
-        "h": 4
-      },
-      "id": 25,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "avg(homeassistant_sensor_temperature_celsius{job=\"home-assistant\",service=\"home-assistant\",entity=\"sensor.thermo_hygrometer_office_temperature\"})",
-          "legendFormat": "Office",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Office Temperature",
-      "type": "stat"
-    },
-    {
-      "id": 28,
-      "type": "stat",
-      "title": "GitHub Open PRs",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 4,
-        "w": 4,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "sum(github_repository_open_pull_requests)",
-          "instant": true,
-          "legendFormat": "",
-          "range": false,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#008791",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": 1
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 10
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value"
-      },
-      "links": [
-        {
-          "title": "GitHub Repository Health",
-          "url": "/d/github-repo-health/github-repository-health",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 29,
-      "type": "stat",
-      "title": "Dependabot Alerts",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "gridPos": {
-        "x": 16,
-        "y": 4,
-        "w": 4,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "sum(github_repository_dependabot_open_alerts)",
-          "instant": true,
-          "legendFormat": "",
-          "range": false,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#008791",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": 1
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 10
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value"
-      },
-      "links": [
-        {
-          "title": "GitHub Repository Health",
-          "url": "/d/github-repo-health/github-repository-health",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 30,
-      "type": "stat",
-      "title": "Code Scan Alerts",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "gridPos": {
-        "x": 20,
-        "y": 4,
-        "w": 4,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "sum(github_repository_code_scanning_open_alerts)",
-          "instant": true,
-          "legendFormat": "",
-          "range": false,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#008791",
-                "value": null
-              },
-              {
-                "color": "#E6C65B",
-                "value": 1
-              },
-              {
-                "color": "#FF3E8D",
-                "value": 10
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value"
-      },
-      "links": [
-        {
-          "title": "GitHub Repository Health",
-          "url": "/d/github-repo-health/github-repository-health",
-          "targetBlank": false
-        }
-      ]
     }
   ],
+  "preload": false,
   "refresh": "30s",
-  "schemaVersion": 39,
-  "style": "dark",
+  "schemaVersion": 42,
   "tags": [
     "operations-portal",
     "platform"
   ],
-  "templating": {
-    "list": []
-  },
   "time": {
     "from": "now-6h",
     "to": "now"
@@ -1994,6 +2511,5 @@
   },
   "timezone": "browser",
   "title": "Operations Platform Overview",
-  "uid": "ops-platform-overview",
-  "version": 10
+  "uid": "ops-platform-overview"
 }

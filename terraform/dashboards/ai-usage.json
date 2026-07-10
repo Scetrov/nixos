@@ -35,9 +35,9 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "ai_codex_window_used_percent{window=\"5h\"}",
+          "expr": "100 - ai_codex_window_used_percent{window=\"5h\"}",
           "instant": true,
-          "legendFormat": "5H Used",
+          "legendFormat": "5H Remaining",
           "range": false,
           "refId": "A"
         }
@@ -54,16 +54,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#008791",
+                "color": "#FF3E8D",
                 "value": null
               },
               {
                 "color": "#E6C65B",
-                "value": 50
+                "value": 20
               },
               {
-                "color": "#FF3E8D",
-                "value": 80
+                "color": "#008791",
+                "value": 50
               }
             ]
           },
@@ -108,9 +108,9 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "ai_codex_window_used_percent{window=\"7d\"}",
+          "expr": "100 - ai_codex_window_used_percent{window=\"7d\"}",
           "instant": true,
-          "legendFormat": "7D Used",
+          "legendFormat": "7D Remaining",
           "range": false,
           "refId": "A"
         }
@@ -127,16 +127,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#008791",
+                "color": "#FF3E8D",
                 "value": null
               },
               {
                 "color": "#E6C65B",
-                "value": 50
+                "value": 20
               },
               {
-                "color": "#FF3E8D",
-                "value": 80
+                "color": "#008791",
+                "value": 50
               }
             ]
           },
