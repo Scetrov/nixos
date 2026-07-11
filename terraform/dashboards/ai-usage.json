@@ -871,7 +871,7 @@
     {
       "id": 8,
       "type": "timeseries",
-      "title": "OpenRouter Per-Key Usage (Lifetime)",
+      "title": "OpenRouter Per-Key Usage (Daily)",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
@@ -889,7 +889,8 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "ai_openrouter_key_usage",
+          "expr": "sum by (key) (clamp_min(delta(ai_openrouter_key_usage[1d]), 0))",
+          "interval": "1d",
           "legendFormat": "{{key}}",
           "range": true,
           "refId": "A"
@@ -902,15 +903,20 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "gradientMode": "scheme",
+            "drawStyle": "bars",
+            "lineInterpolation": "linear",
+            "lineWidth": 0,
+            "fillOpacity": 100,
+            "gradientMode": "none",
             "showPoints": "never",
+            "barAlignment": 0,
             "axisPlacement": "auto",
             "scaleDistribution": {
               "type": "linear"
+            },
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
             }
           }
         },
@@ -927,7 +933,7 @@
           "placement": "bottom",
           "calcs": [
             "lastNotNull",
-            "max"
+            "sum"
           ]
         }
       }
