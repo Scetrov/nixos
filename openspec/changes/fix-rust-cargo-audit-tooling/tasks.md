@@ -14,11 +14,11 @@
 
 - [x] 3.1 Review the diff and scan all changed files for secrets, generated state, dangling endpoints, or unrelated changes
 - [x] 3.2 Stage the OpenSpec artifacts and implementation files required for commit
-- [ ] 3.3 Deploy the NixOS change with `./scripts/play.sh --limit bullit --tags nixos`
+- [x] 3.3 Deploy the NixOS change with `./scripts/play.sh --limit bullit --tags nixos`
 
 ## 4. Verify the Environment
 
-- [ ] 4.1 In a fresh login shell, verify `rustc --version` and `cargo --version` both report 1.97.0
-- [ ] 4.2 Verify `command -v rustc` and `command -v cargo` resolve through the deployed Nix profile and not `~/.rustup`
-- [ ] 4.3 Verify `cargo audit --version` succeeds using the declaratively installed cargo-audit executable
-- [ ] 4.4 Record validation results and confirm the broken stale-interpreter behavior no longer reproduces
+- [x] 4.1 In a fresh login shell, verify `rustc --version` and `cargo --version` both report 1.97.0
+- [x] 4.2 Verify `command -v rustc` and `command -v cargo` resolve through the deployed Nix profile and not `~/.rustup`
+- [x] 4.3 Verify `cargo audit --version` succeeds using the declaratively installed cargo-audit executable
+- [x] 4.4 Record validation results and confirm the broken stale-interpreter behavior no longer reproduces
