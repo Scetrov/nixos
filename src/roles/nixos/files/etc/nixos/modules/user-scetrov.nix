@@ -10,6 +10,7 @@ let
   };
   unstable = import <nixos-unstable> { config = baseconfig; };
   google-antigravity-cli = pkgs.callPackage ../pkgs/google-antigravity-cli.nix { };
+  rust-1_97 = pkgs.callPackage ../pkgs/rust-1_97.nix { };
 in
 {
   age.secrets.user_password_hashed.file = /root/secrets/user_password_hashed.age;
@@ -54,8 +55,9 @@ in
         pkg-config
         powershell
         ripgrep
-        rustup
+        rust-1_97
         tmux
+        unstable.cargo-audit
         unstable.chezmoi
         unstable.devenv
         unstable.dotnetCorePackages.sdk_10_0-bin
