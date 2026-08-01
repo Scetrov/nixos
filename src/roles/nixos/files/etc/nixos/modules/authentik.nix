@@ -101,7 +101,7 @@ in
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "ghcr.io/goauthentik/server:2025.10";
+      default = "ghcr.io/goauthentik/server:2026.5";
       description = "Container image used for the Authentik server and worker.";
     };
 

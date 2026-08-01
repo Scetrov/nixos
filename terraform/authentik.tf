@@ -245,6 +245,7 @@ resource "authentik_application" "metrics" {
   name              = "Metrics"
   slug              = "metrics"
   protocol_provider = authentik_provider_proxy.metrics.id
+  meta_hide         = true
   meta_launch_url   = "blank://blank"
 }
 
@@ -304,6 +305,7 @@ resource "authentik_application" "homeassistant_oidc" {
   name              = "Home Assistant OIDC"
   slug              = "home-assistant-oidc"
   protocol_provider = authentik_provider_oauth2.homeassistant_oidc.id
+  meta_hide         = true
   meta_launch_url   = "blank://blank"
   meta_icon         = "/static/dist/branding/home-assistant.png"
 }

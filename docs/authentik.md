@@ -24,8 +24,8 @@ verified in this environment.
 
 The current deployment uses:
 
-- Authentik image: `ghcr.io/goauthentik/server:2025.10`
-- Live API/schema version observed: `2025.10.4`
+- Authentik image: `ghcr.io/goauthentik/server:2026.5`
+- Live API/schema version observed: `2026.5.6`
 - PostgreSQL image: `postgres:16-alpine`
 
 Auth configuration is split across two layers:
