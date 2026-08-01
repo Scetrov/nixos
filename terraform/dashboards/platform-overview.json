@@ -891,14 +891,14 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "100 - ai_codex_window_used_percent{window=\"5h\"}",
+          "expr": "(100 - ai_codex_window_used_percent{window=\"weekly\"}) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"weekly\"} == 1)",
           "instant": true,
-          "legendFormat": "5H Remaining",
+          "legendFormat": "Weekly Remaining",
           "range": false,
           "refId": "A"
         }
       ],
-      "title": "5-Hour Window",
+      "title": "Weekly Remaining",
       "type": "stat"
     },
     {
@@ -909,29 +909,20 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "fixedColor": "#4B678C",
+            "mode": "fixed"
           },
-          "max": 100,
-          "min": 0,
           "noValue": "N/A",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF3E8D",
-                "value": 0
-              },
-              {
-                "color": "#E6C65B",
-                "value": 20
-              },
-              {
-                "color": "#008791",
-                "value": 50
+                "color": "#4B678C",
+                "value": null
               }
             ]
           },
-          "unit": "percent"
+          "unit": "s"
         }
       },
       "gridPos": {
@@ -966,14 +957,14 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "100 - ai_codex_window_used_percent{window=\"7d\"}",
+          "expr": "(clamp_min(ai_codex_window_reset_timestamp_seconds{window=\"weekly\"} - time(), 0)) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"weekly\"} == 1)",
           "instant": true,
-          "legendFormat": "7D Remaining",
+          "legendFormat": "Weekly Reset",
           "range": false,
           "refId": "A"
         }
       ],
-      "title": "7-Day Window",
+      "title": "Weekly Reset",
       "type": "stat"
     },
     {

@@ -7,6 +7,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DASHBOARD_PATH = REPO_ROOT / "terraform/dashboards/ai-usage.json"
+PLATFORM_OVERVIEW_PATH = REPO_ROOT / "terraform/dashboards/platform-overview.json"
 GRAFANA_TF_PATH = REPO_ROOT / "terraform/grafana.tf"
 
 
@@ -164,6 +165,66 @@ class AIUsageDashboardTests(unittest.TestCase):
         self.assertIn('ai_exporter_last_success_timestamp_seconds{source="codex"}', expression)
         self.assertIn('ai_exporter_poll_interval_seconds{source="codex"}', expression)
         self.assertIn("2 * ai_exporter_poll_interval_seconds", expression)
+
+
+class PlatformOverviewAIUsageDashboardTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        dashboard = json.loads(PLATFORM_OVERVIEW_PATH.read_text(encoding="utf-8"))
+        cls.panels = {panel["id"]: panel for panel in dashboard["panels"]}
+
+    def assert_freshness_gated(self, expression: str) -> None:
+        self.assertIn('ai_codex_authenticated == 1', expression)
+        self.assertIn('ai_exporter_scrape_success{source="codex"} == 1', expression)
+        self.assertIn('ai_exporter_last_success_timestamp_seconds{source="codex"}', expression)
+        self.assertIn('ai_exporter_poll_interval_seconds{source="codex"}', expression)
+        self.assertIn("2 * ai_exporter_poll_interval_seconds", expression)
+        self.assertIn('ai_codex_window_present{window="weekly"} == 1', expression)
+
+    def test_weekly_remaining_panel_uses_semantic_freshness_gated_usage(self) -> None:
+        panel = self.panels[33]
+        self.assertEqual(panel["title"], "Weekly Remaining")
+        self.assertEqual(panel["fieldConfig"]["defaults"]["unit"], "percent")
+        self.assertEqual(panel["fieldConfig"]["defaults"]["noValue"], "N/A")
+        self.assertEqual(panel["targets"][0]["datasource"]["uid"], "mimir")
+        self.assertEqual(
+            panel["fieldConfig"]["defaults"]["thresholds"]["steps"],
+            [
+                {"color": "#FF3E8D", "value": 0},
+                {"color": "#E6C65B", "value": 20},
+                {"color": "#008791", "value": 50},
+            ],
+        )
+        expression = panel["targets"][0]["expr"]
+        self.assertIn('100 - ai_codex_window_used_percent{window="weekly"}', expression)
+        self.assert_freshness_gated(expression)
+
+    def test_weekly_reset_panel_uses_non_negative_freshness_gated_countdown(self) -> None:
+        panel = self.panels[34]
+        self.assertEqual(panel["title"], "Weekly Reset")
+        self.assertEqual(panel["fieldConfig"]["defaults"]["unit"], "s")
+        self.assertEqual(panel["fieldConfig"]["defaults"]["noValue"], "N/A")
+        self.assertEqual(panel["targets"][0]["datasource"]["uid"], "mimir")
+        self.assertEqual(
+            panel["fieldConfig"]["defaults"]["color"],
+            {"fixedColor": "#4B678C", "mode": "fixed"},
+        )
+        expression = panel["targets"][0]["expr"]
+        self.assertIn(
+            'clamp_min(ai_codex_window_reset_timestamp_seconds{window="weekly"} - time(), 0)',
+            expression,
+        )
+        self.assert_freshness_gated(expression)
+
+    def test_retired_fixed_window_labels_are_absent(self) -> None:
+        expressions = "\n".join(
+            target["expr"]
+            for panel in self.panels.values()
+            for target in panel.get("targets", [])
+            if "expr" in target
+        )
+        self.assertNotIn('ai_codex_window_used_percent{window="5h"}', expressions)
+        self.assertNotIn('ai_codex_window_used_percent{window="7d"}', expressions)
 
 
 if __name__ == "__main__":
