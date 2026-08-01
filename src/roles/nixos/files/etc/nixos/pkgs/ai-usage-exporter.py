@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
-"""Prometheus exporter for AI usage metrics.
+"""Prometheus exporter for Codex and OpenRouter usage.
 
-Polls the Codex (ChatGPT) wham/usage endpoint and the OpenRouter /credits
-endpoint, exposing Prometheus gauges for subscription window usage, credit
-balances, and rate-limit status.
+Codex subscription limits are read from the local Codex app-server over its
+Unix WebSocket JSON-RPC interface. Codex owns managed ChatGPT authentication;
+this exporter never reads or refreshes OAuth credentials.
 
-Codex auth: reads an age-decrypted JSON file containing the full OAuth
-credential (access, refresh, expires, accountId).  Refreshes the access
-token in-process when within 5 minutes of expiry or on 401.
-
-OpenRouter auth: reads a KEY=VALUE environment file for OPENROUTER_API_KEY.
+OpenRouter usage remains collected from its management API.
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
 import logging
+import math
 import os
+import socket
 import ssl
+import struct
 import time
-import urllib.error
-import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -29,18 +28,21 @@ from threading import Event, Lock, Thread
 from typing import Any
 
 LOG = logging.getLogger("ai-usage-exporter")
-DEFAULT_POLL_INTERVAL = 60
+DEFAULT_POLL_INTERVAL = 900
 CODEX_STAGGER = 5
-REQUEST_TIMEOUT = 10
-TOKEN_REFRESH_MARGIN = 300  # 5 minutes in seconds
-
-CODEX_USAGE_URL = "https://chatgpt.com/backend-api/wham/usage"
+REQUEST_TIMEOUT = 10.0
+MAX_WEBSOCKET_PAYLOAD = 2 * 1024 * 1024
 OPENROUTER_KEYS_URL = "https://openrouter.ai/api/v1/keys"
+KNOWN_WINDOW_LABELS = {
+    300: "5h",
+    10080: "weekly",
+}
 
 
 # ---------------------------------------------------------------------------
 # Prometheus text helpers
 # ---------------------------------------------------------------------------
+
 
 def prom_escape(value: str) -> str:
     return value.replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
@@ -48,191 +50,381 @@ def prom_escape(value: str) -> str:
 
 def labels(**values: str | int | bool) -> str:
     parts = []
-    for k, v in values.items():
-        escaped = prom_escape(str(v).lower() if isinstance(v, bool) else str(v))
-        parts.append(f'{k}="{escaped}"')
+    for key, value in values.items():
+        escaped = prom_escape(str(value).lower() if isinstance(value, bool) else str(value))
+        parts.append(f'{key}="{escaped}"')
     return "{" + ",".join(parts) + "}"
 
 
+def metric_number(value: float | int) -> str:
+    return f"{value:.15g}" if isinstance(value, float) else str(value)
+
+
 # ---------------------------------------------------------------------------
-# OAuth token manager
+# Codex app-server protocol
 # ---------------------------------------------------------------------------
 
-@dataclass
-class OAuthCredential:
-    access_token: str
-    refresh_token: str
-    expires_ms: int  # milliseconds epoch
-    account_id: str
+
+class CodexError(RuntimeError):
+    """Base class for sanitized Codex collection failures."""
+
+
+class CodexTransportError(CodexError):
+    """The app-server transport could not be reached or completed."""
+
+
+class CodexProtocolError(CodexError):
+    """The app-server returned an invalid or unsuccessful protocol response."""
+
+
+class CodexSchemaError(CodexError):
+    """The app-server rate-limit payload did not satisfy the expected schema."""
+
+
+class RPCResponseError(Exception):
+    def __init__(self, code: int | None, message: str):
+        super().__init__("JSON-RPC request failed")
+        self.code = code
+        self.message = message
 
     @property
-    def expires_s(self) -> float:
-        return self.expires_ms / 1000.0
-
-    def needs_refresh(self) -> bool:
-        return time.time() >= self.expires_s - TOKEN_REFRESH_MARGIN
-
-
-class OAuthTokenManager:
-    """Manages Codex OAuth credentials with in-process token refresh."""
-
-    def __init__(self, secret_file: str):
-        self._secret_file = secret_file
-        self._lock = Lock()
-        self._cred = self._load_credential()
-        LOG.info("loaded OAuth credential for account %s (expires %s)",
-                 self._cred.account_id,
-                 time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self._cred.expires_s)))
-
-    def _load_credential(self) -> OAuthCredential:
-        """Load OAuth credential from the age-decrypted JSON secret file."""
-        with open(self._secret_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return OAuthCredential(
-            access_token=data["access"],
-            refresh_token=data["refresh"],
-            expires_ms=int(data["expires"]),
-            account_id=data["accountId"],
+    def transient(self) -> bool:
+        message = self.message.lower()
+        return self.code in {-32001, -32002, -32003} or any(
+            marker in message
+            for marker in ("overload", "server busy", "temporarily unavailable", "try again")
         )
 
-    @property
-    def credential(self) -> OAuthCredential:
-        with self._lock:
-            return self._cred
 
-    @property
-    def account_id(self) -> str:
-        return self._cred.account_id
+class UnixWebSocketJSONRPC:
+    """Minimal bounded WebSocket JSON-RPC client for a local Unix socket."""
 
-    def ensure_fresh(self) -> None:
-        """Refresh the access token if it's within the refresh margin of expiry."""
-        with self._lock:
-            if not self._cred.needs_refresh():
-                return
-            LOG.info("access token near expiry, refreshing...")
-            self._do_refresh()
+    def __init__(self, socket_path: str, timeout: float = REQUEST_TIMEOUT):
+        self._socket_path = socket_path
+        self._deadline = time.monotonic() + timeout
+        self._conn: socket.socket | None = None
+        self._request_id = 0
 
-    def handle_401(self) -> bool:
-        """Called on HTTP 401 from the API. Forces a token refresh.
+    def __enter__(self) -> "UnixWebSocketJSONRPC":
+        self.connect()
+        return self
 
-        Returns True if the token was refreshed, False if refresh failed.
-        """
-        with self._lock:
-            LOG.warning("received 401, forcing token refresh")
+    def __exit__(self, *_: object) -> None:
+        self.close()
+
+    def _remaining(self) -> float:
+        remaining = self._deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("app-server request deadline exceeded")
+        return remaining
+
+    def _recv_exact(self, length: int) -> bytes:
+        assert self._conn is not None
+        output = bytearray()
+        while len(output) < length:
+            self._conn.settimeout(self._remaining())
+            chunk = self._conn.recv(length - len(output))
+            if not chunk:
+                raise ConnectionError("app-server closed the connection")
+            output.extend(chunk)
+        return bytes(output)
+
+    def connect(self) -> None:
+        conn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        conn.settimeout(self._remaining())
+        conn.connect(self._socket_path)
+        self._conn = conn
+
+        key = base64.b64encode(os.urandom(16)).decode()
+        request = (
+            "GET / HTTP/1.1\r\n"
+            "Host: localhost\r\n"
+            "Upgrade: websocket\r\n"
+            "Connection: Upgrade\r\n"
+            f"Sec-WebSocket-Key: {key}\r\n"
+            "Sec-WebSocket-Version: 13\r\n\r\n"
+        )
+        conn.sendall(request.encode())
+        headers = bytearray()
+        while b"\r\n\r\n" not in headers:
+            headers.extend(self._recv_exact(1))
+            if len(headers) > 16384:
+                raise CodexProtocolError("oversized WebSocket response headers")
+        lines = bytes(headers).decode("latin-1").split("\r\n")
+        if not lines or not lines[0].startswith("HTTP/1.1 101"):
+            raise CodexProtocolError("WebSocket upgrade rejected")
+        header_map = {
+            name.strip().lower(): value.strip()
+            for line in lines[1:]
+            if ":" in line
+            for name, value in [line.split(":", 1)]
+        }
+        expected = base64.b64encode(
+            hashlib.sha1((key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode()).digest()
+        ).decode()
+        if header_map.get("sec-websocket-accept") != expected:
+            raise CodexProtocolError("invalid WebSocket accept header")
+
+    def close(self) -> None:
+        if self._conn is None:
+            return
+        try:
+            self._send_frame(0x8, struct.pack("!H", 1000))
+        except (OSError, TimeoutError):
+            pass
+        self._conn.close()
+        self._conn = None
+
+    def _send_frame(self, opcode: int, payload: bytes) -> None:
+        assert self._conn is not None
+        if len(payload) > MAX_WEBSOCKET_PAYLOAD:
+            raise CodexProtocolError("WebSocket request payload exceeds limit")
+        mask = os.urandom(4)
+        header = bytearray([0x80 | opcode])
+        length = len(payload)
+        if length < 126:
+            header.append(0x80 | length)
+        elif length < 65536:
+            header.extend((0x80 | 126,))
+            header.extend(struct.pack("!H", length))
+        else:
+            header.extend((0x80 | 127,))
+            header.extend(struct.pack("!Q", length))
+        masked = bytes(value ^ mask[index % 4] for index, value in enumerate(payload))
+        self._conn.settimeout(self._remaining())
+        self._conn.sendall(bytes(header) + mask + masked)
+
+    def _recv_frame(self) -> tuple[bool, int, bytes]:
+        first, second = self._recv_exact(2)
+        final = bool(first & 0x80)
+        opcode = first & 0x0F
+        length = second & 0x7F
+        if length == 126:
+            length = struct.unpack("!H", self._recv_exact(2))[0]
+        elif length == 127:
+            length = struct.unpack("!Q", self._recv_exact(8))[0]
+        if length > MAX_WEBSOCKET_PAYLOAD:
+            raise CodexProtocolError("WebSocket response payload exceeds limit")
+        mask = self._recv_exact(4) if second & 0x80 else None
+        payload = self._recv_exact(length)
+        if mask:
+            payload = bytes(value ^ mask[index % 4] for index, value in enumerate(payload))
+        return final, opcode, payload
+
+    def _recv_text(self) -> str:
+        fragments = bytearray()
+        expecting_continuation = False
+        while True:
+            final, opcode, payload = self._recv_frame()
+            if opcode == 0x8:
+                raise ConnectionError("app-server closed the WebSocket")
+            if opcode == 0x9:
+                self._send_frame(0xA, payload)
+                continue
+            if opcode == 0xA:
+                continue
+            if opcode == 0x1 and not expecting_continuation:
+                fragments.extend(payload)
+                expecting_continuation = not final
+            elif opcode == 0x0 and expecting_continuation:
+                fragments.extend(payload)
+                expecting_continuation = not final
+            else:
+                raise CodexProtocolError("unexpected WebSocket frame")
+            if final:
+                try:
+                    return bytes(fragments).decode("utf-8")
+                except UnicodeDecodeError as error:
+                    raise CodexProtocolError("non-UTF-8 WebSocket response") from error
+
+    def notify(self, method: str, params: dict[str, Any]) -> None:
+        request = {"method": method, "params": params}
+        self._send_frame(0x1, json.dumps(request, separators=(",", ":")).encode())
+
+    def rpc(self, method: str, params: dict[str, Any] | None = None) -> Any:
+        self._request_id += 1
+        request_id = self._request_id
+        request: dict[str, Any] = {"id": request_id, "method": method}
+        if params is not None:
+            request["params"] = params
+        self._send_frame(0x1, json.dumps(request, separators=(",", ":")).encode())
+        while True:
             try:
-                self._do_refresh()
-                return True
-            except Exception:
-                LOG.exception("token refresh after 401 failed")
-                return False
-
-    def _do_refresh(self) -> None:
-        """Perform the actual token refresh. Must be called with self._lock held."""
-        # We need the token URL; extract from the credential or use a default.
-        # The auth.json doesn't contain a token URL, so we derive it.
-        # OpenAI's OAuth token endpoint:
-        token_url = "https://auth.openai.com/oauth/token"
-
-        payload = urllib.parse.urlencode({
-            "grant_type": "refresh_token",
-            "refresh_token": self._cred.refresh_token,
-            "client_id": "app_chatgpt",
-        }).encode("utf-8")
-
-        req = urllib.request.Request(
-            token_url,
-            data=payload,
-            method="POST",
-            headers={
-                "Content-Type": "application/x-www-form-urlencoded",
-                "User-Agent": "ai-usage-exporter/1.0",
-            },
-        )
-
-        ctx = ssl.create_default_context()
-        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT, context=ctx) as resp:
-            data = json.loads(resp.read())
-
-        self._cred = OAuthCredential(
-            access_token=data["access_token"],
-            refresh_token=data.get("refresh_token", self._cred.refresh_token),
-            expires_ms=int(data.get("expires_in", 3600)) * 1000 + int(time.time() * 1000),
-            account_id=self._cred.account_id,
-        )
-        LOG.info("access token refreshed (new expiry %s)",
-                 time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self._cred.expires_s)))
+                response = json.loads(self._recv_text())
+            except json.JSONDecodeError as error:
+                raise CodexProtocolError("invalid JSON-RPC response") from error
+            if not isinstance(response, dict) or response.get("id") != request_id:
+                continue
+            if "error" in response:
+                error_data = response.get("error")
+                code = error_data.get("code") if isinstance(error_data, dict) else None
+                message = error_data.get("message", "") if isinstance(error_data, dict) else ""
+                raise RPCResponseError(code if isinstance(code, int) else None, str(message))
+            if "result" not in response:
+                raise CodexProtocolError(f"{method} response omitted result")
+            return response["result"]
 
 
-# ---------------------------------------------------------------------------
-# API clients
-# ---------------------------------------------------------------------------
-
-def http_get_json(url: str, headers: dict[str, str], timeout: int = REQUEST_TIMEOUT) -> dict:
-    """Perform an HTTP GET and return the parsed JSON response."""
-    req = urllib.request.Request(url, headers=headers, method="GET")
-    ctx = ssl.create_default_context()
-    with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
-        return json.loads(resp.read())
+@dataclass(frozen=True)
+class CodexPollResult:
+    authenticated: bool
+    rate_limits: dict[str, Any] | None
 
 
 class CodexClient:
-    """Polls the Codex wham/usage endpoint."""
+    """Reads account state and rate limits from local Codex app-server."""
 
-    def __init__(self, token_mgr: OAuthTokenManager):
-        self._token_mgr = token_mgr
+    def __init__(self, socket_path: str, timeout: float = REQUEST_TIMEOUT, retries: int = 1):
+        self._socket_path = socket_path
+        self._timeout = timeout
+        self._retries = retries
 
-    def poll(self) -> dict[str, Any] | None:
-        """Poll the usage endpoint. Returns parsed response or None on failure.
+    def poll(self) -> CodexPollResult:
+        deadline = time.monotonic() + self._timeout
+        for attempt in range(self._retries + 1):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise CodexTransportError("app-server polling deadline exceeded")
+            try:
+                with UnixWebSocketJSONRPC(self._socket_path, remaining) as rpc:
+                    rpc.rpc(
+                        "initialize",
+                        {
+                            "clientInfo": {
+                                "name": "ai-usage-exporter",
+                                "title": "AI usage exporter",
+                                "version": "1.0.0",
+                            },
+                            "capabilities": None,
+                        },
+                    )
+                    rpc.notify("initialized", {})
+                    account = rpc.rpc("account/read", {"refreshToken": False})
+                    if not isinstance(account, dict) or "account" not in account:
+                        raise CodexProtocolError("account/read returned an invalid result")
+                    if account["account"] is None:
+                        return CodexPollResult(authenticated=False, rate_limits=None)
+                    rate_limits = rpc.rpc("account/rateLimits/read")
+                    if not isinstance(rate_limits, dict):
+                        raise CodexProtocolError("account/rateLimits/read returned an invalid result")
+                    return CodexPollResult(authenticated=True, rate_limits=rate_limits)
+            except RPCResponseError as error:
+                if error.transient and attempt < self._retries:
+                    self._retry_pause(deadline)
+                    continue
+                raise CodexProtocolError(f"app-server JSON-RPC error code {error.code}") from error
+            except CodexError:
+                raise
+            except (OSError, TimeoutError, ConnectionError) as error:
+                if attempt < self._retries:
+                    self._retry_pause(deadline)
+                    continue
+                raise CodexTransportError("app-server transport failed") from error
+        raise CodexTransportError("app-server polling failed")
 
-        Handles token refresh on expiry/401.
-        """
-        self._token_mgr.ensure_fresh()
+    @staticmethod
+    def _retry_pause(deadline: float) -> None:
+        remaining = deadline - time.monotonic()
+        if remaining > 0:
+            time.sleep(min(0.2, remaining))
 
-        cred = self._token_mgr.credential
-        headers = {
-            "Authorization": f"Bearer {cred.access_token}",
-            "Chatgpt-Account-Id": self._token_mgr.account_id,
-            "User-Agent": "ai-usage-exporter/1.0",
-            "Accept": "application/json",
-        }
 
-        try:
-            data = http_get_json(CODEX_USAGE_URL, headers)
-            return data
-        except urllib.error.HTTPError as e:
-            if e.code == 401:
-                if self._token_mgr.handle_401():
-                    # Retry once with the new token
-                    cred = self._token_mgr.credential
-                    headers["Authorization"] = f"Bearer {cred.access_token}"
-                    try:
-                        return http_get_json(CODEX_USAGE_URL, headers)
-                    except Exception:
-                        LOG.exception("codex retry after 401 failed")
-                        return None
-            else:
-                LOG.warning("codex wham/usage returned HTTP %d", e.code)
-            return None
-        except Exception:
-            LOG.exception("codex wham/usage request failed")
-            return None
+@dataclass(frozen=True)
+class CodexWindow:
+    label: str
+    duration_seconds: int
+    used_percent: float
+    reset_timestamp: float | None
+
+
+def _finite_number(value: Any, field_name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise CodexSchemaError(f"Codex {field_name} has an unexpected type")
+    number = float(value)
+    if not math.isfinite(number):
+        raise CodexSchemaError(f"Codex {field_name} is not finite")
+    return number
+
+
+def select_rate_limit_snapshot(result: dict[str, Any]) -> dict[str, Any]:
+    by_limit_id = result.get("rateLimitsByLimitId")
+    if by_limit_id is not None:
+        if not isinstance(by_limit_id, dict):
+            raise CodexSchemaError("Codex rateLimitsByLimitId is not an object")
+        if "codex" in by_limit_id:
+            snapshot = by_limit_id["codex"]
+            if not isinstance(snapshot, dict):
+                raise CodexSchemaError("Codex-specific rate-limit snapshot is not an object")
+            return snapshot
+    snapshot = result.get("rateLimits")
+    if not isinstance(snapshot, dict):
+        raise CodexSchemaError("Codex rate-limit response omitted a usable snapshot")
+    return snapshot
+
+
+def normalize_codex_snapshot(
+    snapshot: dict[str, Any],
+) -> tuple[dict[str, CodexWindow], str, int]:
+    windows: dict[str, CodexWindow] = {}
+    for slot in ("primary", "secondary"):
+        raw = snapshot.get(slot)
+        if raw is None:
+            continue
+        if not isinstance(raw, dict):
+            raise CodexSchemaError(f"Codex {slot} window is not an object")
+        duration_value = _finite_number(raw.get("windowDurationMins"), f"{slot} window duration")
+        if duration_value <= 0 or not duration_value.is_integer():
+            raise CodexSchemaError(f"Codex {slot} window duration is not a positive integer")
+        duration_minutes = int(duration_value)
+        label = KNOWN_WINDOW_LABELS.get(duration_minutes, f"duration_{duration_minutes}m")
+        if label in windows:
+            raise CodexSchemaError(f"Codex duplicate semantic window {label}")
+
+        used_percent = _finite_number(raw.get("usedPercent"), f"{slot} used percentage")
+        clamped_percent = min(100.0, max(0.0, used_percent))
+        if clamped_percent != used_percent:
+            LOG.warning("Codex used percentage outside 0-100 for window %s; clamped", label)
+
+        reset_timestamp: float | None = None
+        if raw.get("resetsAt") is not None:
+            reset_timestamp = _finite_number(raw["resetsAt"], f"{slot} reset timestamp")
+            if reset_timestamp <= 0:
+                raise CodexSchemaError(f"Codex {slot} reset timestamp is not positive")
+
+        windows[label] = CodexWindow(
+            label=label,
+            duration_seconds=duration_minutes * 60,
+            used_percent=clamped_percent,
+            reset_timestamp=reset_timestamp,
+        )
+
+    plan_value = snapshot.get("planType")
+    plan_type = plan_value if isinstance(plan_value, str) and plan_value else "unknown"
+    limit_reached = int(
+        snapshot.get("rateLimitReachedType") is not None or snapshot.get("spendControlReached") is True
+    )
+    return windows, plan_type, limit_reached
+
+
+# ---------------------------------------------------------------------------
+# OpenRouter API client
+# ---------------------------------------------------------------------------
+
+
+def http_get_json(url: str, headers: dict[str, str], timeout: float = REQUEST_TIMEOUT) -> dict:
+    request = urllib.request.Request(url, headers=headers, method="GET")
+    context = ssl.create_default_context()
+    with urllib.request.urlopen(request, timeout=timeout, context=context) as response:
+        return json.loads(response.read())
 
 
 class OpenRouterClient:
-    """Polls the OpenRouter /keys endpoint using a management key.
-
-    A management key (as opposed to a regular API key) grants access to
-    the keys-management API, which lists *all* keys in the organisation
-    with per-key usage breakdowns, spend limits, and enabled status.
-    This gives a complete picture of OpenRouter consumption across all
-    workstations and services, not just the single key used to make the request.
-    """
+    """Polls the OpenRouter keys endpoint using a management key."""
 
     def __init__(self, management_key: str):
         self._management_key = management_key
 
     def poll(self) -> list[dict[str, Any]] | None:
-        """Poll the /keys endpoint. Returns list of key dicts or None on failure."""
         headers = {
             "Authorization": f"Bearer {self._management_key}",
             "User-Agent": "ai-usage-exporter/1.0",
@@ -240,21 +432,24 @@ class OpenRouterClient:
         }
         try:
             data = http_get_json(OPENROUTER_KEYS_URL, headers)
-            # Response shape: {"data": [key1, key2, ...]}
             return data.get("data") if isinstance(data, dict) else None
         except Exception:
-            LOG.exception("openrouter /keys request failed")
+            LOG.exception("OpenRouter keys request failed")
             return None
 
 
 # ---------------------------------------------------------------------------
-# Metrics cache
+# Metrics cache and collector
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class MetricsCache:
-    """Thread-safe cache for rendered Prometheus metrics text."""
-    text: str = "# HELP ai_exporter_ready Whether the exporter has completed an initial scrape.\n# TYPE ai_exporter_ready gauge\nai_exporter_ready 0\n"
+    text: str = (
+        "# HELP ai_exporter_ready Whether the exporter has completed an initial scrape.\n"
+        "# TYPE ai_exporter_ready gauge\n"
+        "ai_exporter_ready 0\n"
+    )
     lock: Lock = field(default_factory=Lock)
 
     def get(self) -> bytes:
@@ -266,98 +461,72 @@ class MetricsCache:
             self.text = text
 
 
-# ---------------------------------------------------------------------------
-# Collector
-# ---------------------------------------------------------------------------
-
 class Collector:
-    """Collects metrics from Codex and OpenRouter, renders Prometheus text."""
+    """Collects Codex and OpenRouter metrics and renders Prometheus text."""
 
-    def __init__(self, codex: CodexClient, openrouter: OpenRouterClient, cache: MetricsCache):
+    def __init__(
+        self,
+        codex: CodexClient,
+        openrouter: OpenRouterClient,
+        cache: MetricsCache,
+        poll_interval: int,
+    ):
         self._codex = codex
         self._openrouter = openrouter
         self._cache = cache
+        self._poll_interval = poll_interval
 
-        # Last known values (kept on scrape failure)
-        self._codex_5h_pct: float = 0.0
-        self._codex_7d_pct: float = 0.0
-        self._codex_5h_reset: float = 0.0
-        self._codex_7d_reset: float = 0.0
-        self._codex_limit_reached: int = 0
-        self._codex_plan_type: str = "unknown"
-        # OpenRouter per-key state: list of dicts {name, usage, usage_daily, ...}
+        self._codex_windows: dict[str, CodexWindow] = {}
+        self._codex_limit_reached = 0
+        self._codex_plan_type = "unknown"
+        self._codex_has_snapshot = False
+        self._codex_authenticated: int | None = None
         self._openrouter_keys: list[dict[str, Any]] = []
-        self._openrouter_total_usage: float = 0.0
-        self._openrouter_total_usage_daily: float = 0.0
-        self._openrouter_total_usage_weekly: float = 0.0
-        self._openrouter_total_usage_monthly: float = 0.0
-        self._openrouter_total_byok_usage: float = 0.0
-        self._openrouter_total_byok_usage_daily: float = 0.0
-        self._openrouter_total_byok_usage_weekly: float = 0.0
-        self._openrouter_total_byok_usage_monthly: float = 0.0
-        self._openrouter_keys_enabled: int = 0
-        self._codex_scrape_success: int = 0
-        self._openrouter_scrape_success: int = 0
-        self._codex_scrape_duration: float = 0.0
-        self._openrouter_scrape_duration: float = 0.0
+        self._openrouter_total_usage = 0.0
+        self._openrouter_total_usage_daily = 0.0
+        self._openrouter_total_usage_weekly = 0.0
+        self._openrouter_total_usage_monthly = 0.0
+        self._openrouter_total_byok_usage = 0.0
+        self._openrouter_total_byok_usage_daily = 0.0
+        self._openrouter_total_byok_usage_weekly = 0.0
+        self._openrouter_total_byok_usage_monthly = 0.0
+        self._openrouter_keys_enabled = 0
+        self._codex_scrape_success = 0
+        self._openrouter_scrape_success = 0
+        self._codex_scrape_duration = 0.0
+        self._openrouter_scrape_duration = 0.0
+        self._codex_last_success: float | None = None
+        self._openrouter_last_success: float | None = None
 
     def collect(self) -> str:
-        """Perform a full scrape cycle and return rendered metrics."""
-        # Scrape Codex
         self._scrape_codex()
-
-        # Stagger OpenRouter by 5 seconds
         time.sleep(CODEX_STAGGER)
-
-        # Scrape OpenRouter
         self._scrape_openrouter()
-
         return self._render()
 
     def _scrape_codex(self) -> None:
         started = time.time()
         try:
-            data = self._codex.poll()
-            if data is None:
+            result = self._codex.poll()
+            self._codex_authenticated = int(result.authenticated)
+            if not result.authenticated:
                 self._codex_scrape_success = 0
-                self._codex_scrape_duration = time.time() - started
                 return
-
+            assert result.rate_limits is not None
+            snapshot = select_rate_limit_snapshot(result.rate_limits)
+            windows, plan_type, limit_reached = normalize_codex_snapshot(snapshot)
+            self._codex_windows = windows
+            self._codex_plan_type = plan_type
+            self._codex_limit_reached = limit_reached
+            self._codex_has_snapshot = True
+            self._codex_last_success = time.time()
             self._codex_scrape_success = 1
-
-            # Parse rate limit info
-            rl = data.get("rate_limit") or {}
-            self._codex_limit_reached = 1 if rl.get("limit_reached") else 0
-            if not rl.get("allowed", True):
-                self._codex_limit_reached = 1
-
-            # Parse primary window (5h) — nested under rate_limit
-            pw = rl.get("primary_window") or {}
-            self._codex_5h_pct = float(pw.get("used_percent", 0))
-            reset_s = pw.get("reset_after_seconds") or pw.get("reset_at")
-            if reset_s is not None:
-                # If it's a Unix timestamp (large number), convert to seconds-until-reset
-                if isinstance(reset_s, (int, float, str)) and float(reset_s) > 1e9:
-                    self._codex_5h_reset = max(0.0, float(reset_s) - time.time())
-                else:
-                    self._codex_5h_reset = max(0.0, float(reset_s))
-
-            # Parse secondary window (7d) — nested under rate_limit
-            sw = rl.get("secondary_window") or {}
-            self._codex_7d_pct = float(sw.get("used_percent", 0))
-            reset_s2 = sw.get("reset_after_seconds") or sw.get("reset_at")
-            if reset_s2 is not None:
-                if isinstance(reset_s2, (int, float, str)) and float(reset_s2) > 1e9:
-                    self._codex_7d_reset = max(0.0, float(reset_s2) - time.time())
-                else:
-                    self._codex_7d_reset = max(0.0, float(reset_s2))
-
-            # Parse plan type
-            self._codex_plan_type = str(data.get("plan_type", "unknown"))
-
+        except CodexError as error:
+            self._codex_scrape_success = 0
+            LOG.warning("Codex scrape failed: %s", error)
         except Exception:
             self._codex_scrape_success = 0
-            LOG.exception("codex scrape failed")
+            LOG.exception("Codex scrape failed unexpectedly")
         finally:
             self._codex_scrape_duration = time.time() - started
 
@@ -367,26 +536,28 @@ class Collector:
             keys = self._openrouter.poll()
             if keys is None:
                 self._openrouter_scrape_success = 0
-                self._openrouter_scrape_duration = time.time() - started
                 return
-
             self._openrouter_scrape_success = 1
+            self._openrouter_last_success = time.time()
             self._openrouter_keys = keys
-
-            # Compute account-level aggregates from per-key data
-            self._openrouter_total_usage = sum(float(k.get("usage") or 0) for k in keys)
-            self._openrouter_total_usage_daily = sum(float(k.get("usage_daily") or 0) for k in keys)
-            self._openrouter_total_usage_weekly = sum(float(k.get("usage_weekly") or 0) for k in keys)
-            self._openrouter_total_usage_monthly = sum(float(k.get("usage_monthly") or 0) for k in keys)
-            self._openrouter_total_byok_usage = sum(float(k.get("byok_usage") or 0) for k in keys)
-            self._openrouter_total_byok_usage_daily = sum(float(k.get("byok_usage_daily") or 0) for k in keys)
-            self._openrouter_total_byok_usage_weekly = sum(float(k.get("byok_usage_weekly") or 0) for k in keys)
-            self._openrouter_total_byok_usage_monthly = sum(float(k.get("byok_usage_monthly") or 0) for k in keys)
-            self._openrouter_keys_enabled = sum(1 for k in keys if not k.get("disabled"))
-
+            self._openrouter_total_usage = sum(float(key.get("usage") or 0) for key in keys)
+            self._openrouter_total_usage_daily = sum(float(key.get("usage_daily") or 0) for key in keys)
+            self._openrouter_total_usage_weekly = sum(float(key.get("usage_weekly") or 0) for key in keys)
+            self._openrouter_total_usage_monthly = sum(float(key.get("usage_monthly") or 0) for key in keys)
+            self._openrouter_total_byok_usage = sum(float(key.get("byok_usage") or 0) for key in keys)
+            self._openrouter_total_byok_usage_daily = sum(
+                float(key.get("byok_usage_daily") or 0) for key in keys
+            )
+            self._openrouter_total_byok_usage_weekly = sum(
+                float(key.get("byok_usage_weekly") or 0) for key in keys
+            )
+            self._openrouter_total_byok_usage_monthly = sum(
+                float(key.get("byok_usage_monthly") or 0) for key in keys
+            )
+            self._openrouter_keys_enabled = sum(1 for key in keys if not key.get("disabled"))
         except Exception:
             self._openrouter_scrape_success = 0
-            LOG.exception("openrouter scrape failed")
+            LOG.exception("OpenRouter scrape failed")
         finally:
             self._openrouter_scrape_duration = time.time() - started
 
@@ -394,127 +565,190 @@ class Collector:
         lines = [
             "# HELP ai_codex_window_used_percent Percentage of the Codex usage window consumed.",
             "# TYPE ai_codex_window_used_percent gauge",
-            f'ai_codex_window_used_percent{labels(window="5h")} {self._codex_5h_pct}',
-            f'ai_codex_window_used_percent{labels(window="7d")} {self._codex_7d_pct}',
-
-            "# HELP ai_codex_window_reset_seconds Seconds until the Codex usage window resets.",
-            "# TYPE ai_codex_window_reset_seconds gauge",
-            f'ai_codex_window_reset_seconds{labels(window="5h")} {self._codex_5h_reset:.0f}',
-            f'ai_codex_window_reset_seconds{labels(window="7d")} {self._codex_7d_reset:.0f}',
-
-            "# HELP ai_codex_limit_reached 1 if the Codex rate limit has been reached, 0 otherwise.",
-            "# TYPE ai_codex_limit_reached gauge",
-            f"ai_codex_limit_reached {self._codex_limit_reached}",
-
-            "# HELP ai_codex_plan_type Codex subscription plan type.",
-            "# TYPE ai_codex_plan_type gauge",
-            f'ai_codex_plan_type{labels(plan_type=self._codex_plan_type)} 1',
-
-            # OpenRouter per-key metrics
-            "# HELP ai_openrouter_key_usage Lifetime OpenRouter spend for each key (USD, management-key view).",
-            "# TYPE ai_openrouter_key_usage gauge",
-            "# HELP ai_openrouter_key_usage_daily OpenRouter spend today for each key (USD).",
-            "# TYPE ai_openrouter_key_usage_daily gauge",
-            "# HELP ai_openrouter_key_usage_weekly OpenRouter spend this week for each key (USD).",
-            "# TYPE ai_openrouter_key_usage_weekly gauge",
-            "# HELP ai_openrouter_key_usage_monthly OpenRouter spend this month for each key (USD).",
-            "# TYPE ai_openrouter_key_usage_monthly gauge",
-            "# HELP ai_openrouter_key_byok_usage Lifetime BYOK spend for each key (USD, user-owned model keys).",
-            "# TYPE ai_openrouter_key_byok_usage gauge",
-            "# HELP ai_openrouter_key_limit Spend limit configured for each key (USD, 0 = unlimited).",
-            "# TYPE ai_openrouter_key_limit gauge",
-            "# HELP ai_openrouter_key_limit_remaining Remaining spend budget in current period for each key (USD, 0 = unlimited).",
-            "# TYPE ai_openrouter_key_limit_remaining gauge",
-            "# HELP ai_openrouter_key_enabled Whether the key is enabled (1) or disabled (0).",
-            "# TYPE ai_openrouter_key_enabled gauge",
         ]
+        for label in sorted(self._codex_windows):
+            window = self._codex_windows[label]
+            window_labels = labels(window=window.label)
+            lines.append(
+                f"ai_codex_window_used_percent{window_labels} {metric_number(window.used_percent)}"
+            )
 
-        # Per-key series (only emitted when we have data)
-        for k in self._openrouter_keys:
-            name = prom_escape(str(k.get("name") or "unknown"))
-            lbl = labels(key=name)
-            lines.extend([
-                f"ai_openrouter_key_usage{lbl} {float(k.get('usage') or 0)}",
-                f"ai_openrouter_key_usage_daily{lbl} {float(k.get('usage_daily') or 0)}",
-                f"ai_openrouter_key_usage_weekly{lbl} {float(k.get('usage_weekly') or 0)}",
-                f"ai_openrouter_key_usage_monthly{lbl} {float(k.get('usage_monthly') or 0)}",
-                f"ai_openrouter_key_byok_usage{lbl} {float(k.get('byok_usage') or 0)}",
-                f"ai_openrouter_key_limit{lbl} {float(k.get('limit') or 0)}",
-                f"ai_openrouter_key_limit_remaining{lbl} {float(k.get('limit_remaining') or 0)}",
-                f"ai_openrouter_key_enabled{lbl} {0 if k.get('disabled') else 1}",
-            ])
+        lines.extend(
+            [
+                "# HELP ai_codex_window_duration_seconds Provider-reported Codex window duration.",
+                "# TYPE ai_codex_window_duration_seconds gauge",
+            ]
+        )
+        for label in sorted(self._codex_windows):
+            window = self._codex_windows[label]
+            lines.append(
+                f"ai_codex_window_duration_seconds{labels(window=window.label)} "
+                f"{window.duration_seconds}"
+            )
 
-        # Account-level aggregates (sum across all keys)
-        lines.extend([
-            "# HELP ai_openrouter_total_usage Total OpenRouter spend across all keys (USD).",
-            "# TYPE ai_openrouter_total_usage gauge",
-            f"ai_openrouter_total_usage {self._openrouter_total_usage}",
+        lines.extend(
+            [
+                "# HELP ai_codex_window_reset_timestamp_seconds Absolute Codex window reset time.",
+                "# TYPE ai_codex_window_reset_timestamp_seconds gauge",
+            ]
+        )
+        for label in sorted(self._codex_windows):
+            window = self._codex_windows[label]
+            if window.reset_timestamp is not None:
+                lines.append(
+                    f"ai_codex_window_reset_timestamp_seconds{labels(window=window.label)} "
+                    f"{metric_number(window.reset_timestamp)}"
+                )
 
-            "# HELP ai_openrouter_total_usage_daily Aggregated OpenRouter spend today across all keys (USD).",
-            "# TYPE ai_openrouter_total_usage_daily gauge",
-            f"ai_openrouter_total_usage_daily {self._openrouter_total_usage_daily}",
+        lines.extend(
+            [
+                "# HELP ai_codex_window_present Whether a semantic Codex window is present.",
+                "# TYPE ai_codex_window_present gauge",
+            ]
+        )
+        for label in sorted(self._codex_windows):
+            lines.append(f"ai_codex_window_present{labels(window=label)} 1")
 
-            "# HELP ai_openrouter_total_usage_weekly Aggregated OpenRouter spend this week across all keys (USD).",
-            "# TYPE ai_openrouter_total_usage_weekly gauge",
-            f"ai_openrouter_total_usage_weekly {self._openrouter_total_usage_weekly}",
+        lines.extend(
+            [
+                "# HELP ai_codex_authenticated Last explicit Codex app-server authentication state.",
+                "# TYPE ai_codex_authenticated gauge",
+            ]
+        )
+        if self._codex_authenticated is not None:
+            lines.append(f"ai_codex_authenticated {self._codex_authenticated}")
 
-            "# HELP ai_openrouter_total_usage_monthly Aggregated OpenRouter spend this month across all keys (USD).",
-            "# TYPE ai_openrouter_total_usage_monthly gauge",
-            f"ai_openrouter_total_usage_monthly {self._openrouter_total_usage_monthly}",
+        if self._codex_has_snapshot:
+            lines.extend(
+                [
+                    "# HELP ai_codex_limit_reached Whether Codex reports a reached limit.",
+                    "# TYPE ai_codex_limit_reached gauge",
+                    f"ai_codex_limit_reached {self._codex_limit_reached}",
+                    "# HELP ai_codex_plan_type Codex subscription plan type.",
+                    "# TYPE ai_codex_plan_type gauge",
+                    f"ai_codex_plan_type{labels(plan_type=self._codex_plan_type)} 1",
+                ]
+            )
 
-            "# HELP ai_openrouter_total_byok_usage Total BYOK spend across all keys (USD, user-owned model keys).",
-            "# TYPE ai_openrouter_total_byok_usage gauge",
-            f"ai_openrouter_total_byok_usage {self._openrouter_total_byok_usage}",
+        lines.extend(
+            [
+                "# HELP ai_openrouter_key_usage Lifetime OpenRouter spend for each key (USD, management-key view).",
+                "# TYPE ai_openrouter_key_usage gauge",
+                "# HELP ai_openrouter_key_usage_daily OpenRouter spend today for each key (USD).",
+                "# TYPE ai_openrouter_key_usage_daily gauge",
+                "# HELP ai_openrouter_key_usage_weekly OpenRouter spend this week for each key (USD).",
+                "# TYPE ai_openrouter_key_usage_weekly gauge",
+                "# HELP ai_openrouter_key_usage_monthly OpenRouter spend this month for each key (USD).",
+                "# TYPE ai_openrouter_key_usage_monthly gauge",
+                "# HELP ai_openrouter_key_byok_usage Lifetime BYOK spend for each key (USD, user-owned model keys).",
+                "# TYPE ai_openrouter_key_byok_usage gauge",
+                "# HELP ai_openrouter_key_limit Spend limit configured for each key (USD, 0 = unlimited).",
+                "# TYPE ai_openrouter_key_limit gauge",
+                "# HELP ai_openrouter_key_limit_remaining Remaining spend budget in current period for each key (USD, 0 = unlimited).",
+                "# TYPE ai_openrouter_key_limit_remaining gauge",
+                "# HELP ai_openrouter_key_enabled Whether the key is enabled (1) or disabled (0).",
+                "# TYPE ai_openrouter_key_enabled gauge",
+            ]
+        )
+        for key in self._openrouter_keys:
+            # Preserve the existing OpenRouter label-escaping behavior.
+            key_name = prom_escape(str(key.get("name") or "unknown"))
+            key_labels = labels(key=key_name)
+            lines.extend(
+                [
+                    f"ai_openrouter_key_usage{key_labels} {float(key.get('usage') or 0)}",
+                    f"ai_openrouter_key_usage_daily{key_labels} {float(key.get('usage_daily') or 0)}",
+                    f"ai_openrouter_key_usage_weekly{key_labels} {float(key.get('usage_weekly') or 0)}",
+                    f"ai_openrouter_key_usage_monthly{key_labels} {float(key.get('usage_monthly') or 0)}",
+                    f"ai_openrouter_key_byok_usage{key_labels} {float(key.get('byok_usage') or 0)}",
+                    f"ai_openrouter_key_limit{key_labels} {float(key.get('limit') or 0)}",
+                    f"ai_openrouter_key_limit_remaining{key_labels} {float(key.get('limit_remaining') or 0)}",
+                    f"ai_openrouter_key_enabled{key_labels} {0 if key.get('disabled') else 1}",
+                ]
+            )
 
-            "# HELP ai_openrouter_total_byok_usage_daily Aggregated BYOK spend today across all keys (USD).",
-            "# TYPE ai_openrouter_total_byok_usage_daily gauge",
-            f"ai_openrouter_total_byok_usage_daily {self._openrouter_total_byok_usage_daily}",
-
-            "# HELP ai_openrouter_total_byok_usage_weekly Aggregated BYOK spend this week across all keys (USD).",
-            "# TYPE ai_openrouter_total_byok_usage_weekly gauge",
-            f"ai_openrouter_total_byok_usage_weekly {self._openrouter_total_byok_usage_weekly}",
-
-            "# HELP ai_openrouter_total_byok_usage_monthly Aggregated BYOK spend this month across all keys (USD).",
-            "# TYPE ai_openrouter_total_byok_usage_monthly gauge",
-            f"ai_openrouter_total_byok_usage_monthly {self._openrouter_total_byok_usage_monthly}",
-
-            "# HELP ai_openrouter_keys_enabled Number of enabled OpenRouter keys in the organisation.",
-            "# TYPE ai_openrouter_keys_enabled gauge",
-            f"ai_openrouter_keys_enabled {self._openrouter_keys_enabled}",
-
-            "# HELP ai_exporter_scrape_success Whether the last scrape of each source succeeded.",
-            "# TYPE ai_exporter_scrape_success gauge",
-            f'ai_exporter_scrape_success{labels(source="codex")} {self._codex_scrape_success}',
-            f'ai_exporter_scrape_success{labels(source="openrouter")} {self._openrouter_scrape_success}',
-
-            "# HELP ai_exporter_scrape_duration_seconds Duration of the last scrape for each source.",
-            "# TYPE ai_exporter_scrape_duration_seconds gauge",
-            f'ai_exporter_scrape_duration_seconds{labels(source="codex")} {self._codex_scrape_duration:.3f}',
-            f'ai_exporter_scrape_duration_seconds{labels(source="openrouter")} {self._openrouter_scrape_duration:.3f}',
-        ])
+        lines.extend(
+            [
+                "# HELP ai_openrouter_total_usage Total OpenRouter spend across all keys (USD).",
+                "# TYPE ai_openrouter_total_usage gauge",
+                f"ai_openrouter_total_usage {self._openrouter_total_usage}",
+                "# HELP ai_openrouter_total_usage_daily Aggregated OpenRouter spend today across all keys (USD).",
+                "# TYPE ai_openrouter_total_usage_daily gauge",
+                f"ai_openrouter_total_usage_daily {self._openrouter_total_usage_daily}",
+                "# HELP ai_openrouter_total_usage_weekly Aggregated OpenRouter spend this week across all keys (USD).",
+                "# TYPE ai_openrouter_total_usage_weekly gauge",
+                f"ai_openrouter_total_usage_weekly {self._openrouter_total_usage_weekly}",
+                "# HELP ai_openrouter_total_usage_monthly Aggregated OpenRouter spend this month across all keys (USD).",
+                "# TYPE ai_openrouter_total_usage_monthly gauge",
+                f"ai_openrouter_total_usage_monthly {self._openrouter_total_usage_monthly}",
+                "# HELP ai_openrouter_total_byok_usage Total BYOK spend across all keys (USD, user-owned model keys).",
+                "# TYPE ai_openrouter_total_byok_usage gauge",
+                f"ai_openrouter_total_byok_usage {self._openrouter_total_byok_usage}",
+                "# HELP ai_openrouter_total_byok_usage_daily Aggregated BYOK spend today across all keys (USD).",
+                "# TYPE ai_openrouter_total_byok_usage_daily gauge",
+                f"ai_openrouter_total_byok_usage_daily {self._openrouter_total_byok_usage_daily}",
+                "# HELP ai_openrouter_total_byok_usage_weekly Aggregated BYOK spend this week across all keys (USD).",
+                "# TYPE ai_openrouter_total_byok_usage_weekly gauge",
+                f"ai_openrouter_total_byok_usage_weekly {self._openrouter_total_byok_usage_weekly}",
+                "# HELP ai_openrouter_total_byok_usage_monthly Aggregated BYOK spend this month across all keys (USD).",
+                "# TYPE ai_openrouter_total_byok_usage_monthly gauge",
+                f"ai_openrouter_total_byok_usage_monthly {self._openrouter_total_byok_usage_monthly}",
+                "# HELP ai_openrouter_keys_enabled Number of enabled OpenRouter keys in the organisation.",
+                "# TYPE ai_openrouter_keys_enabled gauge",
+                f"ai_openrouter_keys_enabled {self._openrouter_keys_enabled}",
+                "# HELP ai_exporter_scrape_success Whether the last scrape of each source succeeded.",
+                "# TYPE ai_exporter_scrape_success gauge",
+                f'ai_exporter_scrape_success{labels(source="codex")} {self._codex_scrape_success}',
+                f'ai_exporter_scrape_success{labels(source="openrouter")} {self._openrouter_scrape_success}',
+                "# HELP ai_exporter_scrape_duration_seconds Duration of the last scrape for each source.",
+                "# TYPE ai_exporter_scrape_duration_seconds gauge",
+                f'ai_exporter_scrape_duration_seconds{labels(source="codex")} {self._codex_scrape_duration:.3f}',
+                f'ai_exporter_scrape_duration_seconds{labels(source="openrouter")} {self._openrouter_scrape_duration:.3f}',
+                "# HELP ai_exporter_last_success_timestamp_seconds Completion time of the last successful source collection.",
+                "# TYPE ai_exporter_last_success_timestamp_seconds gauge",
+            ]
+        )
+        if self._codex_last_success is not None:
+            lines.append(
+                f'ai_exporter_last_success_timestamp_seconds{labels(source="codex")} '
+                f"{metric_number(self._codex_last_success)}"
+            )
+        if self._openrouter_last_success is not None:
+            lines.append(
+                f'ai_exporter_last_success_timestamp_seconds{labels(source="openrouter")} '
+                f"{metric_number(self._openrouter_last_success)}"
+            )
+        lines.extend(
+            [
+                "# HELP ai_exporter_poll_interval_seconds Configured source polling interval.",
+                "# TYPE ai_exporter_poll_interval_seconds gauge",
+                f'ai_exporter_poll_interval_seconds{labels(source="codex")} {self._poll_interval}',
+                f'ai_exporter_poll_interval_seconds{labels(source="openrouter")} {self._poll_interval}',
+                "# HELP ai_exporter_ready Whether the exporter has completed an initial scrape.",
+                "# TYPE ai_exporter_ready gauge",
+                "ai_exporter_ready 1",
+            ]
+        )
         return "\n".join(lines) + "\n"
 
 
 def run_loop(collector: Collector, stop: Event, interval: int) -> None:
-    """Background polling loop."""
-    while not stop.is_set():
+    while not stop.wait(interval):
         try:
-            metrics = collector.collect()
-            collector._cache.set(metrics)
+            collector._cache.set(collector.collect())
         except Exception:
             LOG.exception("collection cycle failed")
-        stop.wait(interval)
 
 
 # ---------------------------------------------------------------------------
-# Env file parser
+# Configuration and main
 # ---------------------------------------------------------------------------
+
 
 def parse_env_file(path: str) -> dict[str, str]:
-    """Parse a KEY=VALUE environment file."""
     env = {}
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
+    with open(path, "r", encoding="utf-8") as file:
+        for line in file:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
@@ -524,62 +758,69 @@ def parse_env_file(path: str) -> dict[str, str]:
     return env
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be positive")
+    return parsed
+
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="AI usage metrics exporter")
-    p.add_argument("--codex-secret-file", required=True,
-                   help="Path to age-decrypted Codex OAuth JSON credential file")
-    p.add_argument("--openrouter-env-file", required=False, default=None,
-                   help="Path to file containing OPENROUTER_MANAGEMENT_KEY=<key>")
-    p.add_argument("--listen-address", default="127.0.0.1:9188",
-                   help="Metrics listen address (default: 127.0.0.1:9188)")
-    p.add_argument("--poll-interval", type=int, default=DEFAULT_POLL_INTERVAL,
-                   help=f"Polling interval in seconds (default: {DEFAULT_POLL_INTERVAL})")
-    return p.parse_args()
+    parser = argparse.ArgumentParser(description="AI usage metrics exporter")
+    parser.add_argument(
+        "--codex-socket",
+        default="/run/codex-app-server/control.sock",
+        help="Path to the local Codex app-server Unix socket",
+    )
+    parser.add_argument(
+        "--openrouter-env-file",
+        default=None,
+        help="Path to a file containing OPENROUTER_MANAGEMENT_KEY",
+    )
+    parser.add_argument(
+        "--listen-address",
+        default="127.0.0.1:9188",
+        help="Metrics listen address (default: 127.0.0.1:9188)",
+    )
+    parser.add_argument(
+        "--poll-interval",
+        type=positive_int,
+        default=DEFAULT_POLL_INTERVAL,
+        help=f"Polling interval in seconds (default: {DEFAULT_POLL_INTERVAL})",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     args = parse_args()
 
-    # Load Codex OAuth credential
-    token_mgr = OAuthTokenManager(args.codex_secret_file)
-
-    # Load OpenRouter management key
     openrouter_key = ""
     if args.openrouter_env_file:
         env = parse_env_file(args.openrouter_env_file)
-        # Prefer the management key; fall back to regular API key for backward compat
         openrouter_key = env.get("OPENROUTER_MANAGEMENT_KEY") or env.get("OPENROUTER_API_KEY", "")
         if not openrouter_key:
-            LOG.warning("OPENROUTER_MANAGEMENT_KEY not found in %s; OpenRouter metrics will fail",
-                        args.openrouter_env_file)
+            LOG.warning("OpenRouter management key is unavailable")
     else:
-        LOG.warning("No OpenRouter env file provided; OpenRouter metrics will be unavailable")
+        LOG.warning("No OpenRouter environment file provided")
 
-    # Create clients and collector
-    codex = CodexClient(token_mgr)
-    openrouter = OpenRouterClient(openrouter_key)
     cache = MetricsCache()
-    collector = Collector(codex, openrouter, cache)
-
-    # Start background polling
+    collector = Collector(
+        CodexClient(args.codex_socket),
+        OpenRouterClient(openrouter_key),
+        cache,
+        args.poll_interval,
+    )
     stop = Event()
-    Thread(target=run_loop, args=(collector, stop, args.poll_interval), daemon=True).start()
-
-    # Initial collection
     try:
         cache.set(collector.collect())
         LOG.info("initial collection complete")
     except Exception:
         LOG.exception("initial collection failed")
+    Thread(target=run_loop, args=(collector, stop, args.poll_interval), daemon=True).start()
 
-    # Serve metrics
-    host, port_s = args.listen_address.rsplit(":", 1)
-    port = int(port_s)
+    host, port_text = args.listen_address.rsplit(":", 1)
+    port = int(port_text)
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
@@ -594,14 +835,14 @@ def main() -> None:
             self.end_headers()
             self.wfile.write(payload)
 
-        def log_message(self, fmt: str, *a: Any) -> None:
+        def log_message(self, _format: str, *_args: Any) -> None:
             return
 
     LOG.info("serving AI usage metrics on %s", args.listen_address)
     try:
         ThreadingHTTPServer((host, port), Handler).serve_forever()
-    except OSError as e:
-        LOG.error("failed to bind %s: %s", args.listen_address, e)
+    except OSError as error:
+        LOG.error("failed to bind metrics listener: %s", error)
         stop.set()
         raise
 

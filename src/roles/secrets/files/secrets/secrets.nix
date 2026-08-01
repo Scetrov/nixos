@@ -55,6 +55,5 @@ in
   "github_repository_observability_app_id.age".publicKeys = users ++ systems;
   "github_repository_observability_private_key.age".publicKeys = users ++ systems;
   "openrouter_management_env.age".publicKeys = users ++ systems;
-  "codex_oauth_env.age".publicKeys = users ++ systems;
   "chatgpt_account_id.age".publicKeys = users ++ systems;
 }

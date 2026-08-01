@@ -1,0 +1,26 @@
+{
+  "account": {
+    "account": {
+      "type": "chatgpt"
+    },
+    "requiresOpenaiAuth": true
+  },
+  "rateLimits": {
+    "rateLimitsByLimitId": {
+      "codex": {
+        "planType": "team",
+        "primary": {
+          "usedPercent": 12.5,
+          "windowDurationMins": 300,
+          "resetsAt": 1800000000
+        },
+        "secondary": {
+          "usedPercent": 44,
+          "windowDurationMins": 10080,
+          "resetsAt": 1900000000
+        },
+        "rateLimitReachedType": null
+      }
+    }
+  }
+}

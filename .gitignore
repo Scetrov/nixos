@@ -2,3 +2,4 @@ src/result
 __pycache__
 terraform/grafana_oncall_token.json
 src/generated-secrets.yml
+.pi-subagents/

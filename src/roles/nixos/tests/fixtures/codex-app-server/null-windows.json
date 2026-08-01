@@ -1,0 +1,18 @@
+{
+  "account": {
+    "account": {
+      "type": "chatgpt"
+    },
+    "requiresOpenaiAuth": true
+  },
+  "rateLimits": {
+    "rateLimitsByLimitId": {
+      "codex": {
+        "planType": "plus",
+        "primary": null,
+        "secondary": null,
+        "rateLimitReachedType": null
+      }
+    }
+  }
+}

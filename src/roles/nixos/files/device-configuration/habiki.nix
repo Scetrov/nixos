@@ -71,7 +71,10 @@
   services.grafana-mcp = {
     enable = true;
   };
-  scetrov.services.ai-usage.enable = true;
+  scetrov.services.ai-usage = {
+    enable = true;
+    codexAppServer.enable = true;
+  };
 
   scetrov.services.github-repository-observability = {
     enable = true;

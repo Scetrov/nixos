@@ -1,0 +1,38 @@
+{
+  "account": {
+    "account": {
+      "type": "chatgpt"
+    },
+    "requiresOpenaiAuth": true
+  },
+  "rateLimits": {
+    "rateLimitsByLimitId": {
+      "other": {
+        "planType": "unknown",
+        "primary": {
+          "usedPercent": 99,
+          "windowDurationMins": 60,
+          "resetsAt": 1800000000
+        }
+      },
+      "codex": {
+        "planType": "enterprise",
+        "primary": {
+          "usedPercent": 25,
+          "windowDurationMins": 10080,
+          "resetsAt": 1900000000
+        },
+        "secondary": null,
+        "rateLimitReachedType": "weekly"
+      }
+    },
+    "rateLimits": {
+      "planType": "fallback-must-not-win",
+      "primary": {
+        "usedPercent": 88,
+        "windowDurationMins": 300,
+        "resetsAt": 1800000000
+      }
+    }
+  }
+}

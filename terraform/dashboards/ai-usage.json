@@ -17,7 +17,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "5-Hour Window",
+      "title": "Weekly Remaining",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
@@ -35,9 +35,9 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "100 - ai_codex_window_used_percent{window=\"5h\"}",
+          "expr": "(100 - ai_codex_window_used_percent{window=\"weekly\"}) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"weekly\"} == 1)",
           "instant": true,
-          "legendFormat": "5H Remaining",
+          "legendFormat": "Weekly Remaining",
           "range": false,
           "refId": "A"
         }
@@ -90,7 +90,7 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "7-Day Window",
+      "title": "Codex Authentication",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
@@ -108,18 +108,16 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "100 - ai_codex_window_used_percent{window=\"7d\"}",
+          "expr": "ai_codex_authenticated",
           "instant": true,
-          "legendFormat": "7D Remaining",
+          "legendFormat": "Authentication",
           "range": false,
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
+          "unit": "none",
           "color": {
             "mode": "thresholds"
           },
@@ -131,25 +129,37 @@
                 "value": null
               },
               {
-                "color": "#E6C65B",
-                "value": 20
-              },
-              {
                 "color": "#008791",
-                "value": 50
+                "value": 1
               }
             ]
           },
-          "mappings": [],
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Unauthenticated",
+                  "color": "#FF3E8D",
+                  "index": 0
+                },
+                "1": {
+                  "text": "Authenticated",
+                  "color": "#008791",
+                  "index": 1
+                }
+              }
+            }
+          ],
           "noValue": "N/A"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -157,7 +167,7 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "value"
       }
     },
     {
@@ -311,7 +321,7 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "ai_codex_limit_reached",
+          "expr": "(ai_codex_limit_reached) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"}))",
           "instant": true,
           "legendFormat": "Limited",
           "range": false,
@@ -376,7 +386,7 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "5H Resets In / 7D Resets In",
+      "title": "Weekly Reset",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
@@ -394,23 +404,11 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "ai_codex_window_reset_seconds{window=\"5h\"}",
+          "expr": "(clamp_min(ai_codex_window_reset_timestamp_seconds{window=\"weekly\"} - time(), 0)) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"weekly\"} == 1)",
           "instant": true,
-          "legendFormat": "5H",
+          "legendFormat": "Weekly Reset",
           "range": false,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "ai_codex_window_reset_seconds{window=\"7d\"}",
-          "instant": true,
-          "legendFormat": "7D",
-          "range": false,
-          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -432,23 +430,7 @@
           "mappings": [],
           "noValue": "N/A"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "7D"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#6FAE9F",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
         "colorMode": "value",
@@ -781,21 +763,10 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "ai_codex_window_used_percent{window=\"5h\"}",
-          "legendFormat": "5-Hour Window",
+          "expr": "(ai_codex_window_used_percent) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"}))",
+          "legendFormat": "{{window}} consumed",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "ai_codex_window_used_percent{window=\"7d\"}",
-          "legendFormat": "7-Day Window",
-          "range": true,
-          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -804,6 +775,7 @@
           "min": 0,
           "max": 100,
           "color": {
+            "fixedColor": "#6F5D86",
             "mode": "fixed"
           },
           "custom": {
@@ -823,7 +795,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "5-Hour Window"
+              "options": "weekly consumed"
             },
             "properties": [
               {
@@ -838,7 +810,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "7-Day Window"
+              "options": "5h consumed"
             },
             "properties": [
               {
@@ -1106,6 +1078,255 @@
           }
         }
       ]
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Exporter Target",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 8,
+        "h": 3
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "up{job=\"ai-usage\",host=\"habiki\"}",
+          "instant": true,
+          "legendFormat": "Exporter",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": null
+              },
+              {
+                "color": "#008791",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "#FF3E8D",
+                  "index": 0
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "#008791",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "Codex Freshness",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 24,
+        "w": 8,
+        "h": 3
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= bool (2 * ai_exporter_poll_interval_seconds{source=\"codex\"}))",
+          "instant": true,
+          "legendFormat": "Freshness",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": null
+              },
+              {
+                "color": "#008791",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Stale",
+                  "color": "#FF3E8D",
+                  "index": 0
+                },
+                "1": {
+                  "text": "Fresh",
+                  "color": "#008791",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "Weekly Window",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 24,
+        "w": 8,
+        "h": 3
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "(ai_codex_window_present{window=\"weekly\"} or on() vector(0)) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"}))",
+          "instant": true,
+          "legendFormat": "Weekly Window",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": null
+              },
+              {
+                "color": "#008791",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Missing",
+                  "color": "#FF3E8D",
+                  "index": 0
+                },
+                "1": {
+                  "text": "Present",
+                  "color": "#008791",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      }
     }
   ],
   "schemaVersion": 39,
@@ -1126,5 +1347,5 @@
   "timezone": "browser",
   "title": "AI Usage",
   "uid": "ai-usage",
-  "version": 1
+  "version": 2
 }
