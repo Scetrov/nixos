@@ -41,6 +41,7 @@ in
         curl
         dive
         exiftool
+        fd
         fzf
         git
         gh
@@ -61,6 +62,7 @@ in
         unstable.chezmoi
         unstable.devenv
         unstable.dotnetCorePackages.sdk_10_0-bin
+        unstable.gcx
         unstable.ghostty
         unstable.gitleaks
         unstable.oh-my-posh
