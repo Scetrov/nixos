@@ -60,6 +60,7 @@ in
         tmux
         unstable.cargo-audit
         unstable.chezmoi
+        unstable.cloudflared
         unstable.devenv
         unstable.dotnetCorePackages.sdk_10_0-bin
         unstable.gcx
@@ -69,6 +70,7 @@ in
         unstable.pre-commit
         unzip
         usbutils
+        wrangler
       ])
       ++ lib.optionals (pkgs.stdenv.hostPlatform.system == "x86_64-linux") [
         google-antigravity-cli
