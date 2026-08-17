@@ -6,7 +6,7 @@ terraform {
   required_providers {
     authentik = {
       source  = "goauthentik/authentik"
-      version = "2026.5.0"
+      version = "2026.5.1"
     }
     random = {
       source  = "hashicorp/random"
@@ -19,7 +19,7 @@ terraform {
     }
     grafana = {
       source  = "grafana/grafana"
-      version = "4.43.0"
+      version = "4.45.0"
     }
   }
 }
