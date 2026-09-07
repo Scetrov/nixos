@@ -187,11 +187,11 @@ display:
 
     lambda: |-
       it.fill(Color::BLACK);
-      
+
       // Top Status Bar Layout
       it.print(15, 12, id(font_header), Color::WHITE, "BLE PROXY ACTIVE");
       it.line(15, 38, 305, 38, id(my_dark_grey));
-      
+
       // Render Temperature String
       it.print(20, 55, id(font_sub), id(my_light_grey), "OUTSIDE SHED TEMP");
       if (id(switchbot_temp_ha).has_state()) {
@@ -199,7 +199,7 @@ display:
       } else {
         it.print(20, 72, id(font_data), id(my_yellow), "NO HA TEMP");
       }
-      
+
       // Render Humidity String
       it.print(20, 115, id(font_sub), id(my_light_grey), "OUTSIDE SHED HUMIDITY");
       if (id(switchbot_hum_ha).has_state()) {

@@ -26,4 +26,21 @@
       "--dns-timeout=120"
     ];
   };
+
+  # A dedicated certificate gives the private S3 endpoint a trusted name
+  # without waiting for the existing public-service certificate to renew.
+  security.acme.certs."s3.tailnet.net.scetrov.live" = {
+    dnsProvider = "cloudflare";
+    dnsResolver = "1.1.1.1:53";
+    credentialFiles = {
+      "CLOUDFLARE_EMAIL_FILE" = config.age.secrets.cloudflare_email.path;
+      "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.age.secrets.cloudflare_dns_zone_api_key.path;
+    };
+    dnsPropagationCheck = true;
+    extraLegoFlags = [
+      "--dns.propagation-wait=5m"
+      "--dns.resolvers=1.1.1.1:53"
+      "--dns-timeout=120"
+    ];
+  };
 }

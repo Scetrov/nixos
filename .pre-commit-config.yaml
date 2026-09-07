@@ -18,6 +18,7 @@ repos:
           - --indent=2
           - --no-sort-keys
       - id: check-yaml
+        exclude: ^esphome/src/esphome\.yml$
 
   - repo: local
     hooks:

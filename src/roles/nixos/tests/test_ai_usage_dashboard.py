@@ -20,9 +20,9 @@ class AIUsageDashboardTests(unittest.TestCase):
     def expressions(self, panel_id: int) -> list[str]:
         return [target["expr"] for target in self.panels[panel_id].get("targets", [])]
 
-    def test_weekly_remaining_is_freshness_gated_with_approved_thresholds(self) -> None:
+    def test_five_hour_remaining_is_freshness_gated_with_approved_thresholds(self) -> None:
         panel = self.panels[1]
-        self.assertEqual(panel["title"], "Weekly Remaining")
+        self.assertEqual(panel["title"], "5-Hour Remaining")
         self.assertEqual(panel["fieldConfig"]["defaults"]["unit"], "percent")
         self.assertEqual(panel["fieldConfig"]["defaults"]["noValue"], "N/A")
         self.assertEqual(
@@ -34,19 +34,19 @@ class AIUsageDashboardTests(unittest.TestCase):
             ],
         )
         expression = self.expressions(1)[0]
-        self.assertIn('100 - ai_codex_window_used_percent{window="weekly"}', expression)
+        self.assertIn('100 - ai_codex_window_used_percent{window="5h"}', expression)
         self.assert_freshness_gated(expression)
-        self.assertIn('ai_codex_window_present{window="weekly"}', expression)
+        self.assertIn('ai_codex_window_present{window="5h"}', expression)
 
-    def test_weekly_reset_uses_absolute_non_negative_countdown(self) -> None:
+    def test_five_hour_reset_uses_absolute_non_negative_countdown(self) -> None:
         panel = self.panels[6]
-        self.assertEqual(panel["title"], "Weekly Reset")
+        self.assertEqual(panel["title"], "5-Hour Reset")
         self.assertEqual(panel["fieldConfig"]["defaults"]["unit"], "s")
         self.assertEqual(panel["fieldConfig"]["defaults"]["noValue"], "N/A")
         self.assertEqual(len(panel["targets"]), 1)
         expression = self.expressions(6)[0]
         self.assertIn(
-            'clamp_min(ai_codex_window_reset_timestamp_seconds{window="weekly"} - time(), 0)',
+            'clamp_min(ai_codex_window_reset_timestamp_seconds{window="5h"} - time(), 0)',
             expression,
         )
         self.assert_freshness_gated(expression)
@@ -84,27 +84,40 @@ class AIUsageDashboardTests(unittest.TestCase):
         self.assertIn("ai_codex_limit_reached", expression)
         self.assert_freshness_gated(expression)
 
-    def test_old_fixed_window_and_relative_reset_queries_are_absent(self) -> None:
+    def test_weekly_cards_are_independently_presence_and_freshness_gated(self) -> None:
+        for panel_id, title, metric in (
+            (19, "Weekly Remaining", '100 - ai_codex_window_used_percent{window="weekly"}'),
+            (20, "Weekly Reset", 'ai_codex_window_reset_timestamp_seconds{window="weekly"}'),
+        ):
+            with self.subTest(panel_id=panel_id):
+                panel = self.panels[panel_id]
+                expression = self.expressions(panel_id)[0]
+                self.assertEqual(panel["title"], title)
+                self.assertEqual(panel["fieldConfig"]["defaults"]["noValue"], "N/A")
+                self.assertIn(metric, expression)
+                self.assertIn('ai_codex_window_present{window="weekly"}', expression)
+                self.assert_freshness_gated(expression)
+
+    def test_retired_fixed_window_and_relative_reset_queries_are_absent(self) -> None:
         expressions = "\n".join(
             target["expr"]
             for panel in self.dashboard["panels"]
             for target in panel.get("targets", [])
             if "expr" in target
         )
-        self.assertNotIn('ai_codex_window_used_percent{window="5h"}', expressions)
-        self.assertNotIn('ai_codex_window_used_percent{window="7d"}', expressions)
+        self.assertNotIn('window="7d"', expressions)
         self.assertNotIn("ai_codex_window_reset_seconds", expressions)
 
     def test_openrouter_panels_and_queries_are_unchanged(self) -> None:
         expected = {
             3: (
                 "Monthly Spend (All Keys)",
-                {"x": 8, "y": 0, "w": 4, "h": 5},
+                {"x": 18, "y": 0, "w": 3, "h": 5},
                 ["ai_openrouter_total_usage_monthly"],
             ),
             4: (
                 "This Week (All Keys)",
-                {"x": 12, "y": 0, "w": 4, "h": 5},
+                {"x": 21, "y": 0, "w": 3, "h": 5},
                 ["ai_openrouter_total_usage_weekly"],
             ),
             8: (
@@ -155,7 +168,7 @@ class AIUsageDashboardTests(unittest.TestCase):
         grafana_tf = GRAFANA_TF_PATH.read_text(encoding="utf-8")
         resource = grafana_tf.split('resource "grafana_dashboard" "ai_usage"', 1)[1].split("}", 1)[0]
         self.assertIn("grafana_folder.operations_services.uid", resource)
-        codex_colors = json.dumps([self.panels[index] for index in (1, 2, 5, 6, 7, 10, 16, 17, 18)])
+        codex_colors = json.dumps([self.panels[index] for index in (1, 2, 5, 6, 7, 10, 16, 17, 18, 19, 20)])
         for color in ("#FF3E8D", "#E6C65B", "#008791"):
             self.assertIn(color, codex_colors)
 
@@ -173,48 +186,44 @@ class PlatformOverviewAIUsageDashboardTests(unittest.TestCase):
         dashboard = json.loads(PLATFORM_OVERVIEW_PATH.read_text(encoding="utf-8"))
         cls.panels = {panel["id"]: panel for panel in dashboard["panels"]}
 
-    def assert_freshness_gated(self, expression: str) -> None:
+    def assert_freshness_gated(self, expression: str, window: str) -> None:
         self.assertIn('ai_codex_authenticated == 1', expression)
         self.assertIn('ai_exporter_scrape_success{source="codex"} == 1', expression)
         self.assertIn('ai_exporter_last_success_timestamp_seconds{source="codex"}', expression)
         self.assertIn('ai_exporter_poll_interval_seconds{source="codex"}', expression)
         self.assertIn("2 * ai_exporter_poll_interval_seconds", expression)
-        self.assertIn('ai_codex_window_present{window="weekly"} == 1', expression)
+        self.assertIn(f'ai_codex_window_present{{window="{window}"}} == 1', expression)
 
-    def test_weekly_remaining_panel_uses_semantic_freshness_gated_usage(self) -> None:
-        panel = self.panels[33]
-        self.assertEqual(panel["title"], "Weekly Remaining")
-        self.assertEqual(panel["fieldConfig"]["defaults"]["unit"], "percent")
-        self.assertEqual(panel["fieldConfig"]["defaults"]["noValue"], "N/A")
-        self.assertEqual(panel["targets"][0]["datasource"]["uid"], "mimir")
-        self.assertEqual(
-            panel["fieldConfig"]["defaults"]["thresholds"]["steps"],
-            [
-                {"color": "#FF3E8D", "value": 0},
-                {"color": "#E6C65B", "value": 20},
-                {"color": "#008791", "value": 50},
-            ],
-        )
-        expression = panel["targets"][0]["expr"]
-        self.assertIn('100 - ai_codex_window_used_percent{window="weekly"}', expression)
-        self.assert_freshness_gated(expression)
+    def test_remaining_panels_use_semantic_freshness_gated_usage(self) -> None:
+        for panel_id, title, window in (
+            (33, "5-Hour Remaining", "5h"),
+            (35, "Weekly Remaining", "weekly"),
+        ):
+            with self.subTest(panel_id=panel_id):
+                panel = self.panels[panel_id]
+                self.assertEqual(panel["title"], title)
+                self.assertEqual(panel["fieldConfig"]["defaults"]["unit"], "percent")
+                self.assertEqual(panel["fieldConfig"]["defaults"]["noValue"], "N/A")
+                self.assertEqual(panel["targets"][0]["datasource"]["uid"], "mimir")
+                self.assertEqual(panel["fieldConfig"]["defaults"]["thresholds"]["steps"], [{"color": "#FF3E8D", "value": 0}, {"color": "#E6C65B", "value": 20}, {"color": "#008791", "value": 50}])
+                expression = panel["targets"][0]["expr"]
+                self.assertIn(f'ai_codex_window_used_percent{{window="{window}"}}', expression)
+                self.assert_freshness_gated(expression, window)
 
-    def test_weekly_reset_panel_uses_non_negative_freshness_gated_countdown(self) -> None:
-        panel = self.panels[34]
-        self.assertEqual(panel["title"], "Weekly Reset")
-        self.assertEqual(panel["fieldConfig"]["defaults"]["unit"], "s")
-        self.assertEqual(panel["fieldConfig"]["defaults"]["noValue"], "N/A")
-        self.assertEqual(panel["targets"][0]["datasource"]["uid"], "mimir")
-        self.assertEqual(
-            panel["fieldConfig"]["defaults"]["color"],
-            {"fixedColor": "#4B678C", "mode": "fixed"},
-        )
-        expression = panel["targets"][0]["expr"]
-        self.assertIn(
-            'clamp_min(ai_codex_window_reset_timestamp_seconds{window="weekly"} - time(), 0)',
-            expression,
-        )
-        self.assert_freshness_gated(expression)
+    def test_reset_panels_use_non_negative_freshness_gated_countdowns(self) -> None:
+        for panel_id, title, window in (
+            (34, "5-Hour Reset", "5h"),
+            (36, "Weekly Reset", "weekly"),
+        ):
+            with self.subTest(panel_id=panel_id):
+                panel = self.panels[panel_id]
+                self.assertEqual(panel["title"], title)
+                self.assertEqual(panel["fieldConfig"]["defaults"]["unit"], "s")
+                self.assertEqual(panel["fieldConfig"]["defaults"]["noValue"], "N/A")
+                self.assertEqual(panel["targets"][0]["datasource"]["uid"], "mimir")
+                expression = panel["targets"][0]["expr"]
+                self.assertIn(f'ai_codex_window_reset_timestamp_seconds{{window="{window}"}} - time()', expression)
+                self.assert_freshness_gated(expression, window)
 
     def test_retired_fixed_window_labels_are_absent(self) -> None:
         expressions = "\n".join(
@@ -223,8 +232,7 @@ class PlatformOverviewAIUsageDashboardTests(unittest.TestCase):
             for target in panel.get("targets", [])
             if "expr" in target
         )
-        self.assertNotIn('ai_codex_window_used_percent{window="5h"}', expressions)
-        self.assertNotIn('ai_codex_window_used_percent{window="7d"}', expressions)
+        self.assertNotIn('window="7d"', expressions)
 
 
 if __name__ == "__main__":

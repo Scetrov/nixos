@@ -14,11 +14,13 @@
     ./modules/local-networking.nix
     ./modules/loki.nix
     ./modules/mimir.nix
+    ./modules/garage.nix
     ./modules/oncall.nix
     ./modules/pyroscope.nix
     ./modules/prometheus.nix
     ./modules/tempo.nix
     ./modules/hermes.nix
+    ./modules/headscale.nix
     ./modules/user-scetrov-filebrowser.nix
     ./modules/user-scetrov-syncthing.nix
     ./modules/grafana-mcp.nix

@@ -30,5 +30,11 @@
 # - name: Include NixOS garbage collection tasks
 #   ansible.builtin.include_tasks: gc.yml
 
+- name: Enroll Habiki in the Headscale tailnet
+  ansible.builtin.include_tasks: headscale-enrolment.yml
+
+- name: Provision Garage storage
+  ansible.builtin.include_tasks: garage-provisioning.yml
+
 - name: Include Podman Restarts
   ansible.builtin.include_tasks: podman.yml

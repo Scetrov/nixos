@@ -719,7 +719,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 3,
+        "w": 2,
         "x": 12,
         "y": 4
       },
@@ -786,8 +786,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 3,
-        "x": 15,
+        "w": 2,
+        "x": 14,
         "y": 4
       },
       "id": 32,
@@ -861,8 +861,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 3,
-        "x": 18,
+        "w": 2,
+        "x": 16,
         "y": 4
       },
       "id": 33,
@@ -891,14 +891,14 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "(100 - ai_codex_window_used_percent{window=\"weekly\"}) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"weekly\"} == 1)",
+          "expr": "(100 - ai_codex_window_used_percent{window=\"5h\"}) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"5h\"} == 1)",
           "instant": true,
-          "legendFormat": "Weekly Remaining",
+          "legendFormat": "5-Hour Remaining",
           "range": false,
           "refId": "A"
         }
       ],
-      "title": "Weekly Remaining",
+      "title": "5-Hour Remaining",
       "type": "stat"
     },
     {
@@ -927,8 +927,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 3,
-        "x": 21,
+        "w": 2,
+        "x": 18,
         "y": 4
       },
       "id": 34,
@@ -957,14 +957,14 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "(clamp_min(ai_codex_window_reset_timestamp_seconds{window=\"weekly\"} - time(), 0)) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"weekly\"} == 1)",
+          "expr": "(clamp_min(ai_codex_window_reset_timestamp_seconds{window=\"5h\"} - time(), 0)) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"5h\"} == 1)",
           "instant": true,
-          "legendFormat": "Weekly Reset",
+          "legendFormat": "5-Hour Reset",
           "range": false,
           "refId": "A"
         }
       ],
-      "title": "Weekly Reset",
+      "title": "5-Hour Reset",
       "type": "stat"
     },
     {
@@ -2475,6 +2475,139 @@
       ],
       "title": "Network Errors / Drops by Host / Device",
       "type": "timeseries"
+    },
+    {
+      "id": 35,
+      "type": "stat",
+      "title": "Weekly Remaining",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 20,
+        "y": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "(100 - ai_codex_window_used_percent{window=\"weekly\"}) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"weekly\"} == 1)",
+          "instant": true,
+          "legendFormat": "Weekly Remaining",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "max": 100,
+          "min": 0,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": 0
+              },
+              {
+                "color": "#E6C65B",
+                "value": 20
+              },
+              {
+                "color": "#008791",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 36,
+      "type": "stat",
+      "title": "Weekly Reset",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 22,
+        "y": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "(clamp_min(ai_codex_window_reset_timestamp_seconds{window=\"weekly\"} - time(), 0)) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"weekly\"} == 1)",
+          "instant": true,
+          "legendFormat": "Weekly Reset",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#4B678C",
+            "mode": "fixed"
+          },
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#4B678C",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
     }
   ],
   "preload": false,

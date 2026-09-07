@@ -32,6 +32,7 @@ in
   "authentik_postgresql_password.age".publicKeys = users ++ systems;
   "authentik_secret_key.age".publicKeys = users ++ systems;
   "cloudflare_dns_zone_api_key.age".publicKeys = users ++ systems;
+  "cloudflare_headscale_ddns_api_token.age".publicKeys = users ++ systems;
   "cloudflare_email.age".publicKeys = users ++ systems;
   "grafana_authentik_client_id.age".publicKeys = users ++ systems;
   "grafana_authentik_client_secret.age".publicKeys = users ++ systems;
@@ -51,6 +52,12 @@ in
   "dtrack_oidc_client_secret.age".publicKeys = users ++ systems;
   "frontier_indexer_db_password.age".publicKeys = users ++ systems;
   "mcp_client_token.age".publicKeys = users ++ systems;
+  "garage_rpc_secret.age".publicKeys = users ++ systems;
+  "garage_admin_token.age".publicKeys = users ++ systems;
+  "garage_admin_environment.age".publicKeys = users ++ systems;
+  "garage_metrics_token.age".publicKeys = users ++ systems;
+  "garage_metrics_environment.age".publicKeys = users ++ systems;
+  "garage_reapers_arsenal_s3_credentials.age".publicKeys = users ++ systems;
   "grafana_mcp_token.age".publicKeys = users ++ systems;
   "github_repository_observability_app_id.age".publicKeys = users ++ systems;
   "github_repository_observability_private_key.age".publicKeys = users ++ systems;

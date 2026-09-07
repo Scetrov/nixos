@@ -1,0 +1,28 @@
+- name: Configure the single-node Garage layout, bucket, and scoped project key
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+
+    status="$(garage status)"
+    if grep -q 'NO ROLE ASSIGNED' <<<"$status"; then
+      node_id="$(awk '/NO ROLE ASSIGNED/ { print $1; exit }' <<<"$status")"
+      test -n "$node_id"
+      garage layout assign -z habiki -c 250GB "$node_id"
+      garage layout apply --version 1
+    fi
+
+    if ! garage bucket info reapers-arsenal >/dev/null 2>&1; then
+      garage bucket create reapers-arsenal
+    fi
+
+    # This file is decrypted from agenix only on Habiki.  It contains the
+    # pre-generated project S3 credential and is never copied into inventory,
+    # a Nix expression, or task output.
+    source /run/agenix/garage_reapers_arsenal_s3_credentials
+    if ! garage key info "$GARAGE_REAPERS_ARSENAL_ACCESS_KEY_ID" >/dev/null 2>&1; then
+      garage key import -n reapers-arsenal-backup "$GARAGE_REAPERS_ARSENAL_ACCESS_KEY_ID" "$GARAGE_REAPERS_ARSENAL_SECRET_ACCESS_KEY" --yes
+    fi
+    garage bucket allow --read --write --owner reapers-arsenal --key "$GARAGE_REAPERS_ARSENAL_ACCESS_KEY_ID"
+  args:
+    executable: /run/current-system/sw/bin/bash
+  when: inventory_hostname == "habiki"

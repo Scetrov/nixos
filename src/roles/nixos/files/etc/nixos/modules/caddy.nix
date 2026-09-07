@@ -4,6 +4,7 @@ lib.mkIf config.services.grafana.enable {
   networking.firewall.allowedTCPPorts = [
     80
     443
+    8443
   ];
 
   age.secrets.loki_token_hash = {
@@ -124,5 +125,26 @@ lib.mkIf config.services.grafana.enable {
             reverse_proxy 127.0.0.1:8123
           '';
         };
+
+    # The S3 API is only bound to Habiki's tailnet address. ACME uses the
+    # existing Cloudflare DNS-01 credentials, so no public S3 route is needed.
+    virtualHosts."s3.tailnet.net.scetrov.live" = {
+      listenAddresses = [ "100.64.0.1" ];
+      useACMEHost = "s3.tailnet.net.scetrov.live";
+      extraConfig = ''
+        encode zstd gzip
+        reverse_proxy 127.0.0.1:3900
+      '';
+    };
+
+    # This site deliberately has no forward_auth directive: Headscale clients
+    # authenticate through their enrolment key and controller policy instead.
+    virtualHosts."headscale.net.scetrov.live:8443" = {
+      useACMEHost = "scetrov.live";
+      extraConfig = ''
+        encode zstd gzip
+        reverse_proxy 127.0.0.1:8090
+      '';
+    };
   };
 }

@@ -1,0 +1,22 @@
+- name: Enroll Habiki in Headscale when it has no tailnet identity
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+
+    tailscale_status="$(tailscale status --json || true)"
+    if jq -e '.BackendState == "Running" and .Self.UserID != 0' <<<"$tailscale_status" >/dev/null; then
+      exit 0
+    fi
+
+    user_id="$(headscale users list -o json | jq -r '(. // [])[] | select(.name == "habiki") | .id' | head -n1)"
+    if [ -z "$user_id" ]; then
+      user_id="$(headscale users create habiki -o json | jq -r '.id')"
+    fi
+
+    auth_key="$(headscale preauthkeys create --user "$user_id" --expiration 1h -o json | jq -r '.key')"
+    test -n "$auth_key"
+    tailscale up --login-server https://headscale.net.scetrov.live:8443 --auth-key "$auth_key"
+  args:
+    executable: /run/current-system/sw/bin/bash
+  when: inventory_hostname == "habiki"
+  no_log: true

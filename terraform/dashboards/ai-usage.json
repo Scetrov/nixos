@@ -17,7 +17,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Weekly Remaining",
+      "title": "5-Hour Remaining",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
@@ -25,7 +25,80 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 4,
+        "w": 3,
+        "h": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "(100 - ai_codex_window_used_percent{window=\"5h\"}) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"5h\"} == 1)",
+          "instant": true,
+          "legendFormat": "5-Hour Remaining",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": null
+              },
+              {
+                "color": "#E6C65B",
+                "value": 20
+              },
+              {
+                "color": "#008791",
+                "value": 50
+              }
+            ]
+          },
+          "mappings": [],
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 19,
+      "type": "stat",
+      "title": "Weekly Remaining",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 3,
         "h": 5
       },
       "targets": [
@@ -88,6 +161,70 @@
       }
     },
     {
+      "id": 20,
+      "type": "stat",
+      "title": "Weekly Reset",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 9,
+        "y": 0,
+        "w": 3,
+        "h": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "(clamp_min(ai_codex_window_reset_timestamp_seconds{window=\"weekly\"} - time(), 0)) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"weekly\"} == 1)",
+          "instant": true,
+          "legendFormat": "Weekly Reset",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "fixedColor": "#4B678C",
+            "mode": "fixed"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#4B678C",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [],
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
       "id": 2,
       "type": "stat",
       "title": "Codex Authentication",
@@ -96,9 +233,9 @@
         "uid": "mimir"
       },
       "gridPos": {
-        "x": 4,
+        "x": 12,
         "y": 0,
-        "w": 4,
+        "w": 3,
         "h": 5
       },
       "targets": [
@@ -179,9 +316,9 @@
         "uid": "mimir"
       },
       "gridPos": {
-        "x": 8,
+        "x": 18,
         "y": 0,
-        "w": 4,
+        "w": 3,
         "h": 5
       },
       "targets": [
@@ -244,9 +381,9 @@
         "uid": "mimir"
       },
       "gridPos": {
-        "x": 12,
+        "x": 21,
         "y": 0,
-        "w": 4,
+        "w": 3,
         "h": 5
       },
       "targets": [
@@ -309,9 +446,9 @@
         "uid": "mimir"
       },
       "gridPos": {
-        "x": 16,
+        "x": 15,
         "y": 0,
-        "w": 4,
+        "w": 3,
         "h": 5
       },
       "targets": [
@@ -386,15 +523,15 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "Weekly Reset",
+      "title": "5-Hour Reset",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
       },
       "gridPos": {
-        "x": 20,
+        "x": 3,
         "y": 0,
-        "w": 4,
+        "w": 3,
         "h": 5
       },
       "targets": [
@@ -404,9 +541,9 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "(clamp_min(ai_codex_window_reset_timestamp_seconds{window=\"weekly\"} - time(), 0)) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"weekly\"} == 1)",
+          "expr": "(clamp_min(ai_codex_window_reset_timestamp_seconds{window=\"5h\"} - time(), 0)) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"})) and on() (ai_codex_window_present{window=\"5h\"} == 1)",
           "instant": true,
-          "legendFormat": "Weekly Reset",
+          "legendFormat": "5-Hour Reset",
           "range": false,
           "refId": "A"
         }
