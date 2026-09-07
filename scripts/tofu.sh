@@ -98,7 +98,7 @@ refresh_generated_secrets() {
 }
 
 if [[ "$REFRESH_ONLY" == true ]]; then
-    tofu -chdir="$TERRAFORM_DIR" init -reconfigure
+    tofu -chdir="$TERRAFORM_DIR" init -reconfigure -upgrade
     refresh_generated_secrets
     exit 0
 fi
@@ -107,7 +107,7 @@ if [[ ${#TOFU_ARGS[@]} -eq 0 ]]; then
     TOFU_ARGS=(apply)
 fi
 
-tofu -chdir="$TERRAFORM_DIR" init -reconfigure
+tofu -chdir="$TERRAFORM_DIR" init -reconfigure -upgrade
 tofu -chdir="$TERRAFORM_DIR" "${TOFU_ARGS[@]}"
 
 if [[ " ${TOFU_ARGS[*]} " == *" apply "* ]]; then
