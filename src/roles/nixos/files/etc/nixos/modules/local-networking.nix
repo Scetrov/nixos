@@ -50,7 +50,7 @@
         "grafana.reapers.scetrov.live"
       ];
       "10.229.5.18" = [
-        "www-arsenal-test.net.scetrov.live"
+        "www.reapers.scetrov.live"
       ];
     };
   };
