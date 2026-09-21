@@ -126,12 +126,15 @@ lib.mkIf config.services.grafana.enable {
           '';
         };
 
-    # The S3 API is only bound to Habiki's tailnet address. ACME uses the
-    # existing Cloudflare DNS-01 credentials, so no public S3 route is needed.
+    # Keep this site on Caddy's shared HTTPS listener so Caddy can start before
+    # tailscaled has assigned Habiki's tailnet address. Restrict access by the
+    # peer source address instead of binding to an address that may not exist.
     virtualHosts."s3.tailnet.net.scetrov.live" = {
-      listenAddresses = [ "100.64.0.1" ];
       useACMEHost = "s3.tailnet.net.scetrov.live";
       extraConfig = ''
+        @notTailnet not remote_ip 100.64.0.0/10
+        respond @notTailnet "Forbidden" 403
+
         encode zstd gzip
         reverse_proxy 127.0.0.1:3900
       '';
