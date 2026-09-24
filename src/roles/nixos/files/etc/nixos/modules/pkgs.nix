@@ -18,6 +18,7 @@ in
     nixos-generators
     nodejs_24
     pnpm
+    steamcmd
     networkmanager-openvpn
     opentofu
     openvpn

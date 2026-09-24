@@ -63,4 +63,6 @@ in
   "github_repository_observability_private_key.age".publicKeys = users ++ systems;
   "openrouter_management_env.age".publicKeys = users ++ systems;
   "chatgpt_account_id.age".publicKeys = users ++ systems;
+  "project_zomboid_admin_password.age".publicKeys = users ++ systems;
+  "project_zomboid_join_password.age".publicKeys = users ++ systems;
 }

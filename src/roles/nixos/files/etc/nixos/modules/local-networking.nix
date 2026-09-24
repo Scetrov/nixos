@@ -26,6 +26,7 @@
       "10.229.10.2" = [
         "habiki"
         "habiki.net.scetrov.live"
+        "zomboid.net.scetrov.live"
         "metrics.net.scetrov.live"
         "identity.net.scetrov.live"
         "immich.net.scetrov.live"

@@ -18,6 +18,7 @@
     ./modules/oncall.nix
     ./modules/pyroscope.nix
     ./modules/prometheus.nix
+    ./modules/project-zomboid.nix
     ./modules/tempo.nix
     ./modules/hermes.nix
     ./modules/headscale.nix
@@ -63,6 +64,21 @@
     matter.enable = true;
   };
   scetrov.services.unifi-network-logs.enable = true;
+  scetrov.services.project-zomboid = {
+    enable = true;
+    serverName = "pz-server";
+    lanCidrs = [ "10.229.0.0/16" ];
+    maxPlayers = 8;
+    memoryMax = "4G";
+    corpseRemovalHours = 140;
+    maximumLootedBuildingChance = 0;
+    zombiePopulationStartMultiplier = 0.7;
+    zombiePopulationPeakMultiplier = 1.0;
+    zombieRedistributeHours = 24;
+    steamAccount = "ScetrovZomboid";
+    adminPasswordFile = config.age.secrets.project_zomboid_admin_password.path;
+    joinPasswordFile = config.age.secrets.project_zomboid_join_password.path;
+  };
   scetrov.services.frontier-indexer = {
     enable = true;
     indexerImage = "ghcr.io/ocky-public/frontier-indexer:v0.3.7";
