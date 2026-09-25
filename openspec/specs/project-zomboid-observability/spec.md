@@ -33,11 +33,12 @@ The system SHALL provide a declaratively managed Project Zomboid service dashboa
 - **THEN** the landing view shows server availability and telemetry freshness alongside supported player, game-runtime, and world-health signals
 
 #### Scenario: Game-master inspects player detail
-- **WHEN** native telemetry exposes player coordinate data and a game master selects a player using the compact selector
-- **THEN** the dashboard shows an online-player roster and a half-width, approximately game-map-proportioned player-path panel using the installed Build 42 basemap and aligned world X/Y coordinates rather than an Earth map
+- **WHEN** native telemetry exposes player data and a game master selects a player using the compact selector
+- **THEN** the dashboard shows a roster of players observed in the active dashboard time range, including last-seen time and latest supported status values
+- **AND** the dashboard shows a half-width, approximately game-map-proportioned player-path panel using the installed Build 42 basemap and aligned world X/Y coordinates rather than an Earth map
 
 #### Scenario: No player coordinate is available
-- **WHEN** no online player coordinate is emitted for the selected time range
+- **WHEN** no player coordinate is emitted for the selected time range
 - **THEN** the roster SHALL indicate unavailable rather than zero, and the map SHALL show no position
 - **AND** no redundant location-coverage or map-empty-state panel SHALL occupy dashboard space
 
@@ -47,9 +48,9 @@ The system SHALL provide a declaratively managed Project Zomboid service dashboa
 - **AND** extended signal documentation SHALL start collapsed under More info
 - **AND** different plotted signals SHALL have readable, visually distinct keys
 
-#### Scenario: Hourly game events are plotted
+#### Scenario: Interval game events are plotted
 - **WHEN** native game-day event totals are available
-- **THEN** the event chart SHALL show approximate rolling-hour increases derived from those resettable totals, labelled as hourly events rather than raw `-today` series
+- **THEN** the event chart SHALL show discrete interval increases derived from those resettable totals, labelled as events per interval rather than raw `-today` series or rolling-hour values
 
 ### Requirement: Game resource telemetry is attributed to the service
 The Project Zomboid dashboard SHALL show only game/JVM or `project-zomboid.service`-attributable CPU and memory telemetry, not host-wide CPU or memory measurements presented as game consumption.

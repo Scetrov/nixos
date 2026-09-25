@@ -21,8 +21,16 @@ def main(root: pathlib.Path) -> None:
         "Native scrape", "Sample age", "Online Players", "Server FPS", "JVM Heap Used", "JVM uptime"
     ))
     assert "Online Player Location Coverage" not in panels and "Map Empty State" not in panels
-    events = panels["Events / rolling hour"]
-    assert len(events["targets"]) == 3 and all("increase(" in t["expr"] and "[1h]" in t["expr"] for t in events["targets"])
+    events = panels["Events per interval"]
+    assert len(events["targets"]) == 3
+    assert all("increase(" in t["expr"] and "[$__interval]" in t["expr"] and t["interval"] == "5m" for t in events["targets"])
+    assert events["fieldConfig"]["defaults"]["custom"]["drawStyle"] == "bars"
+    assert "Absent telemetry is Unavailable" in events["description"]
+    roster = panels["Player Roster — dashboard range"]
+    assert roster["targets"][0]["instant"] is False and roster["targets"][0]["range"] is True
+    assert "label_replace" in roster["targets"][0]["expr"]
+    assert "Players observed in the active dashboard time range" in roster["description"]
+    assert {"groupBy", "organize"} == {t["id"] for t in roster["transformations"]}
     assert dashboard["templating"]["list"][0]["hide"] == 1
     map_panel = panels["Player path"]
     assert map_panel["type"] == "geomap" and map_panel["gridPos"]["w"] == 12
@@ -60,7 +68,8 @@ def main(root: pathlib.Path) -> None:
             expressions.append(expr)
     assert any('parameter="zombies-loaded"' in expr or 'zombies-(loaded|simulated|total)' in expr for expr in expressions)
     assert not any(re.search(r"node_(?:cpu|memory)_", expr) for expr in expressions)
-    assert not any("health" in expr.lower() or "inventory" in expr.lower() for expr in expressions)
+    assert not any(re.search(r"player_(?:health|days_alive|zombies_killed)", expr) or "inventory" in expr.lower() for expr in expressions)
+    assert "Unavailable" in roster["targets"][0]["expr"]
     assert 'folder      = grafana_folder.operations_services.uid' in terraform.split('resource "grafana_dashboard" "project_zomboid_service"')[1].split("}")[0]
     assert "/grafana/d/svc-project-zomboid/project-zomboid-server" in catalog["panels"][1]["options"]["content"]
     assert not any('resource "grafana_rule_group" "project_zomboid' in text for text in [terraform])
