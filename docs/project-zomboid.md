@@ -7,11 +7,24 @@ This is one Build 42 dedicated server on Habiki. Gameplay is LAN-only from
 requires both the agenix-backed join password and explicit whitelist approval.
 RCON is disabled and must never be exposed.
 
-The managed Build 42 sandbox grants 100 free character-creation points and
-sets `MultiHitZombies = true`. These keys are reconciled on service start while
-the server is stopped; existing saves, profiles, and unrelated sandbox options
-remain game-owned. A targeted NixOS rebuild can restart the game, so deploy
-when players are offline or during a maintenance window.
+The managed Build 42 sandbox grants 100 free character-creation points, sets
+`MultiHitZombies = true`, enables the minimap, enables saliva-only infection,
+and applies a 1.5× global XP multiplier. PvP is disabled. Approved players can
+see every connected player's in-game map marker (`MapRemotePlayerVisibility=4`);
+this is private to the existing password-and-whitelist admission path, but every
+approved player can see the others' locations.
+
+Each **new** multiplayer character receives exactly one duffel bag, canned
+chili, can opener, water bottle, and hand axe through the native Build 42
+`SpawnItems` hook. The separate default starter kit remains disabled. Existing
+characters are not retroactively equipped and reconnecting does not grant a
+second kit. Confirm the bottle contains drinkable water with an approved player
+before accepting a deployment because Build 42 can select its initial fluid.
+
+These settings are reconciled on service start while the server is stopped;
+unrelated sandbox options remain game-owned. A targeted NixOS rebuild can
+restart the game, so deploy when players are offline or during a maintenance
+window.
 
 The verified dependency-first Workshop manifest is:
 
@@ -94,8 +107,11 @@ sudo project-zomboid-maintenance reset-world --confirm
 
 It retains the installed Steam runtime and Workshop cache, quarantines the old
 `Zomboid` state beneath `/var/lib/project-zomboid`, and regenerates the server
-profile. Players must be re-added to the whitelist afterwards. Do not use this
-operation for a map-only reset.
+profile. Before replacing the profile it securely snapshots and later restores
+only the existing whitelist records for `Scetrov` and `FlyingFire`; it refuses
+to reset if either record is missing or duplicated. World, character, and all
+other whitelist state are deliberately not retained. Do not use this operation
+for a map-only reset.
 
 ## Validation record
 

@@ -17,6 +17,12 @@ let
   mapTilesScript = pkgs.writeText "project-zomboid-map-tiles.py" (
     builtins.readFile ./project-zomboid-map-tiles.py
   );
+  reconcileProfileScript = pkgs.writeText "project-zomboid-reconcile.py" (
+    builtins.readFile ./project-zomboid-reconcile.py
+  );
+  whitelistResetScript = pkgs.writeText "project-zomboid-whitelist.py" (
+    builtins.readFile ./project-zomboid-whitelist.py
+  );
   renderMapTiles = pkgs.writeShellScript "project-zomboid-render-map-tiles" ''
     set -euo pipefail
     source=${lib.escapeShellArg worldMap}
@@ -87,6 +93,7 @@ let
           ${pkgs.gnused}/bin/sed -i "/^SandboxVars = {/a\\    $key = $value," "$sandbox"
         fi
       }
+      set_sandbox_value StarterKit false
       set_sandbox_value CharacterFreePoints ${toString cfg.characterFreePoints}
       set_sandbox_value MultiHitZombies ${lib.boolToString cfg.multiHitZombies}
       set_sandbox_value HoursForCorpseRemoval ${toString cfg.corpseRemovalHours}.0
@@ -94,6 +101,7 @@ let
       set_sandbox_value PopulationStartMultiplier ${toString cfg.zombiePopulationStartMultiplier}
       set_sandbox_value PopulationPeakMultiplier ${toString cfg.zombiePopulationPeakMultiplier}
       set_sandbox_value RedistributeHours ${toString cfg.zombieRedistributeHours}.0
+      grep -q "^[[:space:]]*StarterKit[[:space:]]*=[[:space:]]*false," "$sandbox"
       grep -q "^[[:space:]]*CharacterFreePoints[[:space:]]*=[[:space:]]*${toString cfg.characterFreePoints}," "$sandbox"
       grep -q "^[[:space:]]*MultiHitZombies[[:space:]]*=[[:space:]]*${lib.boolToString cfg.multiHitZombies}," "$sandbox"
       grep -q "^[[:space:]]*HoursForCorpseRemoval[[:space:]]*=[[:space:]]*${toString cfg.corpseRemovalHours}.0," "$sandbox"
@@ -102,6 +110,16 @@ let
       grep -q "^[[:space:]]*PopulationPeakMultiplier[[:space:]]*=[[:space:]]*${toString cfg.zombiePopulationPeakMultiplier}," "$sandbox"
       grep -q "^[[:space:]]*RedistributeHours[[:space:]]*=[[:space:]]*${toString cfg.zombieRedistributeHours}.0," "$sandbox"
     fi
+
+    ${pkgs.python3}/bin/python3 ${reconcileProfileScript} \
+      --ini ${lib.escapeShellArg ini} \
+      --sandbox "$sandbox" \
+      --pvp ${lib.boolToString cfg.pvp} \
+      --map-remote-player-visibility ${toString cfg.mapRemotePlayerVisibility} \
+      --spawn-items ${lib.escapeShellArg (lib.concatStringsSep "," cfg.spawnItems)} \
+      --allow-mini-map ${lib.boolToString cfg.allowMiniMap} \
+      --zombie-transmission ${toString cfg.zombieTransmission} \
+      --global-xp-multiplier ${toString cfg.globalXpMultiplier}
   '';
   steamOpenSSLCompat = pkgs.runCommand "project-zomboid-steam-openssl" { } ''
     # buildFHSEnv mounts target packages at /usr, so `local` becomes
@@ -164,7 +182,9 @@ let
     # Bootstrap via the private console, never a process argument.
     if [ ! -e ${profileDir}/db/${cfg.serverName}.db ]; then
       admin_password=$(cat ${cfg.adminPasswordFile})
-      printf '%s\n' "$admin_password" >&3
+      # Build 42 confirms the first administrator password interactively.
+      # Feed both entries through the private FIFO, never via argv or logs.
+      printf '%s\n%s\n' "$admin_password" "$admin_password" >&3
       unset admin_password
     fi
     exec ${pkgs.bash}/bin/bash ${steamDir}/start-server.sh -servername ${lib.escapeShellArg cfg.serverName} <&3
@@ -263,14 +283,40 @@ let
           ;;
         reset-world)
           test "''${2-}" = --confirm || { echo "reset-world requires --confirm" >&2; exit 64; }
+          preserved_whitelist=${stateDir}/locks/whitelist-reset.db
+          test ! -e "$preserved_whitelist" || { echo "stale whitelist reset data exists; refusing reset" >&2; exit 1; }
           systemctl stop project-zomboid.service
           trap start_on_exit EXIT
           backup
+          ${pkgs.python3}/bin/python3 ${whitelistResetScript} snapshot \
+            --source ${profileDir}/db/${cfg.serverName}.db \
+            --destination "$preserved_whitelist"
+          trap "rm -f -- \"$preserved_whitelist\"; start_on_exit" EXIT
           quarantine=${stateDir}/quarantine-reset-$(date -u +%Y%m%dT%H%M%SZ)
           mkdir -p "$quarantine"
           test ! -e ${profileDir} || mv ${profileDir} "$quarantine"/
-          ${initialise}
-          chown -R ${cfg.user}:${cfg.user} ${profileDir}
+          # A prior interrupted reset can leave the mutable launcher root-owned.
+          # Repair ownership before the unprivileged initializer reads it.
+          chown -R ${cfg.user}:${cfg.user} ${steamDir} ${profileDir}
+          ${pkgs.util-linux}/bin/runuser -u ${cfg.user} -- ${initialise}
+          # Build 42 creates its SQLite server database on first launch. Stop
+          # again before inserting only the verified whitelist records.
+          systemctl start project-zomboid.service
+          # `systemctl start` returns while Build 42 is still creating its
+          # profile database.  Do not restore into a path that the game can
+          # subsequently replace.
+          for _ in $(${pkgs.coreutils}/bin/seq 1 120); do
+            if [ -f ${profileDir}/db/${cfg.serverName}.db ] && ${pkgs.python3}/bin/python3 ${whitelistResetScript} ready --database ${profileDir}/db/${cfg.serverName}.db; then
+              break
+            fi
+            sleep 2
+          done
+          ${pkgs.python3}/bin/python3 ${whitelistResetScript} ready --database ${profileDir}/db/${cfg.serverName}.db
+          systemctl stop project-zomboid.service
+          ${pkgs.python3}/bin/python3 ${whitelistResetScript} restore \
+            --source "$preserved_whitelist" \
+            --destination ${profileDir}/db/${cfg.serverName}.db
+          rm -f -- "$preserved_whitelist"
           trap - EXIT
           systemctl start project-zomboid.service
           ;;
@@ -321,6 +367,42 @@ in
       type = lib.types.bool;
       default = true;
       description = "Allow one melee attack to hit multiple zombies.";
+    };
+    pvp = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Allow player-versus-player damage.";
+    };
+    mapRemotePlayerVisibility = lib.mkOption {
+      type = lib.types.ints.between 1 4;
+      default = 4;
+      description = "Build 42 in-game map visibility level for connected players.";
+    };
+    spawnItems = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [
+        "Base.Bag_DuffelBag"
+        "Base.CannedChili"
+        "Base.TinOpener"
+        "Base.WaterBottle"
+        "Base.HandAxe"
+      ];
+      description = "Items granted by Build 42 to each new multiplayer character.";
+    };
+    allowMiniMap = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable the Build 42 minimap.";
+    };
+    zombieTransmission = lib.mkOption {
+      type = lib.types.ints.between 1 4;
+      default = 2;
+      description = "Build 42 zombie infection transmission mode.";
+    };
+    globalXpMultiplier = lib.mkOption {
+      type = lib.types.numbers.between 0.0 100.0;
+      default = 1.5;
+      description = "Global Build 42 skill XP multiplier.";
     };
     memoryMax = lib.mkOption {
       type = lib.types.str;
@@ -428,6 +510,17 @@ in
         assertion =
           !cfg.enableHeadscaleAccess || (cfg.headscaleInterface != null && cfg.headscaleCidrs != [ ]);
         message = "Project Zomboid Headscale access requires an interface and source CIDRs.";
+      }
+      {
+        assertion =
+          cfg.spawnItems == [
+            "Base.Bag_DuffelBag"
+            "Base.CannedChili"
+            "Base.TinOpener"
+            "Base.WaterBottle"
+            "Base.HandAxe"
+          ];
+        message = "Project Zomboid family co-op starter items must use the verified five-item allowlist exactly once.";
       }
     ];
     users.groups.${cfg.user} = { };
