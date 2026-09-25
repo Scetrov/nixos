@@ -140,6 +140,12 @@ resource "grafana_dashboard" "hermes_service" {
   overwrite   = true
 }
 
+resource "grafana_dashboard" "project_zomboid_service" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/project-zomboid-service.json")
+  overwrite   = true
+}
+
 resource "grafana_dashboard" "home_assistant_service" {
   folder      = grafana_folder.operations_services.uid
   config_json = file("${local.grafana_portal.source_root}/home-assistant-service.json")

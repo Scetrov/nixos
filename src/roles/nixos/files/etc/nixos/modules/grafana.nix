@@ -3,11 +3,28 @@
 {
   age.secrets.grafana_authentik_client_id.file = /root/secrets/grafana_authentik_client_id.age;
   age.secrets.grafana_authentik_client_secret.file = /root/secrets/grafana_authentik_client_secret.age;
+  age.secrets.grafana_renderer_environment = {
+    file = /root/secrets/grafana_renderer_environment.age;
+    mode = "0400";
+  };
   age.secrets.grafana_secret_key = {
     file = /root/secrets/grafana_secret_key.age;
     owner = "grafana";
     group = "grafana";
     mode = "0400";
+  };
+
+  # Grafana 13 no longer supports the legacy renderer plugin. The native
+  # NixOS service runs a Chromium-backed renderer on loopback only; Nixpkgs
+  # pins both its source and vendored Go dependencies with SHA256 hashes.
+  services.grafana-image-renderer = {
+    enable = true;
+    settings.server.addr = "127.0.0.1:18081";
+  };
+
+  systemd.services.grafana-image-renderer = {
+    restartTriggers = [ config.age.secrets.grafana_renderer_environment.file ];
+    serviceConfig.EnvironmentFile = config.age.secrets.grafana_renderer_environment.path;
   };
 
   services.grafana = {
@@ -26,6 +43,13 @@
       feature_toggles.enable = "externalServiceAccounts accessControlOnCall";
       log.mode = "console";
       metrics.enabled = true;
+      rendering = {
+        server_url = "http://127.0.0.1:18081/render";
+        # The browser must use the same origin as the authenticated tile route;
+        # a localhost callback bypasses Caddy and returns 404 for map tiles.
+        callback_url = "https://metrics.net.scetrov.live/grafana/";
+        concurrent_render_request_limit = 1;
+      };
       security = {
         cookie_secure = true;
         disable_gravatar = true;
@@ -130,6 +154,7 @@
     restartTriggers = [
       config.age.secrets.grafana_authentik_client_id.file
       config.age.secrets.grafana_authentik_client_secret.file
+      config.age.secrets.grafana_renderer_environment.file
     ];
     environment = {
       GF_AUTH_GENERIC_OAUTH_ENABLED = "true";
@@ -147,6 +172,7 @@
     serviceConfig.EnvironmentFile = [
       "/run/agenix/grafana_authentik_client_id"
       "/run/agenix/grafana_authentik_client_secret"
+      config.age.secrets.grafana_renderer_environment.path
     ];
   };
 

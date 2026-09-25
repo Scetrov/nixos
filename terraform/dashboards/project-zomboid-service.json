@@ -1,0 +1,1466 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "Service Catalog",
+      "type": "link",
+      "url": "/grafana/d/ops-service-catalog/operations-service-catalog"
+    },
+    {
+      "title": "Platform Overview",
+      "type": "link",
+      "url": "/grafana/d/ops-platform-overview/operations-platform-overview"
+    },
+    {
+      "title": "System Resources",
+      "type": "link",
+      "url": "/grafana/d/system-resources/system-resources"
+    },
+    {
+      "title": "Grafana Explore",
+      "type": "link",
+      "url": "/grafana/explore"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Playability",
+      "type": "row",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "title": "Native scrape",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#008791"
+          },
+          "noValue": "Unavailable",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Down",
+                  "color": "#FF3E8D",
+                  "index": 0
+                },
+                "1": {
+                  "text": "Up",
+                  "color": "#008791",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF3E8D",
+                "value": null
+              },
+              {
+                "color": "#008791",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Sample age",
+      "type": "stat",
+      "gridPos": {
+        "x": 4,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - timestamp(game{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"players\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#E6C65B"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Online Players",
+      "type": "stat",
+      "gridPos": {
+        "x": 8,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "game{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"players\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#008791"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Server FPS",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "performance{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"fps\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#008791"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 6,
+      "title": "JVM Heap Used",
+      "type": "stat",
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jvm_memory_used_bytes{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",area=\"heap\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#BB5191"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 7,
+      "title": "JVM uptime",
+      "type": "stat",
+      "gridPos": {
+        "x": 20,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - process_start_time_seconds{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4B678C"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 28,
+      "title": "More info",
+      "type": "row",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [
+        {
+          "id": 8,
+          "title": "Signal Coverage",
+          "type": "text",
+          "gridPos": {
+            "x": 0,
+            "y": 6,
+            "w": 24,
+            "h": 6
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "## Verified native Build 42 signals\n\n- **Live:** server FPS (not client rendering FPS), connected players, loaded/simulated/total zombies, animal instances and objects, loaded cells, daily events, process/JVM memory and CPU, sampled network rates, and online-player coordinates.\n- **Unavailable:** separate tick-rate metric; player health and inventory are deliberately excluded.\n- **No player online:** coordinate and roster series are absent, **not zero**. The roster is unavailable; the map can still show earlier positions within the selected time range.\n- **Semantics:** native `game`, `connection`, `performance`, and `network` series use a `parameter` label. Event charts show approximate rolling-hour increases from native game-day counters, which reset each game day. Process metrics are JVM-specific, never host totals. See [System Resources](/grafana/d/system-resources/system-resources) for host context.\n- **Signals:** retained Mimir metrics and Loki journal logs share `service=project-zomboid`, `host=habiki`. No alerts are provisioned."
+          }
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "World Pulse",
+      "type": "row",
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "title": "Zombies \u2014 Loaded / Simulated / Total",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "game{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=~\"zombies-(loaded|simulated|total)\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{parameter}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#BB5191"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "zombies-loaded"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4B678C"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Loaded"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "zombies-simulated"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#BB5191"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Simulated"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "zombies-total"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF3E8D"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "World total"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Animal Instances / Objects",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 7,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "game{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=~\"animals-(instances|objects)\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{parameter}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#855F90"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "animals-instances"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#008791"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Instances"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "animals-objects"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#E6C65B"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Objects"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Loaded Cells",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 18,
+        "y": 7,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "game{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"loaded-cells\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "loaded cells"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4B678C"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Events / rolling hour",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(connection{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"zombies-killed-today\"}[1h])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "Zombies killed"
+        },
+        {
+          "refId": "B",
+          "expr": "increase(connection{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"burned-corpses-today\"}[1h])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "Corpses burned"
+        },
+        {
+          "refId": "C",
+          "expr": "increase(connection{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"players-killed-by-zombie-today\"}[1h])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "Player deaths"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF3E8D"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Zombies killed"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#BB5191"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Zombies killed"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Corpses burned"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#E6C65B"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Corpses burned"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Player deaths"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF3E8D"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Player deaths"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "description": "Approximate events during the preceding hour, derived with increase() from native game-day totals. Game-day resets are treated as counter resets; no samples means unavailable, not zero."
+    },
+    {
+      "id": 14,
+      "title": "Game Runtime",
+      "type": "row",
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 15,
+      "title": "JVM Process CPU Cores",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 8,
+        "h": 7
+      },
+      "description": "CPU seconds per second for the game JVM; 1.0 is one fully utilized core.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(process_cpu_seconds_total{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}[5m])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "CPU cores"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF3E8D"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "title": "JVM Resident Memory",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 8,
+        "y": 23,
+        "w": 8,
+        "h": 7
+      },
+      "description": "Physical resident set of the game JVM, not total host memory.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_resident_memory_bytes{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "Resident memory"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#BB5191"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "title": "JVM Heap and Nonheap Used",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 16,
+        "y": 23,
+        "w": 8,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jvm_memory_used_bytes{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{area}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#855F90"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "heap"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#BB5191"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Heap"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nonheap"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4B678C"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Nonheap"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "title": "JVM Threads",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 8,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jvm_threads_current{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "Threads"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4B678C"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "title": "Game Network B/s",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 8,
+        "y": 30,
+        "w": 16,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "network{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=~\"(received-bps|sent-bps)\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{parameter}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4B678C"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "received-bps"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#008791"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Received"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sent-bps"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF3E8D"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Sent"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "title": "GM Detail \u2014 online players only",
+      "type": "row",
+      "gridPos": {
+        "x": 0,
+        "y": 37,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 21,
+      "title": "Online Player Roster",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 38,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Online-only coordinate series; rows disappear when players disconnect. This is not a saved-character roster.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "player_x{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#BB5191"
+          },
+          "noValue": "Unavailable",
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "id": true,
+              "__name__": true,
+              "cluster": true,
+              "host": true,
+              "instance": true,
+              "job": true,
+              "service": true
+            },
+            "renameByName": {
+              "name": "Online player",
+              "Value": "World X (game tiles)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "title": "Player path",
+      "type": "geomap",
+      "gridPos": {
+        "x": 12,
+        "y": 38,
+        "w": 12,
+        "h": 20
+      },
+      "description": "Selected player positions from native world coordinates over the Build 42 map. Choose a player in the compact toolbar selector; older positions remain in the displayed time window. The native plugin does not support a dynamic per-name interactive legend.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "-player_y{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",name=~\"${player:regex}\"} / 111319.4908",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "expr": "player_x{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",name=~\"${player:regex}\"} / 111319.4908",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#008791"
+          },
+          "noValue": "Unavailable"
+        },
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "id": true,
+              "id 1": true
+            },
+            "renameByName": {
+              "Value #A": "latitude",
+              "Value #B": "longitude"
+            }
+          }
+        }
+      ],
+      "options": {
+        "basemap": {
+          "type": "xyz",
+          "config": {
+            "url": "/grafana/project-zomboid-map/{z}/{x}/{y}.webp",
+            "attribution": "Project Zomboid Build 42 in-game map (The Indie Stone); private server installation",
+            "minZoom": 11,
+            "maxZoom": 17
+          }
+        },
+        "view": {
+          "id": "coords",
+          "lat": -0.07244,
+          "lon": 0.08968,
+          "zoom": 12.8
+        },
+        "controls": {
+          "showZoom": true,
+          "mouseWheelZoom": true,
+          "showAttribution": false
+        },
+        "layers": [
+          {
+            "type": "markers",
+            "name": "Selected player positions",
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "#008791"
+                },
+                "size": {
+                  "fixed": 6
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg"
+                }
+              },
+              "location": {
+                "mode": "coords",
+                "latitude": "latitude",
+                "longitude": "longitude"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 25,
+      "title": "Operational Evidence",
+      "type": "row",
+      "gridPos": {
+        "x": 0,
+        "y": 58,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 26,
+      "title": "Warnings and Errors",
+      "type": "logs",
+      "gridPos": {
+        "x": 0,
+        "y": 46,
+        "w": 12,
+        "h": 12
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{service=\"project-zomboid\",host=\"habiki\"} |~ \"(?i)(warn|error|exception|fatal)\"",
+          "queryType": "range",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "id": 27,
+      "title": "Recent Chronological Logs",
+      "type": "logs",
+      "gridPos": {
+        "x": 0,
+        "y": 59,
+        "w": 24,
+        "h": 9
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{service=\"project-zomboid\",host=\"habiki\"}",
+          "queryType": "range",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "operations-portal",
+    "service",
+    "project-zomboid"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "player",
+        "label": "",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "mimir"
+        },
+        "query": {
+          "query": "label_values(player_x{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}, name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "includeAll": false,
+        "multi": false,
+        "sort": 1,
+        "hide": 1
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Project Zomboid Server",
+  "uid": "svc-project-zomboid",
+  "version": 1
+}

@@ -37,6 +37,15 @@ lib.mkIf config.services.grafana.enable {
           copy_headers X-Authentik-Username X-Authentik-Groups X-Authentik-Email X-Authentik-Name X-Authentik-Uid
         }
 
+        # Tile URLs live under /grafana so the browser sends the Grafana
+        # session cookie (scoped to that subpath). Check Grafana's org API,
+        # which accepts both human sessions and renderer service accounts;
+        # /api/user returns 404 for the renderer's service-account identity.
+        @project_zomboid_map path /grafana/project-zomboid-map/*
+        forward_auth @project_zomboid_map http://127.0.0.1:3005 {
+          uri /grafana/api/org
+        }
+
         header {
           Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
           X-Content-Type-Options nosniff
@@ -94,6 +103,11 @@ lib.mkIf config.services.grafana.enable {
           respond @mcp_auth "Unauthorized" 401
 
           reverse_proxy 127.0.0.1:8000
+        }
+
+        handle_path /grafana/project-zomboid-map/* {
+          root * /var/lib/project-zomboid-map/tiles
+          file_server
         }
 
         handle /grafana* {

@@ -85,6 +85,13 @@
       }
 
       rule {
+        source_labels = ["__journal__systemd_unit"]
+        regex         = "project-zomboid\\.service"
+        replacement   = "project-zomboid"
+        target_label  = "service"
+      }
+
+      rule {
         source_labels = ["__journal_syslog_identifier"]
         target_label  = "syslog_identifier"
       }
@@ -141,6 +148,18 @@
       job_name = "ai-usage"
       scrape_interval = "15s"
     }
+
+    ${lib.optionalString (config.networking.hostName == "habiki") ''
+      prometheus.scrape "project_zomboid" {
+        targets = [{
+          __address__ = "127.0.0.1:9105",
+          service     = "project-zomboid",
+        }]
+        forward_to     = [prometheus.remote_write.central.receiver]
+        job_name       = "project-zomboid"
+        scrape_interval = "15s"
+      }
+    ''}
 
     prometheus.remote_write "central" {
       endpoint {

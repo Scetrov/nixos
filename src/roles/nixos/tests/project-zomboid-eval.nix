@@ -54,6 +54,10 @@ let
   service = config.systemd.services.project-zomboid;
 in
 assert lib.assertMsg (
+  config.scetrov.services.project-zomboid.characterFreePoints == 100
+  && config.scetrov.services.project-zomboid.multiHitZombies
+) "character creation and multi-hit settings must be reconciled declaratively";
+assert lib.assertMsg (
   config.users.users.project-zomboid.isSystemUser
   && config.users.users.project-zomboid.home == "/var/lib/project-zomboid"
 ) "service identity must be unprivileged and persistent";
@@ -76,6 +80,21 @@ assert lib.assertMsg (
   && !(lib.hasInfix "27015" config.networking.firewall.extraCommands)
 ) "firewall must expose only LAN gameplay ports";
 assert lib.assertMsg (
+  config.scetrov.services.project-zomboid.nativeMetricsPort == 9105
+  && lib.hasInfix "iptables -I nixos-fw -p tcp ! -i lo --dport 9105 -j REJECT" config.networking.firewall.extraCommands
+  && lib.hasInfix "ip6tables -I nixos-fw -p tcp ! -i lo --dport 9105 -j REJECT" config.networking.firewall.extraCommands
+  && !(lib.hasInfix "--dport 9105 -j nixos-fw-accept" config.networking.firewall.extraCommands)
+) "native metrics must be inaccessible on non-loopback interfaces";
+assert lib.assertMsg (
+  builtins.elem "d /var/lib/project-zomboid-map 0755 root root - -" config.systemd.tmpfiles.rules
+  && config.systemd.services.project-zomboid-map-tiles.serviceConfig.Type == "oneshot"
+  && lib.hasSuffix "/worldmap.png" config.systemd.paths.project-zomboid-map-tiles.pathConfig.PathChanged
+  && config.systemd.services.project-zomboid-map-tiles.serviceConfig.ProtectSystem == "strict"
+  &&
+    config.systemd.services.project-zomboid-map-tiles.serviceConfig.ReadWritePaths
+    == [ "/var/lib/project-zomboid-map" ]
+) "game map tiles must be generated locally and only written to their private cache";
+assert lib.assertMsg (
   !config.scetrov.services.project-zomboid.enableHeadscaleAccess
   && !(lib.hasInfix "tailscale" config.networking.firewall.extraCommands)
 ) "Headscale access must be disabled by default";
@@ -88,6 +107,7 @@ assert lib.assertMsg (
   passed = true;
   # Expose rendered scripts so the shell/behavior tests can build them.
   launchScript = service.serviceConfig.ExecStart;
+  initialiseScript = service.serviceConfig.ExecStartPre;
   maintenanceScript = builtins.substring 0 (
     builtins.stringLength config.systemd.services.project-zomboid-backup.serviceConfig.ExecStart - 7
   ) config.systemd.services.project-zomboid-backup.serviceConfig.ExecStart;

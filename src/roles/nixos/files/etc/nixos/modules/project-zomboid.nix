@@ -12,6 +12,31 @@ let
   ini = "${profileDir}/Server/${cfg.serverName}.ini";
   workshopIds = lib.concatStringsSep ";" (map (mod: mod.workshopId) cfg.mods);
   workshopIdWords = lib.concatStringsSep " " (map (mod: mod.workshopId) cfg.mods);
+  worldMap = "${steamDir}/media/maps/Muldraugh, KY/worldmap.png";
+  mapTilesRoot = "/var/lib/project-zomboid-map";
+  mapTilesScript = pkgs.writeText "project-zomboid-map-tiles.py" (
+    builtins.readFile ./project-zomboid-map-tiles.py
+  );
+  renderMapTiles = pkgs.writeShellScript "project-zomboid-render-map-tiles" ''
+    set -euo pipefail
+    source=${lib.escapeShellArg worldMap}
+    root=${mapTilesRoot}
+    hash=$(${pkgs.coreutils}/bin/sha256sum "$source" | ${pkgs.coreutils}/bin/cut -d ' ' -f 1)
+    if [ -f "$root/tiles/.source-sha256" ] && [ "$(<"$root/tiles/.source-sha256")" = "$hash" ]; then
+      exit 0
+    fi
+    staging=$(${pkgs.coreutils}/bin/mktemp -d "$root/.tiles.XXXXXXXX")
+    trap '${pkgs.coreutils}/bin/rm -rf -- "$staging"' EXIT
+    ${pkgs.python3.withPackages (ps: [ ps.pillow ])}/bin/python3 ${mapTilesScript} "$source" "$staging"
+    printf '%s\n' "$hash" >"$staging/.source-sha256"
+    ${pkgs.coreutils}/bin/chmod -R a+rX "$staging"
+    ${pkgs.coreutils}/bin/rm -rf -- "$root/tiles.previous"
+    if [ -d "$root/tiles" ]; then
+      ${pkgs.coreutils}/bin/mv "$root/tiles" "$root/tiles.previous"
+    fi
+    ${pkgs.coreutils}/bin/mv "$staging" "$root/tiles"
+    ${pkgs.coreutils}/bin/rm -rf -- "$root/tiles.previous"
+  '';
   modIds = lib.concatStringsSep ";" (map (mod: "\\${mod.modId}") cfg.mods);
   initialise = pkgs.writeShellScript "project-zomboid-initialise" ''
     set -euo pipefail
@@ -35,6 +60,19 @@ let
     EOF
     fi
 
+    # Project Zomboid Build 42 starts its native Prometheus endpoint only when
+    # this JVM property is present.  The launcher JSON is mutable game state
+    # (and can be replaced by Steam validation), so reconcile it before every
+    # service start rather than keeping an unmanaged one-off edit.
+    launcher=${steamDir}/ProjectZomboid64.json
+    if [ -f "$launcher" ]; then
+      tmp=$(mktemp "$launcher.XXXXXX")
+      ${pkgs.jq}/bin/jq --arg prometheus_arg "-DprometheusPort=${toString cfg.nativeMetricsPort}" '
+        .vmArgs |= ((. // []) | map(select(startswith("-DprometheusPort=") | not)) + [$prometheus_arg])
+      ' "$launcher" >"$tmp"
+      mv "$tmp" "$launcher"
+    fi
+
     # SandboxVars is game-owned mutable state. Reconcile only these explicit,
     # safe runtime values while the service is stopped; leave all other world
     # configuration and generated data untouched.
@@ -49,11 +87,15 @@ let
           ${pkgs.gnused}/bin/sed -i "/^SandboxVars = {/a\\    $key = $value," "$sandbox"
         fi
       }
+      set_sandbox_value CharacterFreePoints ${toString cfg.characterFreePoints}
+      set_sandbox_value MultiHitZombies ${lib.boolToString cfg.multiHitZombies}
       set_sandbox_value HoursForCorpseRemoval ${toString cfg.corpseRemovalHours}.0
       set_sandbox_value MaximumLooted ${toString cfg.maximumLootedBuildingChance}
       set_sandbox_value PopulationStartMultiplier ${toString cfg.zombiePopulationStartMultiplier}
       set_sandbox_value PopulationPeakMultiplier ${toString cfg.zombiePopulationPeakMultiplier}
       set_sandbox_value RedistributeHours ${toString cfg.zombieRedistributeHours}.0
+      grep -q "^[[:space:]]*CharacterFreePoints[[:space:]]*=[[:space:]]*${toString cfg.characterFreePoints}," "$sandbox"
+      grep -q "^[[:space:]]*MultiHitZombies[[:space:]]*=[[:space:]]*${lib.boolToString cfg.multiHitZombies}," "$sandbox"
       grep -q "^[[:space:]]*HoursForCorpseRemoval[[:space:]]*=[[:space:]]*${toString cfg.corpseRemovalHours}.0," "$sandbox"
       grep -q "^[[:space:]]*MaximumLooted[[:space:]]*=[[:space:]]*${toString cfg.maximumLootedBuildingChance}," "$sandbox"
       grep -q "^[[:space:]]*PopulationStartMultiplier[[:space:]]*=[[:space:]]*${toString cfg.zombiePopulationStartMultiplier}," "$sandbox"
@@ -257,6 +299,11 @@ in
       type = lib.types.port;
       default = 16262;
     };
+    nativeMetricsPort = lib.mkOption {
+      type = lib.types.port;
+      default = 9105;
+      description = "Private local-scrape native Build 42 Prometheus endpoint port.";
+    };
     lanCidrs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ "10.229.0.0/16" ];
@@ -264,6 +311,16 @@ in
     maxPlayers = lib.mkOption {
       type = lib.types.ints.between 1 32;
       default = 8;
+    };
+    characterFreePoints = lib.mkOption {
+      type = lib.types.ints.between 0 100;
+      default = 100;
+      description = "Free points available during character creation.";
+    };
+    multiHitZombies = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Allow one melee attack to hit multiple zombies.";
     };
     memoryMax = lib.mkOption {
       type = lib.types.str;
@@ -387,61 +444,87 @@ in
       "d ${stateDir}/control 0700 ${cfg.user} ${cfg.user} - -"
       "d ${stateDir}/backups 0750 ${cfg.user} ${cfg.user} - -"
       "d ${stateDir}/locks 0700 ${cfg.user} ${cfg.user} - -"
+      "d ${mapTilesRoot} 0755 root root - -"
     ];
-    networking.firewall.extraCommands =
-      lib.concatMapStrings (
-        cidr:
-        lib.concatMapStrings
-          (port: "iptables -A nixos-fw -p udp -s ${cidr} --dport ${toString port} -j nixos-fw-accept\n")
-          [
-            cfg.gamePort
-            cfg.queryPort
-          ]
-      ) cfg.lanCidrs
-      + lib.optionalString cfg.enableHeadscaleAccess (
-        lib.concatMapStrings (
-          cidr:
-          lib.concatMapStrings
-            (
-              port:
-              "iptables -A nixos-fw -i ${cfg.headscaleInterface} -p udp -s ${cidr} --dport ${toString port} -j nixos-fw-accept\n"
-            )
-            [
-              cfg.gamePort
-              cfg.queryPort
-            ]
-        ) cfg.headscaleCidrs
-      );
-    networking.firewall.extraStopCommands =
+    # The game's embedded HTTP exporter binds wildcard even when scraped at
+    # 127.0.0.1. Explicitly deny ingress on non-loopback IPv4 and IPv6 so
+    # LAN/Headscale/WAN interfaces cannot serve sensitive player telemetry.
+    networking.firewall.extraCommands = ''
+      iptables -I nixos-fw -p tcp ! -i lo --dport ${toString cfg.nativeMetricsPort} -j REJECT
+      ip6tables -I nixos-fw -p tcp ! -i lo --dport ${toString cfg.nativeMetricsPort} -j REJECT
+    ''
+    + lib.concatMapStrings (
+      cidr:
+      lib.concatMapStrings
+        (port: "iptables -A nixos-fw -p udp -s ${cidr} --dport ${toString port} -j nixos-fw-accept\n")
+        [
+          cfg.gamePort
+          cfg.queryPort
+        ]
+    ) cfg.lanCidrs
+    + lib.optionalString cfg.enableHeadscaleAccess (
       lib.concatMapStrings (
         cidr:
         lib.concatMapStrings
           (
             port:
-            "iptables -D nixos-fw -p udp -s ${cidr} --dport ${toString port} -j nixos-fw-accept 2>/dev/null || true\n"
+            "iptables -A nixos-fw -i ${cfg.headscaleInterface} -p udp -s ${cidr} --dport ${toString port} -j nixos-fw-accept\n"
           )
           [
             cfg.gamePort
             cfg.queryPort
           ]
-      ) cfg.lanCidrs
-      + lib.optionalString cfg.enableHeadscaleAccess (
-        lib.concatMapStrings (
-          cidr:
-          lib.concatMapStrings
-            (
-              port:
-              "iptables -D nixos-fw -i ${cfg.headscaleInterface} -p udp -s ${cidr} --dport ${toString port} -j nixos-fw-accept 2>/dev/null || true\n"
-            )
-            [
-              cfg.gamePort
-              cfg.queryPort
-            ]
-        ) cfg.headscaleCidrs
-      );
+      ) cfg.headscaleCidrs
+    );
+    networking.firewall.extraStopCommands = ''
+      iptables -D nixos-fw -p tcp ! -i lo --dport ${toString cfg.nativeMetricsPort} -j REJECT 2>/dev/null || true
+      ip6tables -D nixos-fw -p tcp ! -i lo --dport ${toString cfg.nativeMetricsPort} -j REJECT 2>/dev/null || true
+    ''
+    + lib.concatMapStrings (
+      cidr:
+      lib.concatMapStrings
+        (
+          port:
+          "iptables -D nixos-fw -p udp -s ${cidr} --dport ${toString port} -j nixos-fw-accept 2>/dev/null || true\n"
+        )
+        [
+          cfg.gamePort
+          cfg.queryPort
+        ]
+    ) cfg.lanCidrs
+    + lib.optionalString cfg.enableHeadscaleAccess (
+      lib.concatMapStrings (
+        cidr:
+        lib.concatMapStrings
+          (
+            port:
+            "iptables -D nixos-fw -i ${cfg.headscaleInterface} -p udp -s ${cidr} --dport ${toString port} -j nixos-fw-accept 2>/dev/null || true\n"
+          )
+          [
+            cfg.gamePort
+            cfg.queryPort
+          ]
+      ) cfg.headscaleCidrs
+    );
     environment.systemPackages = [
       (pkgs.writeShellScriptBin "project-zomboid-maintenance" ''exec ${maintenance} "$@"'')
     ];
+    systemd.paths.project-zomboid-map-tiles = {
+      wantedBy = [ "paths.target" ];
+      pathConfig.PathChanged = worldMap;
+    };
+    systemd.services.project-zomboid-map-tiles = {
+      description = "Render installed Project Zomboid Build 42 world map for Grafana";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = renderMapTiles;
+        NoNewPrivileges = true;
+        ProtectSystem = "strict";
+        ReadWritePaths = [ mapTilesRoot ];
+      };
+      unitConfig.ConditionPathExists = worldMap;
+    };
     systemd.services.project-zomboid-backup = {
       description = "Create a Project Zomboid local recovery point";
       serviceConfig = {

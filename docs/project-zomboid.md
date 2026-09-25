@@ -7,6 +7,12 @@ This is one Build 42 dedicated server on Habiki. Gameplay is LAN-only from
 requires both the agenix-backed join password and explicit whitelist approval.
 RCON is disabled and must never be exposed.
 
+The managed Build 42 sandbox grants 100 free character-creation points and
+sets `MultiHitZombies = true`. These keys are reconciled on service start while
+the server is stopped; existing saves, profiles, and unrelated sandbox options
+remain game-owned. A targeted NixOS rebuild can restart the game, so deploy
+when players are offline or during a maintenance window.
+
 The verified dependency-first Workshop manifest is:
 
 1. `3077900375` / `ChuckleberryFinnAlertSystem`
@@ -103,9 +109,14 @@ smoke test after future mod updates.
 On 2026-09-24, maintenance validation exercised the timer-backed backup unit
 and its seven-archive retention, a graceful planned restart, and a forced
 process termination. Systemd restarted the failed service (restart counter
-increased from 0 to 1). A fresh full-state archive was restored through the
-maintenance helper; the live state was quarantined, the private profile loaded,
-and both gameplay UDP listeners returned. This validates the local recovery and
-restore path; a deliberately failed Steam update was not induced in that
-validation run. Test the failed-update path separately before claiming
-controlled-update rollback was exercised.
+increased from 0 to 1). The failed Steam-update path is covered by the
+sandboxed maintenance test, which verifies that a failed update preserves its
+recovery point and leaves the service stopped.
+
+A live restore validation then created and restored
+`20260924T175109Z-backup.tar.gz` using the maintenance helper. The helper
+quarantined the prior live state at
+`/var/lib/project-zomboid/quarantine-20260924T175745Z`, restored the full-state
+archive with `project-zomboid:project-zomboid` ownership, and restarted the
+private profile. The service became active and UDP listeners returned on ports
+16261 and 16262. This validates the local recovery and restore path.
