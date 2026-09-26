@@ -59,6 +59,8 @@ def main() -> None:
         Global = 1.0,
         GlobalToggle = true,
     },
+    Description = "escaped quote: \\"; braces: { }",
+    Note = 'escaped quote: \\' ; braces: { }',
     Unrelated = 42,
 }
 """)
@@ -70,7 +72,15 @@ def main() -> None:
         assert "PVP=false\n" in text and "MapRemotePlayerVisibility=4\n" in text
         assert "SpawnItems=" + ",".join(ITEMS) in text and "Mods=unchanged\n" in text
         text = sandbox.read_text()
-        for expected in ("AllowMiniMap = true,", "Transmission = 2,", "Global = 1.5,", "GlobalToggle = true,", "Unrelated = 42,"):
+        for expected in (
+            "AllowMiniMap = true,",
+            "Transmission = 2,",
+            "Global = 1.5,",
+            "GlobalToggle = true,",
+            'Description = "escaped quote: \\"; braces: { }",',
+            "Note = 'escaped quote: \\' ; braces: { }',",
+            "Unrelated = 42,",
+        ):
             assert expected in text
         malformed = root / "malformed.lua"
         malformed.write_text("SandboxVars = {\n    Map = {\n")

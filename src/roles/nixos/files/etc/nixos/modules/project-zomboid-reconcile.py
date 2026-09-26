@@ -49,7 +49,7 @@ def reconcile_ini(path: Path, values: dict[str, str]) -> None:
 def brace_delta(line: str) -> int:
     """Count table braces after stripping Lua line comments and quoted strings."""
     code = re.sub(r"--.*$", "", line)
-    code = re.sub(r"(['\"])(?:\\.|(?!\1).)*\1", "", code)
+    code = re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', "", code)
     return code.count("{") - code.count("}")
 
 
