@@ -718,7 +718,59 @@
           "instant": false,
           "range": true,
           "interval": "5m",
-          "legendFormat": "Player deaths"
+          "legendFormat": "Players killed by zombies"
+        },
+        {
+          "refId": "D",
+          "expr": "increase(connection{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"zombies-killed-by-fire-today\"}[$__interval])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "interval": "5m",
+          "legendFormat": "Zombies killed by fire (in total)"
+        },
+        {
+          "refId": "E",
+          "expr": "increase(connection{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"players-killed-by-fire-today\"}[$__interval])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "interval": "5m",
+          "legendFormat": "Players killed by fire"
+        },
+        {
+          "refId": "F",
+          "expr": "increase(connection{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"players-killed-by-player-today\"}[$__interval])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "interval": "5m",
+          "legendFormat": "Players killed by players"
+        },
+        {
+          "refId": "G",
+          "expr": "increase(connection{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\",parameter=\"zombified-players-today\"}[$__interval])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "interval": "5m",
+          "legendFormat": "Zombified players"
         }
       ],
       "fieldConfig": {
@@ -733,7 +785,11 @@
             "drawStyle": "bars",
             "barAlignment": 0,
             "lineWidth": 0,
-            "fillOpacity": 80
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
           }
         },
         "overrides": [
@@ -778,7 +834,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Player deaths"
+              "options": "Players killed by zombies"
             },
             "properties": [
               {
@@ -790,7 +846,83 @@
               },
               {
                 "id": "displayName",
-                "value": "Player deaths"
+                "value": "Players killed by zombies"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Zombies killed by fire (in total)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#C86B8F"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Zombies killed by fire (in total)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Players killed by fire"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#855F90"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Players killed by fire"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Players killed by players"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6F5D86"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Players killed by players"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Zombified players"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#008791"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Zombified players"
               }
             ]
           }
@@ -806,7 +938,7 @@
           "sort": "none"
         }
       },
-      "description": "Events in each Grafana-selected interval (minimum 5 minutes), derived with reset-aware increase() from native game-day totals. Absent telemetry is Unavailable, never inferred as zero."
+      "description": "Events in each Grafana-selected interval (minimum 5 minutes), derived with reset-aware increase() from native game-day totals. Zombies killed by fire are included in total zombies killed and are not additive. Absent telemetry is Unavailable, never inferred as zero."
     },
     {
       "id": 14,
@@ -1172,7 +1304,7 @@
         "w": 12,
         "h": 8
       },
-      "description": "Players observed in the active dashboard time range, including disconnected players. Last seen is the latest native coordinate observation; native health, days alive, and zombies killed telemetry is unavailable and is never inferred as zero. This is not a saved-character roster.",
+      "description": "Players observed in the active dashboard time range, including disconnected players. Last seen and world coordinates are the latest native coordinate observation. This is not a saved-character roster.",
       "datasource": {
         "type": "prometheus",
         "uid": "mimir"
@@ -1180,7 +1312,19 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "label_replace(label_replace(label_replace(player_x{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}, \"health\", \"Unavailable\", \"name\", \".*\"), \"days_alive\", \"Unavailable\", \"name\", \".*\"), \"zombies_killed\", \"Unavailable\", \"name\", \".*\")",
+          "expr": "player_x{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "instant": false,
+          "range": true,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "expr": "player_y{job=\"project-zomboid\",service=\"project-zomboid\",host=\"habiki\"}",
           "datasource": {
             "type": "prometheus",
             "uid": "mimir"
@@ -1203,9 +1347,41 @@
             "align": "auto"
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Player ID"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Player"
+              }
+            ]
+          }
+        ]
       },
       "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "outer"
+          }
+        },
         {
           "id": "groupBy",
           "options": {
@@ -1222,20 +1398,17 @@
               "id": {
                 "operation": "groupby"
               },
-              "Value": {
+              "Value #A": {
                 "aggregations": [
                   "lastNotNull"
                 ],
                 "operation": "aggregate"
               },
-              "health": {
-                "operation": "groupby"
-              },
-              "days_alive": {
-                "operation": "groupby"
-              },
-              "zombies_killed": {
-                "operation": "groupby"
+              "Value #B": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
               }
             }
           }
@@ -1249,16 +1422,16 @@
               "host": true,
               "instance": true,
               "job": true,
-              "service": true
+              "service": true,
+              "name 1": true,
+              "id 1": true
             },
             "renameByName": {
               "name": "Player",
               "id": "Player ID",
               "Time (lastNotNull)": "Last seen",
-              "Value (lastNotNull)": "World X (game tiles)",
-              "health": "Health",
-              "days_alive": "Days alive",
-              "zombies_killed": "Zombies killed"
+              "Value #A (lastNotNull)": "World X (game tiles)",
+              "Value #B (lastNotNull)": "World Y (game tiles)"
             }
           }
         }

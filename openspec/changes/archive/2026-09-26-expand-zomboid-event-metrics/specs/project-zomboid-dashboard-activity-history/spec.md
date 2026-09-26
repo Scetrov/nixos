@@ -1,8 +1,5 @@
-# project-zomboid-dashboard-activity-history Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change improve-game-dashboard. Update Purpose after archive.
-## Requirements
 ### Requirement: Project Zomboid activity history is interval-based
 The system SHALL visualize the seven supported resettable native Project Zomboid game event totals as discrete interval event counts across the active Grafana dashboard time range: zombies killed, zombies killed by fire, corpses burned, players killed by zombies, players killed by fire, players killed by players, and zombified players. The interval SHALL be selected from the dashboard range with a configured minimum that ordinarily produces readable 5–15 minute buckets, rather than overlapping rolling-hour values. The dashboard SHALL identify zombies killed by fire as a subset of total zombies killed and SHALL NOT present those two series as independent additive totals.
 
