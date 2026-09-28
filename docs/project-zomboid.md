@@ -69,12 +69,15 @@ sudo project-zomboid-maintenance update
 
 The helper takes the shared lock, stops gracefully, creates a pre-update archive
 (including the Steam account/session), validates app `380870`, downloads every
-declared Workshop item as the dedicated service user, and starts the service.
-Inspect logs and perform a LAN join plus Skill Recovery Journal smoke test before
-accepting the update. If SteamCMD or verification fails, the service stays
-stopped; **do not start the partially updated server**. Restore the printed
-pre-update recovery point first. If the join/smoke test fails after startup,
-stop the service and restore that recovery point.
+declared Workshop item as the dedicated service user, confirms each declared
+mod ID against its installed `mod.info`, and starts the service. Installed
+`mod.info` files carry CRLF line endings, so validation tolerates a trailing
+carriage return; mod IDs are never matched as prefixes. Inspect logs and perform
+a LAN join plus Skill Recovery Journal smoke test before accepting the update. If
+SteamCMD or verification fails, the service stays stopped; **do not start the
+partially updated server**. Restore the printed pre-update recovery point first.
+If the join/smoke test fails after startup, stop the service and restore that
+recovery point.
 
 On a fresh world the administrator password is supplied once through the
 service-owned console FIFO and retained in the account database, not passed as
@@ -136,3 +139,18 @@ quarantined the prior live state at
 archive with `project-zomboid:project-zomboid` ownership, and restarted the
 private profile. The service became active and UDP listeners returned on ports
 16261 and 16262. This validates the local recovery and restore path.
+
+On 2026-09-28 a controlled update stopped the server, created
+`20260928T184218Z-update.tar.gz`, and updated app `380870` plus all three
+declared Workshop items successfully, yet left the service inactive. Steam
+content logs recorded `result No Error` for every download and the installed
+`mod.info` files each declared the configured mod ID. The defect was the
+validator: it required a bare `id=<modId>` line while Build 42 writes CRLF line
+endings, so the whole manifest failed verification and the fail-closed path kept
+the server stopped. Repairing the recovery point was therefore unnecessary; the
+state on disk was complete and current. Workshop validation now accepts a
+trailing carriage return, matches mod IDs only with whole-line anchors, names the
+offending item on failure, and is driven from the declared mod list. The
+sandboxed maintenance test covers CRLF metadata, LF metadata, and a renamed mod.
+The restarted server still requires the LAN join and Skill Recovery Journal
+smoke test before the update is accepted.

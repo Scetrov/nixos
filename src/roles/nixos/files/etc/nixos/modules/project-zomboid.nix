@@ -12,6 +12,9 @@ let
   ini = "${profileDir}/Server/${cfg.serverName}.ini";
   workshopIds = lib.concatStringsSep ";" (map (mod: mod.workshopId) cfg.mods);
   workshopIdWords = lib.concatStringsSep " " (map (mod: mod.workshopId) cfg.mods);
+  # Validation is driven from the same declared manifest so a mod list change
+  # cannot silently leave the installer checking a stale set of items.
+  modValidationPairs = lib.concatMapStringsSep " " (mod: "${mod.workshopId}:${mod.modId}") cfg.mods;
   worldMap = "${steamDir}/media/maps/Muldraugh, KY/worldmap.png";
   mapTilesRoot = "/var/lib/project-zomboid-map";
   mapTilesScript = pkgs.writeText "project-zomboid-map-tiles.py" (
@@ -222,9 +225,18 @@ let
         ls -1t "$backup_dir"/*.tar.gz 2>/dev/null | tail -n +$(( ${toString cfg.backupRetention} + 1 )) | xargs -r rm -f --
       }
       verify_workshop() {
-        ${lib.concatMapStrings (mod: ''
-          find ${steamDir}/steamapps/workshop/content/108600/${mod.workshopId} -name mod.info -exec grep -lqx 'id=${mod.modId}' {} + | grep -q .
-        '') cfg.mods}
+        # Build 42 installs mod.info with CRLF line endings, so the accepted line is
+        # the mod ID plus one optional trailing control character. Demanding a bare
+        # id line rejects every correctly installed mod, which left the server stopped
+        # after a fully successful update on 2026-09-28.
+        for pair in ${modValidationPairs}; do
+          item="''${pair%%:*}"
+          mod="''${pair#*:}"
+          if ! find ${steamDir}/steamapps/workshop/content/108600/"$item" -name mod.info -exec grep -llx -E "id=$mod[[:cntrl:]]?" {} + | grep -q .; then
+            echo "Workshop item $item (mod $mod) is missing from ${steamDir} or its mod.info does not declare that ID." >&2
+            return 1
+          fi
+        done
       }
       start_on_exit() { systemctl start project-zomboid.service; }
       case "$operation" in
