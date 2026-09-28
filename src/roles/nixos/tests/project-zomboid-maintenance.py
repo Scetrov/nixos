@@ -23,6 +23,12 @@ def run(script: pathlib.Path, operation: str, *args: str) -> subprocess.Complete
 
 def main(maintenance: pathlib.Path, launch: pathlib.Path) -> None:
     assert "-adminpassword" not in launch.read_text(), "admin password exposed in argv"
+    if maintenance.is_dir():
+        maintenance /= "bin/project-zomboid-maintenance"
+    wrapper = maintenance.read_text()
+    match = re.search(r"^exec (/[^\s]+project-zomboid-maintenance) ", wrapper, re.MULTILINE)
+    assert match, "maintenance wrapper did not reference its generated script"
+    maintenance = pathlib.Path(match.group(1))
     with tempfile.TemporaryDirectory(prefix="pz-maintenance-test-") as temporary:
         root = pathlib.Path(temporary)
         state = root / "state"
@@ -39,7 +45,9 @@ def main(maintenance: pathlib.Path, launch: pathlib.Path) -> None:
             f'#!/bin/sh\necho "runuser $1 $2" >> {events}\n'
             'shift 3\nexec "$@"\n'
         )
-        (mockbin / "steamcmd").write_text("#!/bin/sh\nexit 42\n")
+        (mockbin / "steamcmd").write_text(
+            f'#!/bin/sh\nprintf "steamcmd-cwd %s\\n" "$PWD" >> {events}\nexit 42\n'
+        )
         for path in mockbin.iterdir():
             path.chmod(0o755)
 
@@ -83,6 +91,7 @@ def main(maintenance: pathlib.Path, launch: pathlib.Path) -> None:
         recorded = events.read_text()
         assert "stop project-zomboid.service" in recorded
         assert "runuser -u project-zomboid" in recorded
+        assert f"steamcmd-cwd {state}" in recorded, "SteamCMD did not enter service-owned state"
         assert "start project-zomboid.service" not in recorded
         assert len(list((state / "backups").glob("*.tar.gz"))) == 2
         print("PASS: full-state backup, incomplete archive, invalid restore, failed update, non-root SteamCMD, no argv password")

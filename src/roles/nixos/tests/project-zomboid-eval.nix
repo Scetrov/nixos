@@ -108,7 +108,7 @@ assert lib.assertMsg (
   # Expose rendered scripts so the shell/behavior tests can build them.
   launchScript = service.serviceConfig.ExecStart;
   initialiseScript = service.serviceConfig.ExecStartPre;
-  maintenanceScript = builtins.substring 0 (
-    builtins.stringLength config.systemd.services.project-zomboid-backup.serviceConfig.ExecStart - 7
-  ) config.systemd.services.project-zomboid-backup.serviceConfig.ExecStart;
+  # The user-facing wrapper closes over the generated maintenance script, so
+  # building it also realizes the script exercised by the behavior test.
+  maintenanceScript = lib.head config.environment.systemPackages;
 }

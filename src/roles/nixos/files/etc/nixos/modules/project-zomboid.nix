@@ -245,7 +245,11 @@ let
           update_failure() { echo "Update failed; server remains stopped. Restore the recovery point above before restarting." >&2; }
           trap update_failure ERR
           run_steamcmd() {
-            ${pkgs.util-linux}/bin/runuser -u ${cfg.user} -- ${pkgs.coreutils}/bin/env HOME=${stateDir} SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt SSL_CERT_DIR=${pkgs.cacert}/etc/ssl/certs ${lib.escapeShellArg cfg.steamcmdPath} "$@"
+            # The Steam bubblewrap runtime retains the caller cwd. An operator
+            # invoking this helper from a private home directory makes that
+            # inaccessible to the service account, so enter service-owned state
+            # before launching SteamCMD.
+            ${pkgs.util-linux}/bin/runuser -u ${cfg.user} -- ${pkgs.coreutils}/bin/env HOME=${stateDir} SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt SSL_CERT_DIR=${pkgs.cacert}/etc/ssl/certs ${pkgs.bash}/bin/bash -c "cd ${lib.escapeShellArg stateDir}; exec \"\$@\"" project-zomboid-steamcmd ${lib.escapeShellArg cfg.steamcmdPath} "$@"
           }
           run_steamcmd +force_install_dir ${steamDir} +login ${lib.escapeShellArg cfg.steamAccount} +app_update 380870 validate +quit
           for item in ${workshopIdWords}; do run_steamcmd +force_install_dir ${steamDir} +login ${lib.escapeShellArg cfg.steamAccount} +workshop_download_item 108600 "$item" validate +quit; done
