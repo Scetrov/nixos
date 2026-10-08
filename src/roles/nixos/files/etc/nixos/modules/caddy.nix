@@ -15,10 +15,15 @@ lib.mkIf config.services.grafana.enable {
     file = /root/secrets/mcp_client_token.age;
     owner = "caddy";
   };
+  age.secrets.mimir_write_token_hash = {
+    file = /root/secrets/mimir_write_token_hash.age;
+    owner = "caddy";
+  };
 
   systemd.services.caddy.serviceConfig.EnvironmentFile = [
     "/run/agenix/loki_token_hash"
     "/run/agenix/mcp_client_token"
+    "/run/agenix/mimir_write_token_hash"
   ];
 
   services.caddy = {
@@ -31,6 +36,7 @@ lib.mkIf config.services.grafana.enable {
         @auth_routes {
           path /loki* /tempo* /otlp* /mimir* /prometheus* /pyroscope* /alloy* /frontier-indexer* /oncall*
           not path /loki/api/v1/push
+          not path /mimir/api/v1/push
         }
         forward_auth @auth_routes http://127.0.0.1:9000 {
           uri /outpost.goauthentik.io/auth/caddy
@@ -58,6 +64,17 @@ lib.mkIf config.services.grafana.enable {
             log-pusher {$LOKI_TOKEN_HASH}
           }
           reverse_proxy 127.0.0.1:3100
+        }
+
+        # Mimir's remote-write endpoint is /api/v1/push upstream. 'handle'
+        # (not handle_path) keeps the incoming path, so uri rewrites it down
+        # to the upstream path before proxying.
+        handle /mimir/api/v1/push {
+          rewrite /api/v1/push
+          basic_auth {
+            metric-writer {$MIMIR_WRITE_TOKEN_HASH}
+          }
+          reverse_proxy 127.0.0.1:8080
         }
 
         handle /loki* {
