@@ -51,6 +51,62 @@ By default, private SSH identity keys are **not** deployed to target machines to
 
 This repository increasingly uses **OpenTofu** (or Terraform) for declarative management of service-level state (e.g., Authentik applications, providers, and entitlements) after the base NixOS system is provisioned. This is handled automatically by the `authentik-config` role.
 
+### Ingesting Metrics into Mimir
+
+Mimir on `habiki` exposes an authenticated remote-write endpoint that accepts writes from machines on the network without requiring a browser session:
+
+```
+POST https://metrics.net.scetrov.live/mimir/api/v1/push
+Basic-Auth user: metric-writer
+```
+
+The write password is stored in the vault as `mimir_write_token`. Retrieve it (without printing it) and export it into the process environment of the pushing service:
+
+```sh
+ansible-vault view src/secrets.yml --vault-password-file ~/.ansible/nixos_vault_password | grep '^mimir_write_token:'
+```
+
+Example [Grafana Alloy](https://grafana.com/docs/alloy/latest/) configuration that scrapes a local target and forwards the metrics to Mimir over the authenticated endpoint:
+
+```alloy
+// Scrape a local target (adjust targets/job to the host you are running on).
+prometheus.scrape "host" {
+  targets = [{
+    __address__ = "127.0.0.1:9100",
+  }]
+
+  job_name = "example-host"
+}
+
+// Forward scraped metrics to Mimir. The endpoint is Caddy-protected with
+// basic_auth; the password is injected from the environment so it is not
+// committed to the repository.
+prometheus.remote_write "mimir" {
+  endpoint {
+    url = "https://metrics.net.scetrov.live/mimir/api/v1/push"
+
+    basic_auth {
+      username   = "metric-writer"
+      password   = env("MIMIR_WRITE_TOKEN")
+    }
+
+    queue_config {
+      max_samples_per_send = 500
+      capacity             = 1000
+    }
+  }
+
+  wal {
+    dir = "/var/lib/grafana/alloy/data/wal/mimir"
+  }
+
+  forward_to = [ prometheus.scrape "host" ]
+}
+```
+
+> [!NOTE]
+> The `/mimir/api/v1/push` route is intentionally excluded from the Authentik `forward_auth` matcher and guarded by `basic_auth` against an aged secret, mirroring the existing `/loki/api/v1/push` convention. Only the shared key is required to write.
+
 ### Deployment Quality Control
 
 The playbook includes a linting phase (`nixos-lint`) that verifies Nix syntax and ensures the repository is in a clean state (no unstaged changes or unpushed commits) before deployment.
