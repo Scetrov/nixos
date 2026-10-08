@@ -10,6 +10,8 @@
     - secrets.yml
     - "{{ (lookup('env', 'PWD') + '/src/generated-secrets.yml') if (lookup('env', 'PWD') + '/src/generated-secrets.yml') is file else '/dev/null' }}"
   roles:
+    - role: local-dns
+      tags: [ 'never', 'local-dns' ]
     - role: secrets
       tags: [ 'secrets', 'nixos', 'authentik', 'hermes', 'dependency-track', 'frontier-indexer' ]
     - role: nixos

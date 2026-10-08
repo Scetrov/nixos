@@ -78,6 +78,15 @@ output "dtrack_oidc_client_secret" {
   sensitive = true
 }
 
+output "forgejo_oidc_client_id" {
+  value = authentik_provider_oauth2.forgejo.client_id
+}
+
+output "forgejo_oidc_client_secret" {
+  value     = authentik_provider_oauth2.forgejo.client_secret
+  sensitive = true
+}
+
 output "flyingfire_initial_password" {
   value     = random_password.flyingfire_password.result
   sensitive = true
