@@ -64,6 +64,15 @@ resource "random_password" "pinkgiraffes_password" {
   special = false
 }
 
+resource "random_id" "forgejo_client_id" {
+  byte_length = 20
+}
+
+resource "random_password" "forgejo_client_secret" {
+  length  = 40
+  special = false
+}
+
 # --- Certificates ---
 data "authentik_certificate_key_pair" "default" {
   name = "authentik Self-signed Certificate"
@@ -193,6 +202,13 @@ data "authentik_user" "scetrov" {
   username = "scetrov"
 }
 
+# Resolved from the non-sensitive variable.forgejo_owner_username so the sole
+# Forgejo access-group member is explicit and reviewable rather than a
+# hardcoded username. Confirmed with the operator on 2026-10-08.
+data "authentik_user" "forgejo_owner" {
+  username = var.forgejo_owner_username
+}
+
 resource "authentik_group" "all_applications" {
   name = "All Applications"
   users = [
@@ -229,6 +245,65 @@ resource "authentik_group" "general_user" {
 resource "authentik_policy_binding" "dependency_track_access" {
   target = authentik_application.dependency_track.uuid
   group  = authentik_group.all_applications.id
+  order  = 0
+}
+
+# --- Forgejo OIDC Provider ---
+#
+# Native OIDC sign-in for the private Forgejo forge. Access is restricted to a
+# dedicated owner-only group (initially the confirmed owner identity, see
+# variable.forgejo_owner_username) rather than the broad all_applications
+# group, per the add-private-forgejo change. The redirect URI is the strict
+# Forgejo OAuth2 callback path for an auth source named "authentik":
+#   /user/oauth2/{provider}/callback
+resource "authentik_provider_oauth2" "forgejo" {
+  name          = "Forgejo"
+  client_id     = random_id.forgejo_client_id.hex
+  client_secret = random_password.forgejo_client_secret.result
+  client_type   = "public"
+  signing_key   = data.authentik_certificate_key_pair.default.id
+
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+
+  allowed_redirect_uris = [
+    {
+      url           = "https://source.net.scetrov.live/user/oauth2/authentik/callback"
+      matching_mode = "strict"
+    }
+  ]
+
+  # Explicit grant types: current authentik does not populate a server-side
+  # default for newly created providers, and an empty list makes the
+  # authorization endpoint reject requests with invalid_request.
+  grant_types = ["authorization_code", "refresh_token"]
+
+  property_mappings = [
+    data.authentik_property_mapping_provider_scope.openid.id,
+    data.authentik_property_mapping_provider_scope.profile.id,
+    data.authentik_property_mapping_provider_scope.email.id,
+    authentik_property_mapping_provider_scope.groups.id,
+  ]
+}
+
+resource "authentik_application" "forgejo" {
+  name              = "Forgejo"
+  slug              = "forgejo"
+  protocol_provider = authentik_provider_oauth2.forgejo.id
+  meta_icon         = "https://raw.githubusercontent.com/go-gitea/gitea/main/web_src/svg/logomark.svg"
+}
+
+# Owner-only access group for Forgejo. Membership is driven by the non-sensitive
+# variable.forgejo_owner_username (confirmed owner identity), not a hardcoded
+# lookup, so the single intended member is explicit and reviewable.
+resource "authentik_group" "forgejo_owners" {
+  name  = "Forgejo Owners"
+  users = [data.authentik_user.forgejo_owner.id]
+}
+
+resource "authentik_policy_binding" "forgejo_access" {
+  target = authentik_application.forgejo.uuid
+  group  = authentik_group.forgejo_owners.id
   order  = 0
 }
 

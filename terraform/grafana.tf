@@ -78,6 +78,15 @@ output "dtrack_oidc_client_secret" {
   sensitive = true
 }
 
+output "forgejo_oidc_client_id" {
+  value = authentik_provider_oauth2.forgejo.client_id
+}
+
+output "forgejo_oidc_client_secret" {
+  value     = authentik_provider_oauth2.forgejo.client_secret
+  sensitive = true
+}
+
 output "flyingfire_initial_password" {
   value     = random_password.flyingfire_password.result
   sensitive = true
@@ -113,6 +122,12 @@ resource "grafana_dashboard" "service_catalog" {
 resource "grafana_dashboard" "frontier_indexer_service" {
   folder      = grafana_folder.operations_services.uid
   config_json = file("${local.grafana_portal.source_root}/frontier-indexer-service.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "forgejo_service" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/forgejo-service.json")
   overwrite   = true
 }
 

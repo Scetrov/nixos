@@ -1,0 +1,30 @@
+# Update only the shared alias module on an already provisioned DNS host.
+# Do not sync device configuration, channels, secrets, or application modules.
+- name: Restrict the DNS-only path to the existing Blocky hosts
+  ansible.builtin.assert:
+    that:
+      - inventory_hostname in ['fyne', 'habiki']
+    fail_msg: The local-dns tag is only supported on Fyne and Habiki.
+
+- name: Copy shared declarative local DNS aliases
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/roles/nixos/files/etc/nixos/modules/local-networking.nix"
+    dest: /etc/nixos/modules/local-networking.nix
+    owner: root
+    group: root
+    mode: '0644'
+
+# Always converge even if a previous rebuild failed after the copy completed.
+- name: Activate local DNS alias configuration
+  become: true
+  ansible.builtin.command: nixos-rebuild switch
+  changed_when: true
+  when: not ansible_check_mode
+
+- name: Reload Blocky hosts-file mapping
+  become: true
+  ansible.builtin.systemd_service:
+    name: blocky
+    state: restarted
+  when: not ansible_check_mode

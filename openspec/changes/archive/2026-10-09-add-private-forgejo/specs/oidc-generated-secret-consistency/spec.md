@@ -1,9 +1,5 @@
-# oidc-generated-secret-consistency Specification
+## MODIFIED Requirements
 
-## Purpose
-
-Ensure OpenTofu-generated OIDC client IDs and client secrets are treated as authoritative deployment inputs for OIDC-enabled services, with safe validation and verification that prevents placeholder or stale values from reaching runtime configuration.
-## Requirements
 ### Requirement: Generated OIDC outputs are authoritative
 The deployment system SHALL treat OpenTofu-managed Authentik OAuth2 provider outputs as the authoritative source for Grafana, Dependency Track, and Forgejo OIDC client IDs and client secrets.
 

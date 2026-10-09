@@ -5,8 +5,10 @@ terraform {
 
   required_providers {
     authentik = {
-      source  = "goauthentik/authentik"
-      version = "2026.8.0"
+      source = "goauthentik/authentik"
+      # Match the deployed Authentik 2026.5.x API. Newer SDKs require pbm_uuid.
+      # 2026.5.2 released 2026-10-02; deferred under the seven-day update policy.
+      version = "2026.5.1"
     }
     random = {
       source  = "hashicorp/random"

@@ -8,6 +8,7 @@
     ./modules/caddy.nix
     ./modules/dependency-track.nix
     ./modules/frontier-indexer.nix
+    ./modules/forgejo.nix
     ./modules/grafana.nix
     ./modules/immich.nix
     ./modules/k6.nix
@@ -57,6 +58,9 @@
   };
 
   scetrov.services.authentik.enable = true;
+  scetrov.services.forgejo.enable = true;
+  # Actions/runner is deferred; retain experimental code without activating it.
+  scetrov.services.forgejo.runner.enable = false;
   scetrov.services.dependency-track.enable = true;
   scetrov.services.home-assistant = {
     enable = true;

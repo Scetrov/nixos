@@ -53,6 +53,9 @@ in
   "dtrack_nvd_api_key.age".publicKeys = users ++ systems;
   "dtrack_oidc_client_id.age".publicKeys = users ++ systems;
   "dtrack_oidc_client_secret.age".publicKeys = users ++ systems;
+  "forgejo_oidc_client_id.age".publicKeys = users ++ systems;
+  "forgejo_oidc_client_secret.age".publicKeys = users ++ systems;
+  "forgejo_metrics_token.age".publicKeys = users ++ systems;
   "frontier_indexer_db_password.age".publicKeys = users ++ systems;
   "mcp_client_token.age".publicKeys = users ++ systems;
   "garage_rpc_secret.age".publicKeys = users ++ systems;

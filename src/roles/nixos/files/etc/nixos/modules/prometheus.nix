@@ -73,6 +73,16 @@
                 annotations:
                   summary: Garage host storage has less than the 500 GiB reserve
                   description: Free space on Habiki's persistent Garage filesystem is below the required recovery reserve.
+          - name: forgejo
+            rules:
+              - alert: ForgejoServiceUnavailable
+                expr: up{job="forgejo",service="forgejo"} != 1
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: Forgejo private metrics endpoint is unavailable
+                  description: The loopback /metrics scrape failed for 5 minutes; the web process or its database is likely down.
       ''
     ];
     scrapeConfigs = [
@@ -200,6 +210,20 @@
             targets = [ "127.0.0.1:9177" ];
             labels = {
               service = "github-repository-observability";
+            };
+          }
+        ];
+      }
+      {
+        job_name = "forgejo";
+        scrape_interval = "60s";
+        metrics_path = "/metrics";
+        bearer_token_file = "/run/agenix/forgejo_metrics_token";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:3002" ];
+            labels = {
+              service = "forgejo";
             };
           }
         ];

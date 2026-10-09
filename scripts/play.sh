@@ -18,6 +18,11 @@ Options:
                            - frontier-indexer : Frontier cycle transition, secrets & host configuration
                            - esphome          : ESPHome secret rendering, validation, build, and OTA deploy
                            - secrets          : Secrets generation and deployment
+                           - local-dns        : Shared DNS aliases only (existing Fyne/Habiki config)
+                           - forgejo          : Habiki Forgejo consumer deploy (generated-secret refresh,
+                                                runtime secrets, NixOS rebuild; OIDC reconciliation
+                                                happens at service start). First deploy requires a
+                                                prior `scripts/tofu.sh` apply so generated outputs exist.
       --skip-generated-refresh
                          Skip pre-flight refresh of OpenTofu generated OIDC secrets.
   -h, --help             Show this help message and exit
@@ -28,7 +33,9 @@ Examples:
   $0 --tags hermes                        # Run Hermes config across all relevant hosts
   $0 --limit habiki --tags hermes         # Targeted deploy of Hermes on habiki
   $0 --limit habiki --tags nixos          # Rebuild NixOS only on habiki
-    $0 --limit habiki --tags esphome        # Run ESPHome workflow owned by habiki
+  $0 --limit habiki --tags esphome        # Run ESPHome workflow owned by habiki
+  $0 --limit fyne --tags local-dns        # DNS-only rollout; no Forgejo or secret refresh
+  $0 --limit habiki --tags forgejo        # Targeted Forgejo consumer deploy on Habiki
 
 EOF
 }
@@ -104,7 +111,7 @@ needs_generated_refresh() {
     IFS=',' read -ra tag_list <<< "$tags"
     for tag in "${tag_list[@]}"; do
         case "${tag// /}" in
-            authentik|nixos|dependency-track|secrets)
+            authentik|nixos|dependency-track|secrets|forgejo)
                 return 0
                 ;;
         esac

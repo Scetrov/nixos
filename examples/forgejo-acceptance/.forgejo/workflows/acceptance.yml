@@ -1,0 +1,40 @@
+name: Private Forgejo acceptance
+on: [push, workflow_dispatch]
+
+# Copy this directory into a trusted owner repository with Actions enabled.
+# No repository secrets, deployment permissions or package downloads required.
+jobs:
+  first:
+    runs-on: forgejo-build
+    container:
+      image: docker.io/library/node@sha256:64af3819f9275802414d7cdc38c27e9d82bd564dec4d4da87d008255d36c63b4
+    steps:
+      # actions/checkout v7.0.1, verified 2026-10-08.
+      - uses: https://code.forgejo.org/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - run: node --test acceptance.test.mjs
+      - run: node build.mjs
+      # Forgejo-maintained artifact fork v5, not GitHub-only upload-artifact.
+      - uses: https://data.forgejo.org/forgejo/upload-artifact@cb8afe72b42edc798abfb8fcb556cf660d894245
+        with:
+          name: acceptance-first
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
+  second:
+    runs-on: forgejo-build
+    container:
+      image: docker.io/library/node@sha256:64af3819f9275802414d7cdc38c27e9d82bd564dec4d4da87d008255d36c63b4
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - run: node --test acceptance.test.mjs
+      - run: node build.mjs
+      - uses: https://data.forgejo.org/forgejo/upload-artifact@cb8afe72b42edc798abfb8fcb556cf660d894245
+        with:
+          name: acceptance-second
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
