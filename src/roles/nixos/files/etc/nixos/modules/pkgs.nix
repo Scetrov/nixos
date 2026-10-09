@@ -25,6 +25,7 @@ in
       openvpn
       (python3.withPackages (ps: with ps; [ cryptography ]))
       wget
+      xclip
       (pkgs.callPackage <agenix/pkgs/agenix.nix> { })
     ]
     ++ pkgs.lib.optionals (pkgs.stdenv.hostPlatform.system == "x86_64-linux") [
