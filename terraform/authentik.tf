@@ -273,6 +273,11 @@ resource "authentik_provider_oauth2" "forgejo" {
     }
   ]
 
+  # Explicit grant types: current authentik does not populate a server-side
+  # default for newly created providers, and an empty list makes the
+  # authorization endpoint reject requests with invalid_request.
+  grant_types = ["authorization_code", "refresh_token"]
+
   property_mappings = [
     data.authentik_property_mapping_provider_scope.openid.id,
     data.authentik_property_mapping_provider_scope.profile.id,

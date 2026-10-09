@@ -24,7 +24,7 @@ This single documented path sequences:
 
 1. Pre-flight refresh of the OpenTofu-generated OIDC outputs into `src/generated-secrets.yml` (fail-closed validation).
 2. The `secrets` role: encrypts and deploys the Forgejo OIDC credentials and the metrics token through agenix, and renders the NixOS modules.
-3. The `nixos` role: rebuilds the host (Forgejo unit, Caddy route, source-scoped SSH rules).
+3. The `nixos` role: rebuilds the host (Forgejo unit, Caddy route, source-scoped SSH rules), then restarts Habiki's Blocky to reload the updated `/etc/hosts` alias. A hosts-only change does not otherwise restart Blocky.
 4. Identity reconciliation: the `forgejo.service` `preStart` reconciles the native OIDC authentication source and owner administration *before* the web process starts, using the systemd credential files. There is no separate undocumented deployment step and no runner registration or first-login gate.
 
 ### First deployment (identity prerequisites first)
@@ -75,7 +75,7 @@ Query both Blocky servers after rollout to confirm they answer
 
 - Grafana: `Forgejo Service` dashboard (`svc-forgejo`, Operations / Services) — availability stat, release, request rate, forge state, and `service=forgejo` logs, using the repository palette.
 - Alerting: `ForgejoServiceUnavailable` (Prometheus, 5m) fires when the private `127.0.0.1:3002/metrics` scrape fails for five minutes.
-- The `/api/healthz` endpoint (database/cache ping) is the service's own health signal; it is not exposed through the public virtual host.
+- The `/api/healthz` endpoint (database/cache ping) is the service's own health signal. It is reachable through the virtual host from the allowed private source networks (it is not authentication, only liveness); the bearer-protected `/metrics` route remains denied through the virtual host and is scraped on the loopback port only.
 
 ## Disable, rollback, and data retention
 

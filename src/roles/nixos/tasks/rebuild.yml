@@ -72,5 +72,17 @@
     state: started
   when: nixos_device_configuration == 'habiki.nix'
 
+# Blocky reads /etc/hosts into memory; a hosts-only NixOS change does not
+# otherwise restart it. Converge even after a previous interrupted rollout.
+- name: Reload Blocky hosts-file mapping after Forgejo deployment
+  become: true
+  ansible.builtin.systemd_service:
+    name: blocky
+    state: restarted
+  when:
+    - inventory_hostname == 'habiki'
+    - forgejo_enabled | default(false) | bool
+    - not ansible_check_mode
+
 - debug:
     var: nixos_output.stdout_lines
