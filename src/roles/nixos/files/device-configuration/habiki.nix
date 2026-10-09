@@ -81,10 +81,10 @@
   };
   scetrov.services.frontier-indexer = {
     enable = true;
-    indexerImage = "ghcr.io/ocky-public/frontier-indexer:v0.3.7";
-    firstCheckpoint = "352596413";
+    indexerImage = "ghcr.io/algo-net/frontier-indexer:v0.4.0@sha256:20c64a1c96fa96c29569fa8343398566d22cb17fb62b1dd8ee6a0d21d7af5fc9";
+    firstCheckpoint = "387251154";
     ingestConcurrencyMax = 2;
-    resetSchemaGeneration = 6;
+    resetSchemaGeneration = 7;
   };
   services.grafana-mcp = {
     enable = true;

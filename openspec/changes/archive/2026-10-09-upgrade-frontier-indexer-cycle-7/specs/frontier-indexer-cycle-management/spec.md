@@ -1,9 +1,5 @@
-# frontier-indexer-cycle-management Specification
+## MODIFIED Requirements
 
-## Purpose
-
-Define declarative management, reset safety, and verification expectations for Frontier Indexer cycle upgrades on Habiki.
-## Requirements
 ### Requirement: Frontier Indexer cycle configuration
 The system SHALL manage Frontier Indexer release image, network and cycle start checkpoint declaratively for Habiki and MUST use the supplied Cycle 7 contracts.
 
@@ -72,6 +68,8 @@ The system SHALL verify a Frontier Indexer cycle upgrade through managed service
 #### Scenario: Cycle 7 indexing advances
 - **WHEN** the freshly reset Cycle 7 deployment receives available checkpoints
 - **THEN** pipeline progress initializes from `387251154` and advances, with the deployed package configuration matching both supplied Cycle 7 contracts
+
+## ADDED Requirements
 
 ### Requirement: Bounded previous-cycle artifact cleanup
 The system SHALL inventory and remove confirmed previous-cycle runtime artifacts through targeted automation without preserving a Cycle 6 archive or deleting unrelated infrastructure state.

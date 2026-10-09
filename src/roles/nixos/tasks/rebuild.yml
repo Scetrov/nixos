@@ -41,12 +41,36 @@
 - debug:
     var: clean_nixos_label
 
+# Stop the already-running old writer before switch can start the new reset unit.
+# Reset also refuses to proceed if a writer survived this managed shutdown.
+- name: Gather service state before Frontier Indexer transition
+  become: true
+  ansible.builtin.service_facts:
+  when: nixos_device_configuration == 'habiki.nix'
+
+- name: Stop Frontier Indexer writer before NixOS switch
+  become: true
+  ansible.builtin.systemd_service:
+    name: podman-frontier-indexer.service
+    state: stopped
+  when:
+    - nixos_device_configuration == 'habiki.nix'
+    - "'podman-frontier-indexer.service' in ansible_facts.services"
+
 - name: Apply NixOS configuration
   become: true
   environment:
     NIXOS_LABEL: "{{ clean_nixos_label }}"
   command: nixos-rebuild switch
   register: nixos_output
+
+# Only reached after a successful switch; never restart an old writer on failure.
+- name: Ensure Frontier Indexer starts through the new dependency chain
+  become: true
+  ansible.builtin.systemd_service:
+    name: podman-frontier-indexer.service
+    state: started
+  when: nixos_device_configuration == 'habiki.nix'
 
 - debug:
     var: nixos_output.stdout_lines

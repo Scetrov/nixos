@@ -15,6 +15,7 @@ Options:
                            - authentik        : Authentik applications & OpenTofu
                            - hermes           : Hermes service, secrets & SSO setup
                            - dependency-track : Dependency Track deployment & configuration
+                           - frontier-indexer : Frontier cycle transition, secrets & host configuration
                            - esphome          : ESPHome secret rendering, validation, build, and OTA deploy
                            - secrets          : Secrets generation and deployment
       --skip-generated-refresh
