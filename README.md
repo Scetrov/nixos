@@ -70,12 +70,16 @@ Example [Grafana Alloy](https://grafana.com/docs/alloy/latest/) configuration th
 
 ```alloy
 // Scrape a local target (adjust targets/job to the host you are running on).
+// `forward_to` lives on the scrape (the source) and points at the
+// remote_write component's `receiver` export.
 prometheus.scrape "host" {
   targets = [{
     __address__ = "127.0.0.1:9100",
   }]
 
   job_name = "example-host"
+
+  forward_to = [ prometheus.remote_write.mimir.receiver ]
 }
 
 // Forward scraped metrics to Mimir. The endpoint is Caddy-protected with
@@ -95,14 +99,12 @@ prometheus.remote_write "mimir" {
       capacity             = 1000
     }
   }
-
-  wal {
-    dir = "/var/lib/grafana/alloy/data/wal/mimir"
-  }
-
-  forward_to = [ prometheus.scrape "host" ]
 }
 ```
+
+> [!NOTE]
+> The `env()` stdlib function is deprecated in current Alloy releases (it still works but logs a warning). The remote-write WAL is managed by Alloy under its `--storage.path` (e.g. `/var/lib/grafana/alloy`) rather than a per-component `wal` block.
+
 
 > [!NOTE]
 > The `/mimir/api/v1/push` route is intentionally excluded from the Authentik `forward_auth` matcher and guarded by `basic_auth` against an aged secret, mirroring the existing `/loki/api/v1/push` convention. Only the shared key is required to write.

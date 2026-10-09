@@ -187,3 +187,9 @@ resource "grafana_dashboard" "ai_usage" {
   config_json = file("${local.grafana_portal.source_root}/ai-usage.json")
   overwrite   = true
 }
+
+resource "grafana_dashboard" "llama_cpp_service" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/llama-cpp-service.json")
+  overwrite   = true
+}
