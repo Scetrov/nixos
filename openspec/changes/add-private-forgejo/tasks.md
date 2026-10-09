@@ -34,13 +34,13 @@ required by this change.
 
 ## 5. Integrate observability
 
-- [ ] 5.1 Route Forgejo logs into existing Loki collection with stable labels and verify secret values are not emitted.
-- [ ] 5.2 Add a private authenticated Forgejo Prometheus scrape where supported and Forgejo service-health signals; verify no auxiliary listener is exposed through the forge.
-- [ ] 5.3 Discover real Forgejo availability signals and add compact declarative Grafana health visibility and alerts using the repository palette.
+- [x] 5.1 Route Forgejo logs into existing Loki collection with stable labels and verify secret values are not emitted. (Alloy `forgejo\.service` relabel → `service=forgejo`; real-binary fixture confirms the metrics token never appears in the console log that Loki ships.)
+- [x] 5.2 Add a private authenticated Forgejo Prometheus scrape where supported and Forgejo service-health signals; verify no auxiliary listener is exposed through the forge. (Token-protected `metrics.ENABLED` on the shared loopback listener via the module `secrets.metrics.TOKEN` credential; Prometheus job `forgejo` with `bearer_token_file`; real v16.0.5 fixture proves 401 bare / 200 bearer; Caddy fixture re-verifies `/metrics` denial through the virtual host. No auxiliary port.)
+- [x] 5.3 Discover real Forgejo availability signals and add compact declarative Grafana health visibility and alerts using the repository palette. (Discovered against real v16.0.5: `/api/healthz` database/cache ping, `gitea_*` gauges incl. `gitea_build_info`/`repositories`/`users`/`accesses`, and scrape `up`. Added `terraform/dashboards/forgejo-service.json` (uid `svc-forgejo`, palette colors), a `grafana_dashboard` resource, a service-catalog row, and the `ForgejoServiceUnavailable` Prometheus alert rule.)
 
 ## 6. Orchestrate and validate deployment
 
-- [ ] 6.1 Add/document a targeted Habiki Forgejo deployment tag/path that sequences Authentik provisioning, generated-secret refresh/validation, runtime secret deployment, NixOS rebuild, and identity reconciliation without a second undocumented deployment; omit runner registration and its first-login gate.
+- [x] 6.1 Add/document a targeted Habiki Forgejo deployment tag/path that sequences Authentik provisioning, generated-secret refresh/validation, runtime secret deployment, NixOS rebuild, and identity reconciliation without a second undocumented deployment; omit runner registration and its first-login gate. (`forgejo` tag on the secrets+nixos roles; `play.sh` pre-flight refreshes/validates generated OIDC outputs for it; first-deploy identity prerequisites via a reviewed `scripts/tofu.sh` apply, fail-closed on missing values; reconciliation in the unit `preStart`. Documented in docs/forgejo.md; syntax-checked.)
 - [ ] 6.2 Run Nix/Ansible/script/OpenTofu configuration checks and isolated first-deploy/repeat/OIDC-rotation tests using non-sensitive fixtures; reproduce and resolve failures before live deployment.
 - [ ] 6.3 Review the shared Authentik plan's blast radius via `scripts/tofu.sh`, then perform the explicitly targeted Habiki deployment and separately targeted Fyne DNS configuration rollout.
 - [ ] 6.4 Query both Blocky servers and verify trusted HTTPS, owner-only OIDC, unauthorized/anonymous denial, correct clone URLs, SSH clone/push, and Git/API token access from the LAN.
@@ -49,7 +49,7 @@ required by this change.
 
 ## 7. Document and finalize
 
-- [ ] 7.1 Document targeted deployment commands, owner access management, SSH URLs, OIDC credential rotation, account/session/key/token revocation, Actions being disabled/deferred, and no formal backup guarantees.
-- [ ] 7.2 Document automated disable/rollback, persistent-state retention, and consistent manual pre-upgrade snapshots with schema-compatible restore cautions.
+- [x] 7.1 Document targeted deployment commands, owner access management, SSH URLs, OIDC credential rotation, account/session/key/token revocation, Actions being disabled/deferred, and no formal backup guarantees. (docs/forgejo.md.)
+- [x] 7.2 Document automated disable/rollback, persistent-state retention, and consistent manual pre-upgrade snapshots with schema-compatible restore cautions. (docs/forgejo.md.)
 - [ ] 7.3 Run applicable repository checks and configured pre-commit checks, review changes for sensitive material and dangling listeners/routes, and stage only intended files; prompt for `pre-commit install` if configured but not installed as a hook.
 - [ ] 7.4 After successful implementation and validation, archive the OpenSpec change before the final signed conventional commit/PR; include model and Pi Coding Agent attribution and never disable signing on failure.

@@ -125,6 +125,12 @@ resource "grafana_dashboard" "frontier_indexer_service" {
   overwrite   = true
 }
 
+resource "grafana_dashboard" "forgejo_service" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/forgejo-service.json")
+  overwrite   = true
+}
+
 resource "grafana_dashboard" "dependency_track_service" {
   folder      = grafana_folder.operations_services.uid
   config_json = file("${local.grafana_portal.source_root}/dependency-track-service.json")

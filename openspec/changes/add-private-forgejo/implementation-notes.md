@@ -692,3 +692,87 @@ network namespace. Nothing deployed, committed or archived.
   (default `"scetrov"`) in `terraform/variables.tf`. Task 2.1 will use
   `data.authentik_user[variable.forgejo_owner_username]` for the dedicated
   Forgejo access group membership.
+
+## 5.1–5.3 Observability (discovered against real v16.0.5, 2026-10-09)
+
+Discovery was done by running the store's real `forgejo-16.0.5` binary against a
+disposable SQLite instance (no secrets, `INSTALL_LOCK = true`, `migrate` +
+`admin user create` initialization) and probing the live endpoints:
+
+- **Service-health signal:** `/api/healthz` returns `{"status":"pass","checks":
+  {"cache:ping":[...],"database:ping":[...]}}` (200, no auth). It is the
+  service's own health endpoint and is *not* exposed through the Caddy virtual
+  host (only `/metrics` and `/api/internal*` are denied there; the site only
+  proxies the normal routes, and the health check is used by Prometheus scrape
+  state rather than a public path).
+- **Metrics:** `settings.metrics.ENABLED = true` puts `/metrics` on the same
+  `127.0.0.1:3002` listener, **bearer-token protected**: verified 401 without a
+  token and 200 with `Authorization: Bearer <token>` against the real binary.
+  Prometheus' `bearer_token_file` scrape option sends exactly
+  `Authorization: Bearer <file contents>` (it is *not* the Basic-auth
+  `authorization.credentials_file` path), which matches Forgejo's check
+  verbatim. So the single `forgejo_metrics_token` secret is shared: Forgejo
+  receives it through the module's `services.forgejo.secrets.metrics.TOKEN`
+  credential path (which feeds `FORGEJO__METRICS__TOKEN__FILE` into
+  `environment-to-ini`) and Prometheus reads the same agenix file as
+  `bearer_token_file`. No auxiliary port.
+- **Real metric names discovered** (job `forgejo`): `gitea_accesses` (total
+  request counter), `gitea_repositories`, `gitea_users`, `gitea_issues_open`,
+  `gitea_build_info{version=...}`, plus Go runtime/process metrics
+  (`go_gc_*`, `process_*`, `go_goroutines`). ~26 `gitea_*` gauges + `zoekt_*`.
+- **Secret hygiene:** the metrics token value never appears in the console log
+  (which is what the journal → Loki pipeline ships) nor in the metrics body.
+  Reconcile CLI output is already suppressed by design (task 3.5).
+  Verified by `scripts/tests/test_forgejo_metrics.py` (real binary fixture).
+
+### Files added/changed for observability
+
+- `forgejo.nix`: `age.secrets.forgejo_metrics_token` (group `prometheus`,
+  mode `0440`), `settings.metrics.ENABLED = true`,
+  `services.forgejo.secrets.metrics.TOKEN` → the age path.
+- `prometheus.nix`: `forgejo` scrape job (`127.0.0.1:3002/metrics`,
+  `bearer_token_file=/run/agenix/forgejo_metrics_token`, `service=forgejo`) and
+  the `forgejo` alert group with `ForgejoServiceUnavailable` (`up` != 1 for 5m,
+  severity critical) — consistent with the existing headscale/garage rules.
+- `alloy.nix`: journal relabel rule `forgejo\.service` → `service=forgejo`.
+- `secrets` role + `secrets.nix`: generate/reuse `forgejo_metrics_token` and
+  declare the `.age` public keys.
+- `terraform/dashboards/forgejo-service.json` (uid `svc-forgejo`, repository
+  palette), `grafana.tf` resource, and a `service-catalog.json` row.
+- `forgejo-eval.nix`: new assertions for the metrics credential wiring, the
+  private bearer scrape config, the protected token file, and the alert rule.
+
+## 6.1 Targeted deployment path (implemented 2026-10-09)
+
+The first-deploy chicken-and-egg: the `secrets` role's fail-fast assertion on
+`forgejo_oidc_client_*` requires the generated OIDC outputs to exist, but they
+are only produced after a `tofu apply` of the shared Authentik plan. The
+`forgejo` consumer tag therefore assumes identity prerequisites were already
+applied:
+
+1. First deploy only: review the shared plan via `./scripts/tofu.sh -- plan`,
+   then `./scripts/tofu.sh` (apply + refresh `src/generated-secrets.yml`).
+   Shared-plan blast radius review is task 6.3.
+2. Consumer path (steady state and rotation): `./scripts/play.sh --limit habiki
+   --tags forgejo`. `play.sh` now refreshes/validates generated OIDC outputs in
+   the pre-flight for the `forgejo` tag (fail-closed), then runs the `secrets`
+   and `nixos` roles (both tagged `forgejo`). Identity reconciliation happens
+   in the `forgejo.service` `preStart` before web startup — no second
+   deployment, no runner registration, no first-login gate.
+
+Fyne DNS-only path unchanged: `./scripts/play.sh --limit fyne --tags
+local-dns`. Runbook: `docs/forgejo.md`.
+
+### Scoped local checks (2026-10-09)
+
+- `forgejo-eval.nix` passes (service-only Actions-off assertions, SSH, Caddy,
+  OIDC, plus the new metrics/alert assertions).
+- 21 python fixture tests pass (12 render, metrics, private proxy, reconcile)
+  with the real Forgejo and Caddy binaries; retained experimental runner tests
+  pass/skip as before.
+- `tofu fmt -check` clean, `openspec validate --strict` valid, `git diff
+  --check` clean, Ansible syntax OK for `forgejo`/`nixos`/`local-dns` tags.
+
+Live acceptance (6.3–6.6) remains pending: shared-plan review/apply, Habiki
+rollout, LAN/Teleport/Headscale access+denial, repeat/rotation/persistence,
+and observability confirmation on the live host.

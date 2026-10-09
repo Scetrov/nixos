@@ -9,6 +9,7 @@ let
       system = "x86_64-linux";
       modules = [
         ../files/etc/nixos/modules/forgejo.nix
+        ../files/etc/nixos/modules/prometheus.nix
         ../files/etc/nixos/modules/local-networking.nix
         {
           # Evaluate without decrypting host secrets or importing live agenix.
@@ -22,6 +23,14 @@ let
                     mode = lib.mkOption {
                       type = lib.types.str;
                       default = "0400";
+                    };
+                    owner = lib.mkOption {
+                      type = lib.types.str;
+                      default = "root";
+                    };
+                    group = lib.mkOption {
+                      type = lib.types.str;
+                      default = "root";
                     };
                     path = lib.mkOption {
                       type = lib.types.str;
@@ -127,9 +136,30 @@ assert lib.assertMsg (
   && !settings.openid.ENABLE_OPENID_SIGNIN
   && !settings.openid.ENABLE_OPENID_SIGNUP
   && builtins.elem "forgejo_oidc_client_secret:/run/agenix/forgejo_oidc_client_secret" service.serviceConfig.LoadCredential
+  && builtins.elem "FORGEJO__METRICS__TOKEN__FILE:/run/agenix/forgejo_metrics_token" service.serviceConfig.LoadCredential
   && lib.hasInfix "forgejo-reconcile.py" service.preStart
   && builtins.length service.restartTriggers >= 2
 ) "registration, anonymous repositories, and password Basic auth must be disabled";
+assert lib.assertMsg
+  (
+    settings.metrics.ENABLED
+    && config.age.secrets.forgejo_metrics_token.group == "prometheus"
+    && config.age.secrets.forgejo_metrics_token.mode == "0440"
+    && builtins.any (
+      job:
+      job.job_name == "forgejo"
+      && job.metrics_path == "/metrics"
+      && job.bearer_token_file == "/run/agenix/forgejo_metrics_token"
+      && builtins.length job.static_configs == 1
+      && (builtins.head job.static_configs).targets == [ "127.0.0.1:3002" ]
+      && (builtins.head job.static_configs).labels.service == "forgejo"
+    ) config.services.prometheus.scrapeConfigs
+    && lib.hasInfix "ForgejoServiceUnavailable" (lib.concatStrings config.services.prometheus.rules)
+    && lib.hasInfix "up{job=\"forgejo\",service=\"forgejo\"}" (
+      lib.concatStrings config.services.prometheus.rules
+    )
+  )
+  "metrics must be token-protected, scraped privately with a protected token file, and alert when unavailable";
 assert lib.assertMsg
   (
     config.users.users.forgejo-runner.isSystemUser

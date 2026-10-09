@@ -72,6 +72,13 @@
 
       rule {
         source_labels = ["__journal__systemd_unit"]
+        regex         = "forgejo\\.service"
+        replacement   = "forgejo"
+        target_label  = "service"
+      }
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
         regex         = "github-repository-observability\\.service"
         replacement   = "github-repository-observability"
         target_label  = "service"

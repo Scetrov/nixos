@@ -54,6 +54,14 @@ in
       file = /root/secrets/forgejo_oidc_client_secret.age;
       mode = "0400";
     };
+    # Prometheus reads this file directly as its bearer token for /metrics,
+    # so it must stay readable by the prometheus group.
+    age.secrets.forgejo_metrics_token = {
+      file = /root/secrets/forgejo_metrics_token.age;
+      owner = "root";
+      group = "prometheus";
+      mode = "0440";
+    };
 
     # Run after upstream config rendering/migrations, before the web process
     # loads authentication sources. Rotation restarts and reconciles in one run.
@@ -79,6 +87,9 @@ in
     services.forgejo = {
       enable = true;
       package = pkgs.forgejo;
+      # The module feeds this path to Forgejo as the metrics.TOKEN credential;
+      # the same file is Prometheus' bearer_token_file for the private scrape.
+      secrets.metrics.TOKEN = config.age.secrets.forgejo_metrics_token.path;
       database.type = "sqlite3";
       stateDir = "/var/lib/forgejo";
       repositoryRoot = "/var/lib/forgejo/repositories";
@@ -116,6 +127,12 @@ in
         security = {
           REVERSE_PROXY_LIMIT = 1;
           REVERSE_PROXY_TRUSTED_PROXIES = "127.0.0.1/32";
+        };
+        # Token-protected metrics on the same loopback listener; Caddy
+        # denies /metrics through the virtual host, Prometheus scrapes
+        # 127.0.0.1:3002 directly with the bearer token file.
+        metrics = {
+          ENABLED = true;
         };
         # OIDC auto-enrollment is separate from closed local registration in
         # v16. Administration derives from signed groups, never email matching.
