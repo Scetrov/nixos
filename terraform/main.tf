@@ -8,7 +8,7 @@ terraform {
       source = "goauthentik/authentik"
       # Match the deployed Authentik 2026.5.x API. Newer SDKs require pbm_uuid.
       # 2026.5.2 released 2026-10-02; deferred under the seven-day update policy.
-      version = "2026.5.1"
+      version = "2026.8.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -21,7 +21,7 @@ terraform {
     }
     grafana = {
       source  = "grafana/grafana"
-      version = "4.46.0"
+      version = "4.47.0"
     }
   }
 }
