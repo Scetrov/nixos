@@ -1,0 +1,16 @@
+# Targeted repair: no NixOS rebuild and no unrelated OpenTofu resource changes.
+# ansible-playbook -i src/inventory.yml src/reconcile-authentik-admin.yml \
+#   --limit habiki --vault-password-file "$HOME/.ansible/nixos_vault_password"
+- name: Reconcile Authentik admin blueprint without resetting access groups
+  hosts: habiki
+  become: false
+  gather_facts: false
+  vars_files:
+    - secrets.yml
+  tasks:
+    - name: Apply the membership-preserving admin blueprint using the vaulted token
+      ansible.builtin.include_role:
+        name: authentik-config
+        tasks_from: reconcile-admin.yml
+      vars:
+        authentik_config_repair_api_token: "{{ authentik_api_token }}"

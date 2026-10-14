@@ -12,7 +12,7 @@ let
   homeAssistantAssets = ../home-assistant;
   homeAssistantStateDir = "/var/lib/homeassistant";
   matterServerStateDir = "/var/lib/matter-server";
-  matterServerImage = "ghcr.io/matter-js/python-matter-server:stable";
+  matterServerImage = "ghcr.io/matter-js/python-matter-server:8.1.2@sha256:6827e352011e2d8c2bde771e446fcf72acc49150ef66bad978816bac1762aad3";
   matterServerPort = 5580;
   homeAssistantPrometheusEntities = [
     "sensor.utility_room_sensor_temperature"
@@ -117,7 +117,7 @@ in
 
     virtualisation.oci-containers.containers = {
       homeassistant = {
-        image = "ghcr.io/home-assistant/home-assistant:stable";
+        image = "ghcr.io/home-assistant/home-assistant:2026.10.0@sha256:1b64d38f38d922bf9d59336451fd6453e1d614f934456af4ee3d2a51061be3a4";
         autoStart = true;
         environment = {
           TZ = "Europe/London";

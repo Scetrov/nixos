@@ -153,7 +153,7 @@ in
 
     caddyImage = mkOption {
       type = types.str;
-      default = "caddy:2-alpine";
+      default = "docker.io/library/caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f";
       description = "Container image for the Caddy reverse proxy.";
     };
 
@@ -249,13 +249,17 @@ in
 
     agentImage = mkOption {
       type = types.str;
+      # DOCUMENTED DIGEST EXCEPTION: `nousresearch/hermes-agent` is a private registry image that
+      # cannot be digest-resolved from the build host, so it stays on the `latest` tag by design
+      # (see design.md D3). All public images in this fleet are tag+sha256 anchored; this is the
+      # single permitted exception.
       default = "nousresearch/hermes-agent:latest";
       description = "Container image for the Hermes agent and dashboard.";
     };
 
     webuiImage = mkOption {
       type = types.str;
-      default = "ghcr.io/nesquena/hermes-webui:latest";
+      default = "ghcr.io/nesquena/hermes-webui:latest@sha256:5fb831ca2a9f3f0b93b84c1ebaaeedf5809d914a33bbf969e5c29a5bb75cb47c";
       description = "Container image for Hermes WebUI.";
     };
 

@@ -356,7 +356,7 @@
       delegate_to: "{{ authentik_config_blueprint_delegate_host | default('localhost') }}"
       ansible.builtin.shell: |
         set -euo pipefail
-        curl --silent --show-error --output /dev/null --write-out 'HTTP_STATUS:%{http_code}' \
+        curl --fail --silent --show-error --output /dev/null --write-out 'HTTP_STATUS:%{http_code}' \
           --header 'Authorization: Bearer {{ authentik_config_blueprint_api_token }}' \
           --request DELETE \
           '{{ (authentik_config_blueprint_api_base_url_effective | default(authentik_config_api_base_url)) }}/managed/blueprints/{{ authentik_config_blueprint_instance_json.pk | default(authentik_config_blueprint_instance_json.instance_uuid) }}/'
@@ -371,7 +371,7 @@
       delegate_to: localhost
       ansible.builtin.shell: |
         set -euo pipefail
-        curl --silent --show-error --output /dev/null --write-out 'HTTP_STATUS:%{http_code}' \
+        curl --fail --silent --show-error --output /dev/null --write-out 'HTTP_STATUS:%{http_code}' \
           --header 'Cookie: {{ authentik_config_blueprint_cookie_header }}' \
           --header 'X-CSRFToken: {{ authentik_config_blueprint_csrf_token }}' \
           --request DELETE \

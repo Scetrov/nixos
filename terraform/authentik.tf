@@ -90,8 +90,9 @@ resource "authentik_provider_oauth2" "grafana" {
 
   allowed_redirect_uris = [
     {
-      url           = "https://metrics.net.scetrov.live/grafana/login/generic_oauth"
-      matching_mode = "strict"
+      url               = "https://metrics.net.scetrov.live/grafana/login/generic_oauth"
+      matching_mode     = "strict"
+      redirect_uri_type = "authorization"
     }
   ]
 
@@ -174,8 +175,9 @@ resource "authentik_provider_oauth2" "dependency_track" {
 
   allowed_redirect_uris = [
     {
-      url           = "https://dtrack.net.scetrov.live/static/oidc-callback.html"
-      matching_mode = "strict"
+      url               = "https://dtrack.net.scetrov.live/static/oidc-callback.html"
+      matching_mode     = "strict"
+      redirect_uri_type = "authorization"
     }
   ]
 
@@ -268,8 +270,9 @@ resource "authentik_provider_oauth2" "forgejo" {
 
   allowed_redirect_uris = [
     {
-      url           = "https://source.net.scetrov.live/user/oauth2/authentik/callback"
-      matching_mode = "strict"
+      url               = "https://source.net.scetrov.live/user/oauth2/authentik/callback"
+      matching_mode     = "strict"
+      redirect_uri_type = "authorization"
     }
   ]
 
@@ -363,8 +366,9 @@ resource "authentik_provider_oauth2" "homeassistant_oidc" {
 
   allowed_redirect_uris = [
     {
-      url           = "https://homeassistant.net.scetrov.live/auth/oidc/callback"
-      matching_mode = "strict"
+      url               = "https://homeassistant.net.scetrov.live/auth/oidc/callback"
+      matching_mode     = "strict"
+      redirect_uri_type = "authorization"
     }
   ]
 
@@ -408,7 +412,7 @@ resource "authentik_brand" "default" {
 
   branding_default_flow_background = "/static/dist/branding/background.jpg"
 
-  branding_custom_css = <<-EOT
+  branding_custom_css = trimspace(<<-EOT
     :root {
         --ak-flow-background: url('/static/dist/branding/background.jpg') !important;
     }
@@ -434,6 +438,7 @@ resource "authentik_brand" "default" {
         background-image: url('/static/dist/branding/background.jpg') !important;
     }
   EOT
+  )
 
   flow_authentication = data.authentik_flow.default_authentication.id
 }

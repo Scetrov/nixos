@@ -21,7 +21,7 @@ let
       runtime_directory=${lib.escapeShellArg cfg.codexAppServer.runtimeDirectory}
 
       chgrp ai-usage-exporter "$runtime_directory"
-      chmod 2770 "$runtime_directory"
+      chmod 2750 "$runtime_directory"
 
       if [ ! -e "$socket" ]; then
         exit 0
@@ -54,9 +54,9 @@ let
 
       python3 ${../pkgs/codex-app-server-readiness.py} \
         --socket "$socket" \
-        --timeout 10
+        --timeout 60
       chgrp ai-usage-exporter ${lib.escapeShellArg cfg.codexAppServer.runtimeDirectory}
-      chmod 2770 ${lib.escapeShellArg cfg.codexAppServer.runtimeDirectory}
+      chmod 2750 ${lib.escapeShellArg cfg.codexAppServer.runtimeDirectory}
       chgrp ai-usage-exporter "$socket"
       chmod 0660 "$socket"
       test "$(stat -c %U "$socket")" = codex-app-server
@@ -134,7 +134,7 @@ in
 
       image = lib.mkOption {
         type = lib.types.str;
-        default = "codex-app-server:0.145.0";
+        default = "codex-app-server:0.162.0";
         readOnly = true;
         description = "Immutable local image name for the pinned Codex app-server build.";
       };
@@ -222,7 +222,7 @@ in
     systemd.tmpfiles.rules = lib.optionals cfg.codexAppServer.enable [
       "d /var/lib/codex-app-server-podman 0700 codex-app-server codex-app-server - -"
       "d ${cfg.codexAppServer.stateDirectory} 0700 codex-app-server codex-app-server - -"
-      "d ${cfg.codexAppServer.runtimeDirectory} 2770 codex-app-server ai-usage-exporter - -"
+      "d ${cfg.codexAppServer.runtimeDirectory} 2750 codex-app-server ai-usage-exporter - -"
     ];
 
     virtualisation.oci-containers.containers.codex-app-server-runtime =

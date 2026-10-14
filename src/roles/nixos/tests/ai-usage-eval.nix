@@ -65,7 +65,7 @@ let
   ];
 in
 assert lib.assertMsg (
-  container.image == "codex-app-server:0.145.0"
+  container.image == "codex-app-server:0.162.0"
 ) "Codex app-server image must remain version-pinned";
 assert lib.assertMsg (
   container.imageFile != null
@@ -121,7 +121,7 @@ assert lib.assertMsg (
 ) "Exporter must use only app-server with no legacy Codex credential declaration";
 assert lib.assertMsg (
   builtins.elem "d /var/lib/codex-app-server 0700 codex-app-server codex-app-server - -" config.systemd.tmpfiles.rules
-  && builtins.elem "d /run/codex-app-server 2770 codex-app-server ai-usage-exporter - -" config.systemd.tmpfiles.rules
+  && builtins.elem "d /run/codex-app-server 2750 codex-app-server ai-usage-exporter - -" config.systemd.tmpfiles.rules
 ) "Codex state or runtime directory permissions differ from the design";
 assert lib.assertMsg (builtins.all
   (

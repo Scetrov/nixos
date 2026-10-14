@@ -5,13 +5,13 @@ let
     pkgs.fetchFromGitHub {
       owner = "oxalica";
       repo = "rust-overlay";
-      rev = "e598b37857b895b81020a65a802ef55f5bbed72f";
-      hash = "sha256-KlepQu/O5m11lAjcJ4ER5bc6bIzyX2UMPDARzMzQfIw=";
+      rev = "f91010a5c1b6125b715eb78a84fb5dd8fb74a2b0";
+      hash = "sha256-HJ4TEF3j7HmLYeEP/PtqjeiBX/6TppXB2qY53HcrWbs=";
     }
   );
   rustPkgs = pkgs.extend rust-overlay;
 in
-rustPkgs.rust-bin.stable."1.97.0".default.override {
+rustPkgs.rust-bin.stable."1.99.0".default.override {
   extensions = [
     "rustfmt"
     "clippy"
