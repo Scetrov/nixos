@@ -160,6 +160,7 @@ class UnixWebSocketJSONRPC:
             for name, value in [line.split(":", 1)]
         }
         expected = base64.b64encode(
+            # nosemgrep: python.lang.security.insecure-hash-algorithms.insecure-hash-algorithm-sha1 -- RFC 6455 requires SHA-1 for Sec-WebSocket-Accept
             hashlib.sha1((key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode()).digest()
         ).decode()
         if header_map.get("sec-websocket-accept") != expected:

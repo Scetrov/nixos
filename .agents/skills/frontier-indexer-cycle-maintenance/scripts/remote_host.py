@@ -129,11 +129,11 @@ def verify(report, config):
     progress = sql("SELECT json_build_object('pipelines',count(*),'min_checkpoint',min(checkpoint_hi_inclusive),"
                    "'max_checkpoint',max(checkpoint_hi_inclusive)) FROM indexer.watermarks;")
     migrations = sql("SELECT json_build_object('applied',count(*)) FROM indexer.__diesel_schema_migrations;")
-    with urllib.request.urlopen("http://127.0.0.1:9184/metrics", timeout=15) as response:
+    with urllib.request.urlopen("http://127.0.0.1:9184/metrics", timeout=15) as response:  # nosemgrep: dynamic-urllib-use-detected
         metrics = response.read().decode()
     metric_names = set(re.findall(r"^([A-Za-z_:][A-Za-z0-9_:]*)[ {]", metrics, re.M))
     query = urllib.parse.urlencode({"query": 'up{job="frontier-indexer"}'})
-    with urllib.request.urlopen("http://127.0.0.1:9090/api/v1/query?" + query, timeout=15) as response:
+    with urllib.request.urlopen("http://127.0.0.1:9090/api/v1/query?" + query, timeout=15) as response:  # nosemgrep: dynamic-urllib-use-detected
         scrape = json.load(response)
     scrape_values = [item["value"][1] for item in scrape.get("data", {}).get("result", [])]
     journal = command(["journalctl", "-u", "podman-frontier-indexer.service", "--since", config["since"], "--no-pager", "-o", "cat"])
