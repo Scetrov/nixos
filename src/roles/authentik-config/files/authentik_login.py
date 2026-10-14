@@ -101,7 +101,7 @@ def main():
             "use only for local self-signed Authentik deployments",
             file=sys.stderr,
         )
-    ssl_context = ssl._create_unverified_context() if insecure else None
+    ssl_context = ssl._create_unverified_context() if insecure else None  # nosemgrep: unverified-ssl-context -- explicit opt-in for self-signed local Authentik; warned to stderr
 
     # Set up cookie jar for session persistence
     cj = http.cookiejar.CookieJar()

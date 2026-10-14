@@ -25,7 +25,7 @@ MEDIA_TYPES = ",".join([
 def fetch(url, headers=None):
     try:
         request = urllib.request.Request(url, headers={"User-Agent": "frontier-cycle-maintenance", **(headers or {})})
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=30) as response:  # nosemgrep: dynamic-urllib-use-detected -- operator-supplied URL for local maintenance script
             return response.read()
     except (OSError, urllib.error.URLError) as error:
         raise MaintenanceError(f"Upstream request failed ({type(error).__name__}); retry after checking connectivity/rate limits") from error
