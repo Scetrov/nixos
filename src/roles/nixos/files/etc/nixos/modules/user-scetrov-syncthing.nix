@@ -6,6 +6,10 @@ let
   unstable = import <nixos-unstable> { config = baseconfig; };
 in
 {
+  # Plaintext GUI password, age-encrypted at rest; the syncthing module
+  # bcrypt-hashes it at activation and applies it via the REST API.
+  age.secrets.syncthing_gui_password.file = /root/secrets/syncthing_gui_password.age;
+
   services.syncthing = {
     enable = true;
     user = "scetrov";
@@ -13,6 +17,7 @@ in
     dataDir = "/home/scetrov/Documents";
     configDir = "/home/scetrov/.config/syncthing";
     guiAddress = "syncthing.scetrov.local:8384";
+    guiPasswordFile = config.age.secrets.syncthing_gui_password.path;
 
     overrideDevices = true;
     overrideFolders = true;
@@ -62,7 +67,6 @@ in
       };
       gui = {
         user = "scetrov";
-        password = "$2a$10$yU8h0TKUwPgoM6Dx99TPk.wDagF6/imHgfj1IWyZpM7281ev2nZD6";
         tls = true;
       };
     };

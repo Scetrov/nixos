@@ -21,12 +21,17 @@ def columns(connection: sqlite3.Connection) -> list[str]:
     found = [row[1] for row in connection.execute("PRAGMA table_info(whitelist)")]
     if not found or "username" not in found:
         raise ValueError("Build 42 whitelist table is missing or malformed")
+    # Column names are interpolated into DDL below; reject anything that could
+    # escape the double-quoted identifier form.
+    if any('"' in column or not column.strip() for column in found):
+        raise ValueError("Whitelist column names contain unsafe characters")
     return found
 
 
 def rows(connection: sqlite3.Connection, names: tuple[str, ...]) -> list[tuple[object, ...]]:
     placeholders = ", ".join("?" for _ in names)
-    result = connection.execute(
+    # Usernames are passed as bound parameters; only the ? placeholder count is interpolated.
+    result = connection.execute(  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query -- sqlite3 with bound parameters, no untrusted interpolation
         f"SELECT * FROM whitelist WHERE username IN ({placeholders}) ORDER BY username", names
     ).fetchall()
     user_index = columns(connection).index("username")
@@ -49,7 +54,8 @@ def snapshot(source: Path, destination: Path) -> None:
             os.chmod(temporary, 0o600)
             destination_db = sqlite3.connect(temporary)
             placeholders = ", ".join("?" for _ in source_columns)
-            destination_db.execute(
+            # Column names are double-quoted identifiers validated in columns().
+            destination_db.execute(  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query -- sqlite3 DDL from validated local schema, no untrusted values
                 "CREATE TABLE whitelist (" + ", ".join(f'"{column}"' for column in source_columns) + ")"
             )
             destination_db.executemany(

@@ -107,7 +107,8 @@ class GitHubClient:
         issued = now_ts() - 60
         payload = {"iat": issued, "exp": issued + 540, "iss": self.app_id}
         signing_input = f"{b64url(json.dumps(header, separators=(',', ':')).encode())}.{b64url(json.dumps(payload, separators=(',', ':')).encode())}".encode()
-        signature = self.private_key.sign(signing_input, padding.PKCS1v15(), hashes.SHA256())
+        # GitHub App JWTs must be RS256, which mandates PKCS1v15 padding.
+        signature = self.private_key.sign(signing_input, padding.PKCS1v15(), hashes.SHA256())  # nosemgrep: python.cryptography.cryptography-rsa-pkcs1-signature -- RS256 mandates PKCS1v15; offline JWT generation, no oracle exposure
         return signing_input.decode() + "." + b64url(signature)
 
     def request(self, path: str, token: str | None = None, method: str = "GET", body: bytes | None = None) -> tuple[Any, dict[str, str]]:
