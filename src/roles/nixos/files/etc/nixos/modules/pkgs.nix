@@ -24,6 +24,7 @@ in
       opentofu
       openvpn
       (python3.withPackages (ps: with ps; [ cryptography ]))
+      semgrep
       wget
       xclip
       (pkgs.callPackage <agenix/pkgs/agenix.nix> { })
