@@ -41,13 +41,15 @@ def atomic_write(path, content, owner=None):
 
 
 def authenticate(instance, runner_uuid, token, labels):
+    if not instance.startswith(("http://", "https://")):
+        raise RegistrationError("Runner instance must be an http(s) URL")
     request = urllib.request.Request(
         instance.rstrip("/") + "/api/actions/runner.v1.RunnerService/Declare",
         json.dumps({"version": "13.2.0", "labels": labels}).encode(),
         headers={"Content-Type": "application/json", "Connect-Protocol-Version": "1",
                  "x-runner-uuid": runner_uuid, "x-runner-token": token})
     try:
-        with urllib.request.urlopen(request, timeout=15) as response:
+        with urllib.request.urlopen(request, timeout=15) as response:  # nosemgrep: dynamic-urllib-use-detected
             json.load(response)
     except urllib.error.HTTPError as error:
         if error.code in (401, 403):

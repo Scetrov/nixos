@@ -413,9 +413,11 @@ def normalize_codex_snapshot(
 
 
 def http_get_json(url: str, headers: dict[str, str], timeout: float = REQUEST_TIMEOUT) -> dict:
+    if not url.startswith("https://"):
+        raise ValueError(f"non-https URL refused: {url.split('://', 1)[0]}://")
     request = urllib.request.Request(url, headers=headers, method="GET")
     context = ssl.create_default_context()
-    with urllib.request.urlopen(request, timeout=timeout, context=context) as response:
+    with urllib.request.urlopen(request, timeout=timeout, context=context) as response:  # nosemgrep: dynamic-urllib-use-detected
         return json.loads(response.read())
 
 

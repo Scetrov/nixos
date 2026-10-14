@@ -112,6 +112,8 @@ class GitHubClient:
 
     def request(self, path: str, token: str | None = None, method: str = "GET", body: bytes | None = None) -> tuple[Any, dict[str, str]]:
         url = path if path.startswith("https://") else API + path
+        if not url.startswith("https://"):
+            raise ValueError(f"non-https GitHub URL refused: {url.split('://', 1)[0]}://")
         headers = {
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
@@ -120,7 +122,7 @@ class GitHubClient:
         if token:
             headers["Authorization"] = f"Bearer {token}"
         req = Request(url, data=body, method=method, headers=headers)
-        with urlopen(req, timeout=30) as resp:
+        with urlopen(req, timeout=30) as resp:  # nosemgrep: dynamic-urllib-use-detected
             self.rate_remaining = int(resp.headers.get("x-ratelimit-remaining", self.rate_remaining))
             self.rate_reset = int(resp.headers.get("x-ratelimit-reset", self.rate_reset))
             raw = resp.read()

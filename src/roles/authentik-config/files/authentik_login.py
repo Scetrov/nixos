@@ -95,6 +95,12 @@ def main():
     ui_base = api_base.rsplit('/api/v3', 1)[0]
     browser_flow_url = f"{ui_base}/if/flow/{urllib.parse.quote(flow_slug)}/"
     insecure = os.environ.get("AUTHENTIK_LOGIN_INSECURE", "0") == "1"
+    if insecure:
+        print(
+            "WARNING: AUTHENTIK_LOGIN_INSECURE=1 - TLS certificate verification is DISABLED; "
+            "use only for local self-signed Authentik deployments",
+            file=sys.stderr,
+        )
     ssl_context = ssl._create_unverified_context() if insecure else None
 
     # Set up cookie jar for session persistence
