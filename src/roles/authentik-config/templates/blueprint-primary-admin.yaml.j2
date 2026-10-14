@@ -8,6 +8,20 @@ version: 1
 metadata:
   name: primary-admin
 entries:
+  # Bootstrap admin membership only on creation. A present-state user.groups
+  # assignment REPLACES every membership, including OpenTofu application groups.
+  # OpenTofu owns steady-state application access; this blueprint must not reset it.
+  - model: authentik_core.user
+    id: primary-admin-create
+    state: created
+    identifiers:
+      username: "{{ authentik_config_primary_admin_username }}"
+    attrs:
+      name: "{{ authentik_config_primary_admin_name }}"
+      groups:
+        - !Find [authentik_core.group, [name, authentik Admins]]
+
+  # Continue reconciling identity and recovery credentials, not group membership.
   - model: authentik_core.user
     id: primary-admin-user
     identifiers:
@@ -19,11 +33,10 @@ entries:
       path: "{{ authentik_config_primary_admin_path }}"
       type: internal
       password: "{{ authentik_config_primary_admin_password }}"
-      groups:
-        - !Find [authentik_core.group, [name, authentik Admins]]
 
   - model: authentik_core.user
     id: user-scetrov
+    state: created
     identifiers:
       username: "scetrov"
     attrs:

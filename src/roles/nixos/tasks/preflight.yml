@@ -1,3 +1,11 @@
+- name: Refuse to activate PG17 over unmigrated homelab databases
+  become: true
+  ansible.builtin.script:
+    cmd: upgrade_databases.py guard
+    executable: python3
+  changed_when: false
+  when: inventory_hostname == 'habiki'
+
 - name: Find local Nix files for syntax validation
   ansible.builtin.find:
     paths: "{{ role_path }}/files"

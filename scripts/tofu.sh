@@ -84,7 +84,7 @@ refresh_generated_secrets() {
 }
 
 if [[ "$REFRESH_ONLY" == true ]]; then
-    tofu -chdir="$TERRAFORM_DIR" init -reconfigure -upgrade
+    tofu -chdir="$TERRAFORM_DIR" init -reconfigure -upgrade >&2
     refresh_generated_secrets
     exit 0
 fi
@@ -93,7 +93,8 @@ if [[ ${#TOFU_ARGS[@]} -eq 0 ]]; then
     TOFU_ARGS=(apply)
 fi
 
-tofu -chdir="$TERRAFORM_DIR" init -reconfigure -upgrade
+# Keep command stdout machine-readable (e.g. output -raw) for Ansible callers.
+tofu -chdir="$TERRAFORM_DIR" init -reconfigure -upgrade >&2
 tofu -chdir="$TERRAFORM_DIR" "${TOFU_ARGS[@]}"
 
 if [[ " ${TOFU_ARGS[*]} " == *" apply "* ]]; then

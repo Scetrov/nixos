@@ -32,7 +32,7 @@ let
           --network=podman \
           --env-file=${oncallEnvFile} \
           -v ${stateDir}:${stateDir}:U \
-          docker.io/grafana/oncall:latest \
+          docker.io/grafana/oncall:v1.16.11@sha256:9abc7342e10022da5893867789a91112fe366b3cd064a07a32d752f9de395fe5 \
           sh -ceu 'python - <<PY
     import socket
     import time
@@ -163,7 +163,7 @@ in
 
   virtualisation.oci-containers.containers = {
     oncall-postgres = {
-      image = "docker.io/postgres:16-alpine";
+      image = "docker.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24";
       autoStart = true;
       extraOptions = [ "--network=podman" ];
       environment = {
@@ -178,13 +178,14 @@ in
     };
 
     oncall-redis = {
-      image = "docker.io/redis:7-alpine";
+      image = "docker.io/library/redis:8-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0";
+      volumes = [ "oncall-redis-data:/data" ];
       autoStart = true;
       extraOptions = [ "--network=podman" ];
     };
 
     oncall-engine = {
-      image = "docker.io/grafana/oncall:latest";
+      image = "docker.io/grafana/oncall:v1.16.11@sha256:9abc7342e10022da5893867789a91112fe366b3cd064a07a32d752f9de395fe5";
       autoStart = true;
       cmd = [
         "sh"
@@ -202,7 +203,7 @@ in
     };
 
     oncall-celery = {
-      image = "docker.io/grafana/oncall:latest";
+      image = "docker.io/grafana/oncall:v1.16.11@sha256:9abc7342e10022da5893867789a91112fe366b3cd064a07a32d752f9de395fe5";
       autoStart = true;
       cmd = [
         "sh"

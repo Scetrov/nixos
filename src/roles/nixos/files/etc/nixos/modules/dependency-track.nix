@@ -159,19 +159,19 @@ in
 
     apiserverImage = lib.mkOption {
       type = lib.types.str;
-      default = "dependencytrack/apiserver:4.14.1";
+      default = "docker.io/dependencytrack/apiserver:4.14.5@sha256:4d41f29ce886a7fcb94a424b3eb2bfd17497ba92d48d43896c48e87a69bcf335";
       description = "Container image for API Server.";
     };
 
     frontendImage = lib.mkOption {
       type = lib.types.str;
-      default = "dependencytrack/frontend:4.14.1";
+      default = "docker.io/dependencytrack/frontend:4.14.5@sha256:d675efbd80facddb696c21c82e1973d0dc83ae38b3c896d1c87bf78a26a6c9eb";
       description = "Container image for Frontend.";
     };
 
     postgresqlImage = lib.mkOption {
       type = lib.types.str;
-      default = "postgres:16-alpine";
+      default = "docker.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24";
       description = "Container image for PostgreSQL.";
     };
   };

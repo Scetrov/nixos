@@ -1,0 +1,171 @@
+# Explicit maintenance only: never imported by the normal deployment playbook.
+# scripts/play.sh --limit habiki --tags database-upgrade -- -e upgrade_confirm=true
+# Roll back using the SAME backup directory printed by the migration:
+# scripts/play.sh --limit habiki --tags database-upgrade -- \
+#   -e upgrade_confirm=true -e upgrade_action=rollback -e upgrade_backup_dir=/var/lib/component-upgrade/RUN
+- name: Upgrade homelab databases during a maintenance window
+  hosts: habiki
+  become: true
+  gather_facts: true
+  vars_files:
+    - secrets.yml
+  tags: [database-upgrade]
+  vars:
+    upgrade_action: migrate
+    upgrade_database_only: false
+    upgrade_backup_dir: "/var/lib/component-upgrade/{{ ansible_facts.date_time.iso8601_basic_short }}"
+    upgrade_script: /var/lib/component-upgrade/upgrade_databases.py
+  tasks:
+    - name: Require an explicit maintenance confirmation
+      ansible.builtin.assert:
+        that:
+          - upgrade_confirm | default(false) | bool
+          - upgrade_action in ['migrate', 'resume', 'rollback']
+          - upgrade_backup_dir is match('^/var/lib/component-upgrade/[A-Za-z0-9_-]+$')
+        fail_msg: "This run stops SSO, Dependency-Track and OnCall. Set upgrade_confirm=true."
+
+    - name: Create private maintenance directory
+      ansible.builtin.file:
+        path: /var/lib/component-upgrade
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Install one-off migration helper
+      ansible.builtin.copy:
+        src: roles/nixos/files/upgrade_databases.py
+        dest: "{{ upgrade_script }}"
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Restore previous generation and retained PG16 data when requested
+      when: upgrade_action == 'rollback'
+      ansible.builtin.command:
+        argv: [python3, "{{ upgrade_script }}", rollback, --backup-dir, "{{ upgrade_backup_dir }}"]
+      changed_when: true
+
+    - name: Migrate and activate new configuration
+      when: upgrade_action != 'rollback'
+      block:
+        - name: Read the completed restore manifest when resuming activation
+          when: upgrade_action == 'resume'
+          ansible.builtin.slurp:
+            src: "{{ upgrade_backup_dir }}/manifest.json"
+          register: upgrade_manifest
+
+        - name: Refuse to resume activation without completed restores
+          when: upgrade_action == 'resume'
+          ansible.builtin.assert:
+            that:
+              - (upgrade_manifest.content | b64decode | from_json).prepared | default(false) | bool
+
+        - name: Check installed database versions before resuming
+          when: upgrade_action == 'resume'
+          ansible.builtin.command:
+            argv: [python3, "{{ upgrade_script }}", guard]
+          changed_when: false
+
+        - name: Check that all three live databases are PG16
+          when: upgrade_action == 'migrate'
+          ansible.builtin.command:
+            argv: [python3, "{{ upgrade_script }}", check]
+          changed_when: false
+
+        - name: Read the running Authentik image ID
+          ansible.builtin.command:
+            argv: [podman, inspect, authentik-server, --format, '{% raw %}{{.Image}}{% endraw %}']
+          register: upgrade_authentik_id
+          changed_when: false
+
+        - name: Read its immutable repository digest for the database-only stage
+          ansible.builtin.command:
+            argv: [podman, image, inspect, "{{ upgrade_authentik_id.stdout }}"]
+          register: upgrade_authentik_image
+          changed_when: false
+          no_log: true
+
+        - name: Keep Authentik on the current image during the PG17 restore check
+          ansible.builtin.set_fact:
+            upgrade_authentik_digest: "{{ (upgrade_authentik_image.stdout | from_json)[0].RepoDigests | select('match', '^ghcr.io/goauthentik/server@sha256:') | first }}"
+
+        # Sync only; do not call the normal role's whole-host restart task.
+        - name: Copy NixOS source without activating any image changes
+          ansible.builtin.include_role:
+            name: nixos
+            tasks_from: sync.yml
+
+        - name: Write temporary database-only configuration
+          ansible.builtin.copy:
+            dest: /etc/nixos/database-upgrade-stage.nix
+            mode: '0600'
+            content: |
+              { lib, ... }: {
+                imports = [ ./configuration.nix ];
+                scetrov.services.authentik.image = lib.mkForce "{{ upgrade_authentik_digest }}";
+              }
+
+        - name: Build the database-only stage before stopping services
+          ansible.builtin.command:
+            argv: [nixos-rebuild, build, -I, 'nixos-config=/etc/nixos/database-upgrade-stage.nix']
+            chdir: /var/lib/component-upgrade
+          changed_when: true
+
+        - name: Dump databases, cold-copy PG16, verify isolated PG17 restores and install data
+          when: upgrade_action == 'migrate'
+          ansible.builtin.command:
+            argv: [python3, "{{ upgrade_script }}", migrate, --backup-dir, "{{ upgrade_backup_dir }}"]
+          register: upgrade_restore
+          changed_when: true
+
+        - name: Activate PG17 with the old Authentik server image first
+          ansible.builtin.command:
+            argv: [nixos-rebuild, switch, -I, 'nixos-config=/etc/nixos/database-upgrade-stage.nix']
+          changed_when: true
+
+        - name: Verify database-only Authentik stage
+          ansible.builtin.uri:
+            url: http://127.0.0.1:9000/-/health/ready/
+            status_code: 200
+          register: upgrade_authentik_health
+          until: upgrade_authentik_health.status | default(0) == 200
+          retries: 60
+          delay: 5
+
+        - name: Activate the reviewed Authentik 2026.8 image
+          when: not (upgrade_database_only | bool)
+          ansible.builtin.command:
+            argv: [nixos-rebuild, switch]
+          changed_when: true
+
+        - name: Check application health after migrations
+          ansible.builtin.uri:
+            url: "{{ item }}"
+            status_code: 200
+          register: upgrade_health
+          until: upgrade_health.status | default(0) == 200
+          retries: 60
+          delay: 5
+          loop:
+            - http://127.0.0.1:9000/-/health/ready/
+            - http://127.0.0.1:8081/health
+            - http://127.0.0.1:18080/health/
+
+        - name: Remove temporary stage configuration
+          when: not (upgrade_database_only | bool)
+          ansible.builtin.file:
+            path: /etc/nixos/database-upgrade-stage.nix
+            state: absent
+
+        - name: Record backup retention and remaining checks
+          ansible.builtin.debug:
+            msg: "Retain {{ upgrade_backup_dir }} and *.pg16-before-upgrade for at least 7 days. Verify Forgejo/DT OIDC and Grafana logs before sign-off."
+      rescue:
+        - name: Stop on failure without discarding any backups
+          ansible.builtin.fail:
+            msg: >-
+              Maintenance stopped. Keep {{ upgrade_backup_dir }}; do not run a normal rebuild.
+              Roll back with scripts/play.sh --limit habiki --tags database-upgrade --
+              -e upgrade_confirm=true -e upgrade_action=rollback
+              -e upgrade_backup_dir={{ upgrade_backup_dir }}.

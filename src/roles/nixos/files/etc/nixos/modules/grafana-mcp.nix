@@ -21,8 +21,8 @@ in
 
     image = lib.mkOption {
       type = lib.types.str;
-      # Default to latest but overridable in host device-configuration for pinning/updates (SR-006)
-      default = "docker.io/grafana/mcp-grafana:latest";
+      # Pinned to latest stable with sha256 digest for supply-chain integrity; overridable in host device-configuration (SR-006)
+      default = "docker.io/grafana/mcp-grafana:2.0.2@sha256:78d208116ec52b09b44f0eca66892073b39aefcb64483c54d43255c8eab7e97a";
       description = "Docker image for the Grafana MCP Server";
     };
   };

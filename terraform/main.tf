@@ -6,13 +6,13 @@ terraform {
   required_providers {
     authentik = {
       source = "goauthentik/authentik"
-      # Match the deployed Authentik 2026.5.x API. Newer SDKs require pbm_uuid.
-      # 2026.5.2 released 2026-10-02; deferred under the seven-day update policy.
+      # Keep the provider SDK on the deployed Authentik 2026.8 release line.
+      # Server 2026.8.3 and provider 2026.8.0 share the same API contract.
       version = "2026.8.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.0"
+      version = "3.9.1"
     }
     caddy = {
 
@@ -21,7 +21,7 @@ terraform {
     }
     grafana = {
       source  = "grafana/grafana"
-      version = "4.47.0"
+      version = "4.49.0"
     }
   }
 }

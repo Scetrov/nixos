@@ -318,16 +318,8 @@
             authentik_config_repair_csrf_token: "{{ (authentik_config_bootstrap_blueprint_login.stdout | from_json).csrf_token }}"
           no_log: true
 
-    - name: Reconcile the managed Authentik admin account
-      ansible.builtin.include_tasks: deploy-blueprint.yml
-      vars:
-        # Authentik 2025.10 accepts blueprint writes with the bootstrap API token,
-        # but rejects the same POST through a recovered browser session with 403.
-        authentik_config_blueprint_api_token: "{{ authentik_config_repair_api_token }}"
-        authentik_config_blueprint_cookie_header: "{{ authentik_config_repair_cookie_header }}"
-        authentik_config_blueprint_csrf_token: "{{ authentik_config_repair_csrf_token }}"
-        authentik_config_blueprint_name: "{{ authentik_config_primary_admin_blueprint_name }}"
-        authentik_config_blueprint_template: "{{ authentik_config_primary_admin_blueprint_template }}"
+    - name: Reconcile admin identity while preserving application memberships
+      ansible.builtin.include_tasks: reconcile-admin.yml
 
     - name: Verify the managed Authentik admin account can log in
       delegate_to: localhost
@@ -486,32 +478,30 @@
     - name: Apply Authentik steady-state configuration via OpenTofu
       delegate_to: localhost
       run_once: true
-      ansible.builtin.shell:
-        cmd: |
-          set -e
-          tofu init -reconfigure
-          tofu apply -auto-approve
-
-          # We no longer write the token to disk here.
-        chdir: "{{ playbook_dir }}/../terraform"
+      become: false
+      ansible.builtin.command:
+        argv:
+          - "{{ playbook_dir }}/../scripts/tofu.sh"
+          - --
+          - apply
+          - -auto-approve
       register: tofu_apply_output
       environment:
-        TF_IN_AUTOMATION: "true"
-        PG_CONN_STR: "postgres://terraform:{{ authentik_postgresql_password }}@{{ hostvars['habiki'].ansible_host | default('10.229.10.2') }}:5433/terraform_state?sslmode=disable"
-        TF_VAR_authentik_token: "{{ authentik_api_token }}"
-        TF_VAR_grafana_token: "{{ grafana_admin_token }}"
         TF_VAR_hermes_external_host: "{{ authentik_config_hermes_external_host }}"
       no_log: true
 
     - name: Retrieve Grafana OnCall token from Tofu
       delegate_to: localhost
       run_once: true
-      ansible.builtin.command: tofu output -raw grafana_oncall_token
-      args:
-        chdir: "{{ playbook_dir }}/../terraform"
+      become: false
+      ansible.builtin.command:
+        argv:
+          - "{{ playbook_dir }}/../scripts/tofu.sh"
+          - --
+          - output
+          - -raw
+          - grafana_oncall_token
       register: tofu_oncall_token
-      environment:
-        PG_CONN_STR: "postgres://terraform:{{ authentik_postgresql_password }}@{{ hostvars['habiki'].ansible_host | default('10.229.10.2') }}:5433/terraform_state?sslmode=disable"
       when: tofu_apply_output is success
       changed_when: false
       no_log: true

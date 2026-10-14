@@ -235,7 +235,8 @@ in
 
     timescaleImage = lib.mkOption {
       type = lib.types.str;
-      default = "docker.io/timescale/timescaledb-ha:pg17";
+      # `pg17` is a moving tag; anchored to the resolved multi-arch index digest for supply-chain integrity
+      default = "docker.io/timescale/timescaledb-ha:pg17@sha256:20534b8a06680956336604f3735d5811807f5244c6a364c761a70dea9c63de36";
       description = "Container image for TimescaleDB.";
     };
 

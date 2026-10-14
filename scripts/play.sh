@@ -11,6 +11,8 @@ Modular NixOS & Service Deployment Wrapper
 Options:
   -l, --limit <host>     Limit deployment to a specific host (e.g., habiki, bullit, fyne)
   -t, --tags <tag>       Filter execution by tags/logical groups:
+                           - database-upgrade : Explicit PG16→17/Redis maintenance on habiki
+                                                Requires --limit habiki and -e upgrade_confirm=true
                            - nixos            : Host configuration & linting
                            - authentik        : Authentik applications & OpenTofu
                            - hermes           : Hermes service, secrets & SSO setup
@@ -86,8 +88,18 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Database maintenance is deliberately separate from normal deployment roles.
+PLAYBOOK="src/playbook.yml"
+if [[ "$TAGS" == "database-upgrade" ]]; then
+    if [[ "$LIMIT" != "habiki" ]]; then
+        echo "Error: database-upgrade requires --limit habiki." >&2
+        exit 1
+    fi
+    PLAYBOOK="src/upgrade-databases.yml"
+fi
+
 # Build Ansible arguments
-ANSIBLE_ARGS=("-i" "src/inventory.yml" "src/playbook.yml" "--vault-password-file" "$HOME/.ansible/nixos_vault_password")
+ANSIBLE_ARGS=("-i" "src/inventory.yml" "$PLAYBOOK" "--vault-password-file" "$HOME/.ansible/nixos_vault_password")
 
 if [[ -n "$LIMIT" ]]; then
     ANSIBLE_ARGS+=("--limit" "$LIMIT")

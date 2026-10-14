@@ -10,7 +10,7 @@ let
   };
   unstable = import <nixos-unstable> { config = baseconfig; };
   google-antigravity-cli = pkgs.callPackage ../pkgs/google-antigravity-cli.nix { };
-  rust-1_97 = pkgs.callPackage ../pkgs/rust-1_97.nix { };
+  rust-1_99 = pkgs.callPackage ../pkgs/rust-1_99.nix { };
 in
 {
   age.secrets.user_password_hashed.file = /root/secrets/user_password_hashed.age;
@@ -56,7 +56,7 @@ in
         pkg-config
         powershell
         ripgrep
-        rust-1_97
+        rust-1_99
         tmux
         unstable.cargo-audit
         unstable.chezmoi

@@ -101,13 +101,13 @@ in
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "ghcr.io/goauthentik/server:2026.5";
+      default = "ghcr.io/goauthentik/server:2026.8.3@sha256:ab9b4e8cc4ab3f8d1198d2db6aeea66bafea1963b3f2843589e0d163f97d9849";
       description = "Container image used for the Authentik server and worker.";
     };
 
     postgresqlImage = lib.mkOption {
       type = lib.types.str;
-      default = "postgres:16-alpine";
+      default = "docker.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24";
       description = "Container image used for PostgreSQL.";
     };
 
