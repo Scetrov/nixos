@@ -89,7 +89,6 @@ assert lib.assertMsg (
   && config.age.secrets.garage_metrics_token.group == "prometheus"
   && config.age.secrets.garage_metrics_token.mode == "0440"
   && config.age.secrets.garage_metrics_environment.mode == "0400"
-  && config.age.secrets.garage_reapers_arsenal_s3_credentials.mode == "0400"
   && builtins.elem "/run/agenix/garage_admin_environment" garageService.serviceConfig.EnvironmentFile
   && builtins.elem "/run/agenix/garage_metrics_environment" garageService.serviceConfig.EnvironmentFile
 ) "Garage secrets must be injected with restricted filesystem permissions";

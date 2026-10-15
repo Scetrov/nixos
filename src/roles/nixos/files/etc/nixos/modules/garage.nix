@@ -37,12 +37,6 @@ in
       group = "root";
       mode = "0400";
     };
-    garage_reapers_arsenal_s3_credentials = {
-      file = /root/secrets/garage_reapers_arsenal_s3_credentials.age;
-      owner = "root";
-      group = "root";
-      mode = "0400";
-    };
   };
 
   services.garage = {

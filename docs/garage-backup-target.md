@@ -30,8 +30,7 @@ idempotent provisioning path. Each project needs:
    ```
 
 Never create a shared project key or allow a key on another project's bucket.
-Do not use `garage key info --show-secret` in automation or logs. The initial
-`reapers-arsenal` project follows this pattern.
+Do not use `garage key info --show-secret` in automation or logs.
 
 ## Rotate or revoke a project credential
 
