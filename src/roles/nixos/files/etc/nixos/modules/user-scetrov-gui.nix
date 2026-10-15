@@ -62,8 +62,7 @@ in
       jetbrains.rider
       nerd-fonts.fira-code
       sqlite
-      unstable.antigravity
-      unstable.antigravity-cli
+      unstable.antigravity-hub
       unstable.bun
       unstable.chromium
       unstable.code-cursor

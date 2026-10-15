@@ -9,7 +9,6 @@ let
     allowUnfree = true;
   };
   unstable = import <nixos-unstable> { config = baseconfig; };
-  google-antigravity-cli = pkgs.callPackage ../pkgs/google-antigravity-cli.nix { };
   rust-1_99 = pkgs.callPackage ../pkgs/rust-1_99.nix { };
 in
 {
@@ -73,7 +72,7 @@ in
         wrangler
       ])
       ++ lib.optionals (pkgs.stdenv.hostPlatform.system == "x86_64-linux") [
-        google-antigravity-cli
+        unstable.antigravity-cli
       ];
   };
 
