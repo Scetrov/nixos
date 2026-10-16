@@ -13,6 +13,7 @@ import tempfile
 import time
 import unittest
 import uuid
+from urllib.parse import quote
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -155,6 +156,72 @@ class HermesAuthExpiryTests(unittest.TestCase):
                 )
                 self.assertEqual(status, 200)
                 self.assertEqual(body, f"POST|{path}|fixture-user")
+
+    def test_authenticated_login_resumes_without_upstream_login_page(self):
+        for method in ["GET", "HEAD"]:
+            for target in ["/", "/session/fixture123", "/settings", "/session/test_1-2"]:
+                with self.subTest(method=method, target=target):
+                    status, headers, body = self.request(
+                        "/login?next=" + quote(target, safe=""),
+                        {"Cookie": "fixture=valid"}, method=method,
+                    )
+                    self.assertEqual(status, 302)
+                    self.assertEqual(headers.get("Location"), target)
+                    self.assertEqual(headers.get("Cache-Control"), "no-store")
+                    self.assertNotIn("fixture-user", body)
+
+    def test_login_return_target_fails_closed(self):
+        for target in [
+            "", "https://evil.invalid/", "//evil.invalid/", "/\\evil.invalid/",
+            "/login", "/login/", "/session/login", "/login?next=/login",
+            "/session/../login", "/%2f%2fevil.invalid", "/session/x\r\nLocation: evil",
+            "/session/x?next=//evil.invalid", "/session/x#fragment", "/session/with space",
+        ]:
+            with self.subTest(target=target):
+                status, headers, _ = self.request(
+                    "/login?next=" + quote(target, safe=""), {"Cookie": "fixture=valid"}
+                )
+                self.assertEqual(status, 302)
+                self.assertEqual(headers.get("Location"), "/")
+                self.assertEqual(headers.get("Cache-Control"), "no-store")
+        status, headers, _ = self.request("/login", {"Cookie": "fixture=valid"})
+        self.assertEqual((status, headers.get("Location")), (302, "/"))
+
+    def test_login_recovery_still_requires_authentik(self):
+        for headers in [
+            {}, {"Cookie": "fixture=invalid"}, {"X-Authentik-Username": "spoofed"},
+            {"Cookie": "fixture=invalid", "X-Authentik-Username": "spoofed"},
+        ]:
+            status, response_headers, _ = self.request("/login?next=%2Fsession%2Fx", headers)
+            self.assertEqual(status, 302)
+            self.assertEqual(response_headers.get("Location"), "https://identity.invalid/authorize")
+        for expected in [401, 403, 500]:
+            status, headers, _ = self.request(
+                "/login?next=%2Fsession%2Fx", {"X-Fixture-Status": str(expected)}
+            )
+            self.assertEqual(status, expected)
+            self.assertNotEqual(headers.get("Location"), "/session/x")
+
+    def test_expiry_recovery_returns_to_session_after_authentication(self):
+        target = "/session/fixture123"
+        status, _, _ = self.request("/api/projects")
+        self.assertEqual(status, 401)
+        login = "/login?next=" + quote(target, safe="")
+        status, headers, _ = self.request(login)
+        self.assertEqual((status, headers.get("Location")),
+                         (302, "https://identity.invalid/authorize"))
+        # Model the browser returning from Authentik with an accepted cookie.
+        cookie = {"Cookie": "fixture=valid"}
+        status, headers, _ = self.request(login, cookie)
+        self.assertEqual((status, headers.get("Location")), (302, target))
+        status, _, body = self.request(headers["Location"], cookie)
+        self.assertEqual((status, body), (200, f"GET|{target}|fixture-user"))
+
+    def test_login_post_is_not_replaced_by_browser_recovery(self):
+        status, _, body = self.request(
+            "/login", {"Cookie": "fixture=valid"}, method="POST", body="original-body"
+        )
+        self.assertEqual((status, body), (200, "POST|/login|fixture-user"))
 
     def test_auth_failures_stay_denied(self):
         for expected in [401, 403, 500]:

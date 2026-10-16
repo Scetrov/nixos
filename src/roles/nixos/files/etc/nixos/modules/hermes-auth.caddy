@@ -18,10 +18,28 @@ handle @background {
 
 # Only top-level navigation should enter the normal Authentik login flow.
 handle {
-  forward_auth http://127.0.0.1:9000 {
-    uri /outpost.goauthentik.io/auth/caddy
-    copy_headers X-Authentik-Username X-Authentik-Groups X-Authentik-Email X-Authentik-Name X-Authentik-Uid
+  # Keep this order: Caddy normally sorts redirects ahead of forward_auth.
+  route {
+    forward_auth http://127.0.0.1:9000 {
+      uri /outpost.goauthentik.io/auth/caddy
+      copy_headers X-Authentik-Username X-Authentik-Groups X-Authentik-Email X-Authentik-Name X-Authentik-Uid
+    }
+
+    # Hermes sends API 401s to /login even with native auth disabled. Once
+    # Authentik grants access, resume directly instead of rendering that form.
+    @login {
+      path /login
+      method GET HEAD
+    }
+    handle @login {
+      header Cache-Control no-store
+      # Deliberately accept only simple local paths. Complex/encoded targets,
+      # query strings, fragments and login loops safely fall back to home.
+      @resume expression `{query.next}.matches('^/[A-Za-z0-9/_-]*$') && !{query.next}.startsWith('//') && !{query.next}.matches('(^|/)login(/|$)')`
+      redir @resume {query.next} 302
+      redir * / 302
+    }
+    reverse_proxy 127.0.0.1:8787
   }
-  reverse_proxy 127.0.0.1:8787
 }
 encode zstd gzip
