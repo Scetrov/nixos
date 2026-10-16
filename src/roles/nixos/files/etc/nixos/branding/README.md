@@ -4,6 +4,25 @@ Application icons are served locally from `/static/dist/branding/`. Ansible
 copies the assets into the existing Authentik branding volume; OpenTofu owns
 application `meta_icon` references. No new endpoints or ports are needed.
 
+## Hermes
+
+`sources/hermes.svg` reproduces the caduceus SVG supplied by the operator from
+Hermes' current UI. It preserves the original path, viewBox, transform, and
+cyan-to-blue gradient (`#08EBF1` → `#3889FD`). Explicit gradient colors make it
+self-contained: no application CSS, scripts, fonts, or external resources are
+needed. The unused CSS classes were removed and an image role was added.
+
+`hermes.png` is a transparent 512 × 512 rendering of that SVG. It replaces the
+previous raster artwork at the existing Authentik icon URL, so no application
+metadata or SSO changes are needed. Reproduce it using absolute file paths:
+
+```sh
+QT_QPA_PLATFORM=offscreen ksvgtopng 512 512 /absolute/path/sources/hermes.svg /absolute/path/hermes.png
+```
+
+The SVG source is retained for future resizing; only the rendered PNG needs to
+be deployed using the existing `authentik-branding` command below.
+
 ## Forgejo and Miniflux
 
 Both icons use a 512 × 512 pixel canvas. Forgejo is rendered on a transparent

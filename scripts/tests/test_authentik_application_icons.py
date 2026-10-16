@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import struct
 import unittest
+import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -25,7 +26,11 @@ class ApplicationIconTests(unittest.TestCase):
     def test_new_icons_are_local_and_deployed(self):
         tasks = (ROOT / "src/roles/nixos/tasks/main.yml").read_text()
         self.assertIn("tags: [authentik-branding]", tasks)
-        for app, filename in [("forgejo", "authentik.tf"), ("miniflux", "miniflux.tf")]:
+        for app, filename in [
+            ("forgejo", "authentik.tf"),
+            ("miniflux", "miniflux.tf"),
+            ("hermes", "authentik.tf"),
+        ]:
             with self.subTest(application=app):
                 source = (ROOT / "terraform" / filename).read_text()
                 body = re.search(
@@ -37,6 +42,34 @@ class ApplicationIconTests(unittest.TestCase):
                 image = (BRANDING / f"{app}.png").read_bytes()
                 self.assertEqual(image[:8], b"\x89PNG\r\n\x1a\n")
                 self.assertEqual(struct.unpack(">II", image[16:24]), (512, 512))
+
+    def test_hermes_svg_is_self_contained(self):
+        svg = ET.parse(BRANDING / "sources/hermes.svg").getroot()
+        ns = {"svg": "http://www.w3.org/2000/svg"}
+        self.assertEqual(svg.attrib["viewBox"], "0 0 64 64")
+        self.assertEqual(svg.attrib["aria-label"], "Hermes caduceus")
+        stops = svg.findall("svg:defs/svg:linearGradient/svg:stop", ns)
+        self.assertEqual(
+            [(stop.attrib["offset"], stop.attrib["stop-color"]) for stop in stops],
+            [("0", "#08EBF1"), ("1", "#3889FD")],
+        )
+        group = svg.find("svg:g", ns)
+        self.assertEqual(
+            group.attrib["transform"], "translate(-24.93 -29.13) scale(0.09075)"
+        )
+        path = group.find("svg:path", ns)
+        self.assertEqual(path.attrib["fill"], "url(#hermes-mark)")
+        self.assertEqual(path.attrib["fill-rule"], "evenodd")
+        self.assertEqual(path.attrib["d"].count(" Z"), 7)
+        allowed_tags = {"svg", "defs", "linearGradient", "stop", "g", "path"}
+        for element in svg.iter():
+            self.assertIn(element.tag.removeprefix(f"{{{ns['svg']}}}"), allowed_tags)
+            self.assertFalse(any(
+                name.startswith("on") or "href" in name or name in {"class", "style"}
+                for name in element.attrib
+            ))
+        # The PNG renderer retains an alpha channel for transparent backgrounds.
+        self.assertEqual((BRANDING / "hermes.png").read_bytes()[25], 6)
 
     def test_upstream_assets_match_recorded_hashes(self):
         expected = {
