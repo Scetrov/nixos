@@ -137,14 +137,7 @@ lib.mkIf config.services.grafana.enable {
 
     virtualHosts."hermes.net.scetrov.live" = lib.mkIf config.services.hermes-webui.enable {
       useACMEHost = "scetrov.live";
-      extraConfig = ''
-        forward_auth http://127.0.0.1:9000 {
-          uri /outpost.goauthentik.io/auth/caddy
-          copy_headers X-Authentik-Username X-Authentik-Groups X-Authentik-Email X-Authentik-Name X-Authentik-Uid
-        }
-        encode zstd gzip
-        reverse_proxy 127.0.0.1:8787
-      '';
+      extraConfig = builtins.readFile ./hermes-auth.caddy;
     };
 
     virtualHosts."homeassistant.net.scetrov.live" =

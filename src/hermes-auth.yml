@@ -1,0 +1,49 @@
+# Proxy-only repair: no channel updates, secret refreshes, provider changes,
+# or blanket container restarts. Use scripts/play.sh --limit habiki --tags hermes-auth.
+- name: Deploy Hermes authentication routing on Habiki
+  hosts: habiki
+  gather_facts: false
+  tasks:
+    - name: Parse-check the Caddy NixOS module
+      ansible.builtin.command:
+        argv:
+          - nix-instantiate
+          - --parse
+          - "{{ playbook_dir }}/roles/nixos/files/etc/nixos/modules/caddy.nix"
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      tags: [hermes-auth]
+
+    - name: Copy Hermes authentication routing modules
+      become: true
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/roles/nixos/files/etc/nixos/modules/{{ item }}"
+        dest: "/etc/nixos/modules/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - caddy.nix
+        - hermes-auth.caddy
+      tags: [hermes-auth]
+
+    - name: Activate the NixOS configuration without updating channels
+      become: true
+      ansible.builtin.command:
+        argv:
+          - nixos-rebuild
+          - switch
+      register: hermes_auth_rebuild
+      changed_when: true
+      tags: [hermes-auth]
+
+    - name: Verify Caddy remains active
+      become: true
+      ansible.builtin.command:
+        argv:
+          - systemctl
+          - is-active
+          - caddy.service
+      changed_when: false
+      tags: [hermes-auth]

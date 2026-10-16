@@ -118,3 +118,61 @@ The module is intended to keep the Hermes containers unprivileged:
 * secret material injected through a root-owned env file
 * all app containers isolated on a private Podman network
 The main host-level exposure is the chosen Caddy port.
+
+## Expired Authentik Sessions
+
+The host Caddy site reads `modules/hermes-auth.caddy`. For `/api`, `/api/*`,
+`/health`, and `/health/*`, an outpost authentication redirect is translated to
+JSON `401` with `Cache-Control: no-store` and no `Location` header. Authenticated
+requests still require Authentik approval. Other auth failures remain failures.
+Browser navigation, including `/login`, retains the normal OAuth redirect.
+
+The pinned WebUI already handles API `401` by navigating at top level to
+`login?next=...`; no CSP widening, frontend injection, image upgrade, or longer
+session lifetime is needed. SSE reconnect handshakes receive `401` too; ordinary
+API polling drives reauthentication. An already-established stream is not revoked
+by these proxy rules.
+
+### Regression Checks
+
+The container fixture uses the Caddy image pinned in `hermes.nix`, mocked auth
+and application upstreams, and a random localhost-only port. It removes its
+container and temporary configuration on completion:
+
+```bash
+python3 scripts/tests/test_hermes_auth_expiry.py
+```
+
+The frontend check executes only the deployed API helper in a mocked browser.
+Run it with the Bubblewrap isolation launcher installed on the operator machine:
+
+```bash
+ssh scetrov@10.229.10.2 'sudo -n podman exec hermes-webui cat /app/static/workspace.js' |
+  /home/scetrov/.agents/skills/bubblewrap-isolation/scripts/run-isolated.sh -- \
+  node scripts/tests/check_hermes_frontend_auth.cjs
+```
+
+### Proxy-only Deployment
+
+```bash
+./scripts/play.sh --limit habiki --tags hermes-auth
+```
+
+This focused play copies only `caddy.nix` and `hermes-auth.caddy`, then runs
+`nixos-rebuild switch` and verifies Caddy. It does not update channels, refresh
+secrets, apply OpenTofu, or blanket-restart containers. Other pending changes
+already present in `/etc/nixos` can still be activated by a rebuild; inspect host
+configuration drift before deployment. The normal full Hermes deployment remains
+available for stack or provider changes.
+
+After deployment, make no-cookie requests without following redirects:
+
+- `/api/projects`, `/api/sessions/events`, `/api/settings`, `/api/crons/recent`,
+  and `/health`: expect `401`, JSON, `no-store`, and no `Location`.
+- `/` and `/login`: expect the usual `302` to Authentik.
+- An authenticated tab should navigate to login on its next API poll after
+  expiry; verify this in-browser when validating a future WebUI image update.
+
+Roll back by reverting the Caddy routing changes and rerunning the focused play
+(or deploy the previous `caddy.nix`, which does not read the new fragment). Do not
+work around expiry by bypassing Authentik or allowing the identity origin in CSP.

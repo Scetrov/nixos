@@ -16,6 +16,8 @@ Options:
                            - nixos            : Host configuration & linting
                            - authentik        : Authentik applications & OpenTofu
                            - hermes           : Hermes service, secrets & SSO setup
+                           - hermes-auth      : Proxy-only Hermes auth repair (requires --limit habiki;
+                                                no channel updates or blanket container restarts)
                            - dependency-track : Dependency Track deployment & configuration
                            - miniflux         : Habiki feed reader: provision OIDC, refresh credentials,
                                                 render secrets and rebuild (requires --limit habiki)
@@ -132,6 +134,22 @@ done
 
 # Database maintenance is deliberately separate from normal deployment roles.
 PLAYBOOK="src/playbook.yml"
+if has_tag hermes-auth; then
+    if [[ "$LIMIT" != "habiki" || "$TAGS" != "hermes-auth" ]]; then
+        echo "Error: hermes-auth requires --limit habiki and cannot be combined with other tags." >&2
+        exit 1
+    fi
+    # Do not allow trailing arguments to widen the focused play's host/tag scope.
+    for argument in "${EXTRA_ARGS[@]}"; do
+        case "$argument" in
+            --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*)
+                echo "Error: hermes-auth target/tag overrides after -- are not supported." >&2
+                exit 1
+                ;;
+        esac
+    done
+    PLAYBOOK="src/hermes-auth.yml"
+fi
 if [[ "$TAGS" == "database-upgrade" ]]; then
     if [[ "$LIMIT" != "habiki" ]]; then
         echo "Error: database-upgrade requires --limit habiki." >&2

@@ -1,0 +1,27 @@
+# Background fetches and stream handshakes must not follow OAuth redirects:
+# Hermes already handles API 401s by navigating to its same-origin login page.
+@background path /api /api/* /health /health/*
+handle @background {
+  forward_auth http://127.0.0.1:9000 {
+    uri /outpost.goauthentik.io/auth/caddy
+    copy_headers X-Authentik-Username X-Authentik-Groups X-Authentik-Email X-Authentik-Name X-Authentik-Uid
+
+    @login_redirect status 3xx
+    handle_response @login_redirect {
+      header Content-Type application/json
+      header Cache-Control no-store
+      respond `{"error":"unauthorized"}` 401
+    }
+  }
+  reverse_proxy 127.0.0.1:8787
+}
+
+# Only top-level navigation should enter the normal Authentik login flow.
+handle {
+  forward_auth http://127.0.0.1:9000 {
+    uri /outpost.goauthentik.io/auth/caddy
+    copy_headers X-Authentik-Username X-Authentik-Groups X-Authentik-Email X-Authentik-Name X-Authentik-Uid
+  }
+  reverse_proxy 127.0.0.1:8787
+}
+encode zstd gzip
