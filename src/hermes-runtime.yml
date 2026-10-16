@@ -1,0 +1,147 @@
+# Focused runtime rollout. Review /etc/nixos drift before the host-wide switch.
+# No channels, OpenTofu, unrelated secrets, or blanket Podman restarts.
+- name: Deploy Hermes runtime on Habiki
+  hosts: habiki
+  gather_facts: false
+  vars_files:
+    - secrets.yml
+  tags: [hermes-runtime]
+  tasks:
+    - name: Require the explicit Habiki limit
+      ansible.builtin.assert:
+        that:
+          - ansible_limit == 'habiki'
+        quiet: true
+
+    - name: Parse-check Hermes NixOS configuration
+      ansible.builtin.command:
+        argv:
+          - nix-instantiate
+          - --parse
+          - "{{ playbook_dir }}/roles/nixos/files/{{ item }}"
+      loop:
+        - etc/nixos/modules/hermes.nix
+        - etc/nixos/modules/caddy.nix
+        - device-configuration/habiki.nix
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      check_mode: false
+
+    - name: Encrypt only the vault-rendered Hermes environment
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ playbook_dir }}/../scripts/render_hermes_secret.py"
+        stdin: "{{ lookup('ansible.builtin.template', playbook_dir + '/roles/secrets/templates/hermes-webui.env.j2') }}"
+        stdin_add_newline: false
+      delegate_to: localhost
+      become: false
+      changed_when: true
+      when: not ansible_check_mode
+      no_log: true
+
+    - name: Copy only the Hermes encrypted environment
+      become: true
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/roles/secrets/files/secrets/hermes_webui_env.age"
+        dest: /root/secrets/hermes_webui_env.age
+        owner: root
+        group: root
+        mode: "0600"
+      diff: false
+      no_log: true
+
+    - name: Copy only Hermes modules and the device configuration
+      become: true
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/roles/nixos/files/{{ item.source }}"
+        dest: "/etc/nixos/{{ item.target }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - {source: etc/nixos/modules/hermes.nix, target: modules/hermes.nix}
+        - {source: etc/nixos/modules/caddy.nix, target: modules/caddy.nix}
+        - {source: etc/nixos/modules/hermes-auth.caddy, target: modules/hermes-auth.caddy}
+        - {source: device-configuration/habiki.nix, target: device-configuration.nix}
+
+    - name: Activate NixOS without updating channels
+      become: true
+      ansible.builtin.command:
+        argv: [nixos-rebuild, switch]
+      changed_when: true
+
+    - name: Refresh the shared Hermes environment and model configuration
+      become: true
+      ansible.builtin.systemd_service:
+        name: hermes-webui-oci-setup.service
+        state: restarted
+      when: not ansible_check_mode
+
+    - name: Restart only the deployed Hermes application containers
+      become: true
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - podman-hermes-agent.service
+        - podman-hermes-webui.service
+      when: not ansible_check_mode
+
+    - name: Verify GitHub CLI inside both agent execution environments
+      become: true
+      ansible.builtin.command:
+        argv: [podman, exec, "{{ item }}", gh, --version]
+      loop: [hermes-agent, hermes-webui]
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Verify GitHub CLI has normal unauthenticated behavior
+      become: true
+      ansible.builtin.command:
+        argv:
+          - podman
+          - exec
+          - "{{ item }}"
+          - env
+          - -u
+          - GH_TOKEN
+          - -u
+          - GITHUB_TOKEN
+          - -u
+          - GH_ENTERPRISE_TOKEN
+          - -u
+          - GITHUB_ENTERPRISE_TOKEN
+          - -u
+          - GH_HOST
+          - GH_CONFIG_DIR=/nonexistent-hermes-auth-check
+          - gh
+          - auth
+          - status
+      loop: [hermes-agent, hermes-webui]
+      register: hermes_unauthenticated_cli
+      failed_when: hermes_unauthenticated_cli.rc != 1 or 'not logged into any GitHub hosts' not in hermes_unauthenticated_cli.stderr
+      changed_when: false
+      when: not ansible_check_mode
+      no_log: true
+
+    - name: Verify the WebUI password variable is absent
+      become: true
+      ansible.builtin.command:
+        argv:
+          - podman
+          - exec
+          - hermes-webui
+          - python
+          - -c
+          - "import os; assert 'HERMES_WEBUI_PASSWORD' not in os.environ"
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Verify Caddy and Hermes units remain active
+      become: true
+      ansible.builtin.command:
+        argv: [systemctl, is-active, caddy.service, podman-hermes-agent.service, podman-hermes-webui.service]
+      changed_when: false
+      when: not ansible_check_mode

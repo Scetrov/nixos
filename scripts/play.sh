@@ -16,6 +16,8 @@ Options:
                            - nixos            : Host configuration & linting
                            - authentik        : Authentik applications & OpenTofu
                            - hermes           : Hermes service, secrets & SSO setup
+                           - hermes-runtime   : Hermes-only secret/config/runtime deploy (requires --limit habiki;
+                                                no channel updates, OpenTofu or blanket restarts)
                            - hermes-auth      : Proxy-only Hermes auth repair (requires --limit habiki;
                                                 no channel updates or blanket container restarts)
                            - dependency-track : Dependency Track deployment & configuration
@@ -134,6 +136,21 @@ done
 
 # Database maintenance is deliberately separate from normal deployment roles.
 PLAYBOOK="src/playbook.yml"
+if has_tag hermes-runtime; then
+    if [[ "$LIMIT" != "habiki" || "$TAGS" != "hermes-runtime" ]]; then
+        echo "Error: hermes-runtime requires --limit habiki and cannot be combined with other tags." >&2
+        exit 1
+    fi
+    for argument in "${EXTRA_ARGS[@]}"; do
+        case "$argument" in
+            --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*)
+                echo "Error: hermes-runtime target/tag overrides after -- are not supported." >&2
+                exit 1
+                ;;
+        esac
+    done
+    PLAYBOOK="src/hermes-runtime.yml"
+fi
 if has_tag hermes-auth; then
     if [[ "$LIMIT" != "habiki" || "$TAGS" != "hermes-auth" ]]; then
         echo "Error: hermes-auth requires --limit habiki and cannot be combined with other tags." >&2

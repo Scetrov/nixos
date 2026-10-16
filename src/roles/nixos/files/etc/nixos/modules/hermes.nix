@@ -51,6 +51,22 @@ let
       reverse_proxy hermes-webui:8787
     }
   '';
+  # The upstream Nix package wraps gh in a Nix-store shell script. Export only
+  # its static ELF payload so the container needs neither that shell nor /nix/store.
+  githubCli =
+    pkgs.runCommand "hermes-gh-${pkgs.pkgsStatic.github-cli.version}"
+      {
+        nativeBuildInputs = [ pkgs.buildPackages.binutils ];
+      }
+      ''
+        mkdir -p "$out/bin"
+        cp ${pkgs.pkgsStatic.github-cli}/bin/.gh-wrapped "$out/bin/gh"
+        readelf -l "$out/bin/gh" > elf-headers
+        if grep -q INTERP elf-headers; then
+          echo "Hermes GitHub CLI must not require a dynamic loader" >&2
+          exit 1
+        fi
+      '';
   webuiEnvFile = "${toString cfg.home}/webui.env";
   loadModelEnv = lib.optionalString (cfg.environmentFile != null) ''
     if [ -r ${lib.escapeShellArg cfg.environmentFile} ]; then
@@ -257,6 +273,12 @@ in
       description = "Container image for the Hermes agent and dashboard.";
     };
 
+    githubCliPackage = mkOption {
+      type = types.package;
+      default = githubCli;
+      description = "Static GitHub CLI package mounted read-only into gateway and WebUI agent runtimes at /usr/local/bin/gh.";
+    };
+
     webuiImage = mkOption {
       type = types.str;
       default = "ghcr.io/nesquena/hermes-webui:latest@sha256:5fb831ca2a9f3f0b93b84c1ebaaeedf5809d914a33bbf969e5c29a5bb75cb47c";
@@ -272,7 +294,9 @@ in
         Keep API keys out of the Nix store by putting secrets here, for example:
 
         OPENROUTER_API_KEY=sk-or-v1-...
-        HERMES_WEBUI_PASSWORD=change-me
+        GH_TOKEN=optional-operator-provided-token
+
+        Habiki uses Authentik and trusted proxy identity, not a WebUI password.
 
         When rootless is enabled, this file must be readable by the service user.
         With sops-nix, set owner = config.services.hermes-webui.user.
@@ -484,11 +508,13 @@ in
         volumes = [
           "${cfg.homeVolume}:/home/hermes/.hermes"
           "${cfg.agentSourceVolume}:/opt/hermes"
+          "${cfg.githubCliPackage}/bin/gh:/usr/local/bin/gh:ro"
         ];
         environment = cfg.extraEnvironment // {
           HERMES_HOME = "/home/hermes/.hermes";
           HERMES_UID = toString containerUid;
           HERMES_GID = toString containerGid;
+          GH_TELEMETRY = "false";
         };
         environmentFiles = optionalEnvFiles;
         extraOptions = [ "--network=${cfg.networkName}" ] ++ rootlessHealthOptions;
@@ -503,6 +529,7 @@ in
           "${cfg.homeVolume}:/home/hermeswebui/.hermes"
           "${cfg.agentSourceVolume}:/home/hermeswebui/.hermes/hermes-agent"
           "${toString cfg.workspace}:/workspace"
+          "${cfg.githubCliPackage}/bin/gh:/usr/local/bin/gh:ro"
         ];
         environment = cfg.extraEnvironment // {
           HERMES_WEBUI_HOST = "0.0.0.0";
@@ -510,6 +537,7 @@ in
           HERMES_WEBUI_STATE_DIR = "/home/hermeswebui/.hermes/webui";
           WANTED_UID = toString containerUid;
           WANTED_GID = toString containerGid;
+          GH_TELEMETRY = "false";
         };
         environmentFiles = optionalEnvFiles ++ [ webuiEnvFile ];
         extraOptions = [ "--network=${cfg.networkName}" ] ++ rootlessHealthOptions;
