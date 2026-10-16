@@ -37,11 +37,24 @@ class ApplicationIconTests(unittest.TestCase):
                     rf'resource "authentik_application" "{app}"\s*\{{([^}}]+)\}}',
                     source,
                 ).group(1)
-                self.assertIn(f'"/static/dist/branding/{app}.png"', body)
-                self.assertIn(f"    - {app}.png\n", tasks)
-                image = (BRANDING / f"{app}.png").read_bytes()
+                icon = re.search(r'meta_icon\s*=\s*"/static/dist/branding/([^"/]+)"', body)
+                self.assertIsNotNone(icon)
+                asset = icon.group(1)
+                self.assertIn(f"    - {asset}\n", tasks)
+                image = (BRANDING / asset).read_bytes()
                 self.assertEqual(image[:8], b"\x89PNG\r\n\x1a\n")
                 self.assertEqual(struct.unpack(">II", image[16:24]), (512, 512))
+
+    def test_hermes_icon_url_changes_with_artwork(self):
+        source = (ROOT / "terraform/authentik.tf").read_text()
+        body = re.search(
+            r'resource "authentik_application" "hermes"\s*\{([^}]+)\}', source
+        ).group(1)
+        asset = re.search(r'meta_icon\s*=\s*"/static/dist/branding/([^"/]+)"', body).group(1)
+        # Replacing bytes at hermes.png leaves existing browser caches reusable.
+        self.assertRegex(asset, r"^hermes-caduceus-[0-9a-f]{12}\.png$")
+        checksum = hashlib.sha256((BRANDING / asset).read_bytes()).hexdigest()[:12]
+        self.assertEqual(asset, f"hermes-caduceus-{checksum}.png")
 
     def test_hermes_svg_is_self_contained(self):
         svg = ET.parse(BRANDING / "sources/hermes.svg").getroot()
@@ -69,7 +82,7 @@ class ApplicationIconTests(unittest.TestCase):
                 for name in element.attrib
             ))
         # The PNG renderer retains an alpha channel for transparent backgrounds.
-        self.assertEqual((BRANDING / "hermes.png").read_bytes()[25], 6)
+        self.assertEqual(next(BRANDING.glob("hermes-caduceus-*.png")).read_bytes()[25], 6)
 
     def test_upstream_assets_match_recorded_hashes(self):
         expected = {

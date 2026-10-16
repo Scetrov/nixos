@@ -12,16 +12,23 @@ cyan-to-blue gradient (`#08EBF1` → `#3889FD`). Explicit gradient colors make i
 self-contained: no application CSS, scripts, fonts, or external resources are
 needed. The unused CSS classes were removed and an image role was added.
 
-`hermes.png` is a transparent 512 × 512 rendering of that SVG. It replaces the
-previous raster artwork at the existing Authentik icon URL, so no application
-metadata or SSO changes are needed. Reproduce it using absolute file paths:
+`hermes-caduceus-84a4bc433bfd.png` is a transparent 512 × 512 rendering of that
+SVG. Its filename includes the first 12 hex digits of its SHA-256 checksum.
+Replacing bytes at the old `hermes.png` URL was insufficient for a user whose
+Authentik tile still displayed the old H; changing the application icon URL
+avoids reusing a cached response for that path. No SSO changes are needed.
+
+Reproduce it using absolute file paths:
 
 ```sh
-QT_QPA_PLATFORM=offscreen ksvgtopng 512 512 /absolute/path/sources/hermes.svg /absolute/path/hermes.png
+QT_QPA_PLATFORM=offscreen ksvgtopng 512 512 /absolute/path/sources/hermes.svg /absolute/path/hermes-caduceus-84a4bc433bfd.png
 ```
 
-The SVG source is retained for future resizing; only the rendered PNG needs to
-be deployed using the existing `authentik-branding` command below.
+When the artwork changes, recompute the checksum, rename the PNG accordingly,
+and update both the Ansible copy list and the OpenTofu `meta_icon` reference.
+Deploy assets first using the `authentik-branding` command below, then review
+and apply `authentik_application.hermes` through `scripts/tofu.sh`. Existing
+clients need a launcher reload to receive the updated application metadata.
 
 ## Forgejo and Miniflux
 
