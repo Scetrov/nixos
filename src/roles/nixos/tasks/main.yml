@@ -11,6 +11,7 @@
   ansible.builtin.include_tasks: sync.yml
 
 - name: Copy Authentik branding assets
+  tags: [authentik-branding]
   become: true
   ansible.builtin.copy:
     src: "etc/nixos/branding/{{ item }}"
@@ -23,6 +24,8 @@
     - background.jpg
     - hermes.png
     - home-assistant.png
+    - forgejo.png
+    - miniflux.png
   when: authentik_config_enabled | default(false)
 
 - name: Include NixOS rebuild tasks

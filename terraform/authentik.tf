@@ -293,7 +293,7 @@ resource "authentik_application" "forgejo" {
   name              = "Forgejo"
   slug              = "forgejo"
   protocol_provider = authentik_provider_oauth2.forgejo.id
-  meta_icon         = "https://raw.githubusercontent.com/go-gitea/gitea/main/web_src/svg/logomark.svg"
+  meta_icon         = "/static/dist/branding/forgejo.png"
 }
 
 # Owner-only access group for Forgejo. Membership is driven by the non-sensitive

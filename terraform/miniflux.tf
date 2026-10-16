@@ -38,6 +38,7 @@ resource "authentik_application" "miniflux" {
   protocol_provider  = authentik_provider_oauth2.miniflux.id
   policy_engine_mode = "all"
   meta_launch_url    = "https://feed.net.scetrov.live"
+  meta_icon          = "/static/dist/branding/miniflux.png"
 }
 
 resource "authentik_group" "miniflux_operator" {
