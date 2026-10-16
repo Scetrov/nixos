@@ -1,0 +1,13 @@
+# CodeQL analysis configuration.
+#
+# scripts/tests/ contains offline setup-contract tests that deliberately
+# hard-code fake secrets (fixture passwords) and write them into throwaway
+# temporary directories to assert that production code never leaks them.
+# The py/clear-text-storage-sensitive-data rule flags those fixtures
+# (alerts #4/#5); they are test scaffolding, not credentials. Excluding the
+# test tree keeps production code under full analysis while removing the
+# noise. Test-only exclusions are the recommended CodeQL remedy for fixture
+# secrets: https://docs.github.com/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-code-scanning-experience
+name: "Scetrov/nixos CodeQL config"
+paths-ignore:
+  - "scripts/tests/**"
