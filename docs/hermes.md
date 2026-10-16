@@ -38,6 +38,38 @@ The generated WebUI runtime environment is kept in sync with the same resolved m
 The provider and base URL are written as:
 * Provider: `openrouter`
 * Base URL: `https://openrouter.ai/api/v1`
+### GitHub App credentials
+Ansible renders `src/roles/secrets/templates/hermes-webui.env.j2` into the existing
+`hermes_webui_env.age` secret. NixOS passes its decrypted runtime file to the
+agent, WebUI, and dashboard, and copies it into the shared Hermes `.env`.
+No credentials belong in Nix expressions or the Nix store.
+
+| Ansible Vault key (`src/secrets.yml`) | Container environment variable |
+| --- | --- |
+| `hermes_github_app_id` | `GITHUB_APP_ID` |
+| `hermes_github_client_id` | `GITHUB_APP_CLIENT_ID` |
+| `hermes_github_client_secret` | `GITHUB_APP_CLIENT_SECRET` |
+| `hermes_github_private_key` | `GITHUB_APP_PRIVATE_KEY` |
+| `hermes_github_installation_id` (optional) | `GITHUB_APP_INSTALLATION_ID` |
+
+Unset or empty GitHub fields are omitted. Multiline PEM keys are encoded with
+literal `\n` sequences so Podman receives one environment entry; the
+[GitHub App plugin](https://hermes-agent.nousresearch.com/docs/plugins/github_app)
+decodes these back into newlines. Client credentials are made available for
+OAuth consumers; the documented plugin uses the App ID, private key, and
+installation ID for installation authentication, not the OAuth client secret.
+
+Credential injection does **not** install or enable a GitHub plugin. The documented
+plugin additionally needs the App's installation ID (not its App ID or client ID);
+add `hermes_github_installation_id` to the vault if using that plugin.
+
+Deploy through the existing targeted automation:
+```bash
+./scripts/play.sh --limit habiki --tags hermes
+```
+After secret rotation, restart the setup unit and the Hermes app containers as
+noted below; the copied `.env` must be refreshed as well as container environments.
+
 ## Container Model
 The module is set up for rootless Podman by default:
 * Service user: `hermes-webui`
