@@ -1,0 +1,3 @@
+# A component-only feed-reader run must not refresh every channel or restart
+# unrelated containers. NixOS still activates the complete declarative host.
+nixos_miniflux_only: "{{ ansible_run_tags | length == 1 and 'miniflux' in ansible_run_tags }}"

@@ -38,6 +38,8 @@ GENERATED_KEYS = [
     ("dtrack_oidc_client_secret", "dtrack_oidc_client_secret", True),
     ("forgejo_oidc_client_id", "forgejo_oidc_client_id", False),
     ("forgejo_oidc_client_secret", "forgejo_oidc_client_secret", True),
+    ("miniflux_oidc_client_id", "miniflux_oidc_client_id", False),
+    ("miniflux_oidc_client_secret", "miniflux_oidc_client_secret", True),
     ("grafana_oncall_api_key", "grafana_oncall_token", False),
     ("grafana_authentik_client_id", "grafana_oidc_client_id", False),
     ("grafana_authentik_client_secret", "grafana_oidc_client_secret", True),
@@ -57,12 +59,16 @@ class RenderError(Exception):
 
 
 def _scalar(value: object) -> str:
-    text = str(value).strip()
+    if not isinstance(value, str):
+        raise RenderError("required generated value must be a string")
+    text = value.strip()
     if text == "":
         raise RenderError("required generated value is empty")
     if text.lower() == "null":
         raise RenderError("required generated value is null")
-    if text.endswith("_placeholder"):
+    if text.lower().endswith("_placeholder") or text.lower() in {
+        "placeholder", "changeme", "change-me", "replace-me",
+    }:
         raise RenderError("required generated value is a placeholder")
     return text
 
@@ -86,7 +92,7 @@ def render(outputs: dict[str, dict]) -> str:
             lines.append(f"{generated_key}: |")
             lines.extend("  " + sub for sub in value.splitlines())
         else:
-            lines.append(f'{generated_key}: "{value}"')
+            lines.append(f"{generated_key}: {json.dumps(value)}")
     return "\n".join(lines) + "\n"
 
 

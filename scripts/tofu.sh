@@ -14,6 +14,8 @@ Modes:
   scripts/tofu.sh --refresh-generated-secrets
                                           Refresh src/generated-secrets.yml from current state only
   scripts/tofu.sh -- plan                 Run arbitrary tofu args, then refresh after apply only
+  scripts/tofu.sh -- fmt ...              Format caller-relative files without credentials/backend init
+  scripts/tofu.sh -- validate             Validate installed providers locally without credentials/init
 EOF
 }
 
@@ -47,6 +49,19 @@ TERRAFORM_DIR="$ROOT_DIR/terraform"
 VAULT_PASSWORD_FILE="$HOME/.ansible/nixos_vault_password"
 GENERATED_SECRETS_FILE="$ROOT_DIR/src/generated-secrets.yml"
 
+# Local checks neither need credentials nor initialize/upgrade the remote
+# backend. Keep pre-commit behind this wrapper without a hidden network action.
+if [[ "$REFRESH_ONLY" == false ]]; then
+    case "${TOFU_ARGS[0]:-}" in
+        fmt)
+            exec tofu "${TOFU_ARGS[@]}"
+            ;;
+        validate)
+            exec tofu -chdir="$TERRAFORM_DIR" "${TOFU_ARGS[@]}"
+            ;;
+    esac
+fi
+
 # shellcheck source=/dev/null
 source "$HOME/env/grafana.env"
 
@@ -69,6 +84,8 @@ refresh_generated_secrets() {
     json_outputs="$(tofu -chdir="$TERRAFORM_DIR" output -json)"
     tmp_sec_file="$(mktemp /dev/shm/generated-secrets.XXXXXX)"
     chmod 0600 "$tmp_sec_file"
+    # Clean the protected plaintext even if validation or encryption fails.
+    trap 'rm -f "$tmp_sec_file"' EXIT
 
     # Render + validate through the shared, unit-tested renderer. It fails
     # closed (non-zero, nothing written) on missing/empty/null/placeholder
@@ -80,6 +97,7 @@ refresh_generated_secrets() {
         --vault-password-file "$VAULT_PASSWORD_FILE" \
         --output "$GENERATED_SECRETS_FILE" >/dev/null
     rm -f "$tmp_sec_file"
+    trap - EXIT
     echo "Refreshed encrypted generated secrets at src/generated-secrets.yml."
 }
 

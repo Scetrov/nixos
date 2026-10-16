@@ -70,6 +70,15 @@
         target_label  = "service"
       }
 
+      ${lib.optionalString (config.scetrov.services.miniflux.enable or false) ''
+        rule {
+          source_labels = ["__journal__systemd_unit"]
+          regex         = "miniflux(-dbsetup)?\\.service"
+          replacement   = "miniflux"
+          target_label  = "service"
+        }
+      ''}
+
       rule {
         source_labels = ["__journal__systemd_unit"]
         regex         = "forgejo\\.service"

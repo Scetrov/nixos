@@ -13,9 +13,9 @@
     - role: local-dns
       tags: [ 'never', 'local-dns' ]
     - role: secrets
-      tags: [ 'secrets', 'nixos', 'authentik', 'hermes', 'dependency-track', 'frontier-indexer', 'forgejo' ]
+      tags: [ 'secrets', 'nixos', 'authentik', 'hermes', 'dependency-track', 'frontier-indexer', 'forgejo', 'miniflux' ]
     - role: nixos
-      tags: [ 'nixos', 'hermes', 'dependency-track', 'frontier-indexer', 'forgejo' ]
+      tags: [ 'nixos', 'hermes', 'dependency-track', 'frontier-indexer', 'forgejo', 'miniflux' ]
     - role: esphome
       tags: [ 'esphome' ]
     - role: authentik-config

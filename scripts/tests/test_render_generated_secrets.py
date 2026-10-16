@@ -45,6 +45,8 @@ def valid_outputs(**overrides):
         "dtrack_oidc_client_secret": {"value": "dtrack-secret-fixture", "sensitive": True},
         "forgejo_oidc_client_id": {"value": "aa11bb22cc33dd44ee55ff667788990011223344", "sensitive": False},
         "forgejo_oidc_client_secret": {"value": "forgejo-secret-fixture", "sensitive": True},
+        "miniflux_oidc_client_id": {"value": "miniflux-id-fixture", "sensitive": True},
+        "miniflux_oidc_client_secret": {"value": "miniflux-secret-fixture", "sensitive": True},
         "grafana_oncall_token": {"value": "oncall-token-fixture", "sensitive": True},
         "grafana_oidc_client_id": {"value": "grafana-client-id-fixture", "sensitive": False},
         "grafana_oidc_client_secret": {"value": "grafana-secret-fixture", "sensitive": True},

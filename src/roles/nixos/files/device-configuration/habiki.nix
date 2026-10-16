@@ -15,6 +15,7 @@
     ./modules/local-networking.nix
     ./modules/loki.nix
     ./modules/mimir.nix
+    ./modules/miniflux.nix
     ./modules/garage.nix
     ./modules/oncall.nix
     ./modules/pyroscope.nix
@@ -58,6 +59,7 @@
   };
 
   scetrov.services.authentik.enable = true;
+  scetrov.services.miniflux.enable = true;
   scetrov.services.forgejo.enable = true;
   # Actions/runner is deferred; retain experimental code without activating it.
   scetrov.services.forgejo.runner.enable = false;

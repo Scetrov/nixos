@@ -17,6 +17,8 @@ Options:
                            - authentik        : Authentik applications & OpenTofu
                            - hermes           : Hermes service, secrets & SSO setup
                            - dependency-track : Dependency Track deployment & configuration
+                           - miniflux         : Habiki feed reader: provision OIDC, refresh credentials,
+                                                render secrets and rebuild (requires --limit habiki)
                            - frontier-indexer : Frontier cycle transition, secrets & host configuration
                            - esphome          : ESPHome secret rendering, validation, build, and OTA deploy
                            - secrets          : Secrets generation and deployment
@@ -38,6 +40,7 @@ Examples:
   $0 --limit habiki --tags esphome        # Run ESPHome workflow owned by habiki
   $0 --limit fyne --tags local-dns        # DNS-only rollout; no Forgejo or secret refresh
   $0 --limit habiki --tags forgejo        # Targeted Forgejo consumer deploy on Habiki
+  $0 --limit habiki --tags miniflux       # End-to-end Miniflux deployment on Habiki
 
 EOF
 }
@@ -88,6 +91,45 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+has_tag() {
+    local requested="$1" tag
+    local -a selected_tags=()
+    IFS=',' read -ra selected_tags <<< "$TAGS"
+    for tag in "${selected_tags[@]}"; do
+        [[ "${tag// /}" != "$requested" ]] || return 0
+    done
+    return 1
+}
+
+MINIFLUX_DEPLOY=false
+if has_tag miniflux; then
+    if [[ "$LIMIT" != "habiki" ]]; then
+        echo "Error: miniflux requires --limit habiki." >&2
+        exit 1
+    fi
+    if [[ "$SKIP_GENERATED_REFRESH" == true ]]; then
+        echo "Error: miniflux cannot skip authoritative generated-secret refresh." >&2
+        exit 1
+    fi
+    MINIFLUX_DEPLOY=true
+fi
+
+# Introspection and check mode must not apply infrastructure or refresh secrets.
+READ_ONLY=false
+for argument in "${EXTRA_ARGS[@]}"; do
+    case "$argument" in
+        --syntax-check|--list-tasks|--list-tags|--list-hosts|--check|-C)
+            READ_ONLY=true
+            ;;
+        --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*)
+            if [[ "$MINIFLUX_DEPLOY" == true ]]; then
+                echo "Error: miniflux target/tag overrides after -- are not supported." >&2
+                exit 1
+            fi
+            ;;
+    esac
+done
+
 # Database maintenance is deliberately separate from normal deployment roles.
 PLAYBOOK="src/playbook.yml"
 if [[ "$TAGS" == "database-upgrade" ]]; then
@@ -123,7 +165,7 @@ needs_generated_refresh() {
     IFS=',' read -ra tag_list <<< "$tags"
     for tag in "${tag_list[@]}"; do
         case "${tag// /}" in
-            authentik|nixos|dependency-track|secrets|forgejo)
+            authentik|nixos|dependency-track|secrets|forgejo|miniflux)
                 return 0
                 ;;
         esac
@@ -132,7 +174,13 @@ needs_generated_refresh() {
     return 1
 }
 
-if [[ "$SKIP_GENERATED_REFRESH" == false ]] && needs_generated_refresh "$TAGS"; then
+if [[ "$MINIFLUX_DEPLOY" == true && "$READ_ONLY" == false ]]; then
+    echo "Provisioning Miniflux identity and refreshing credentials before Ansible loads vars_files..."
+    # The binding's dependency graph includes its application/provider, group,
+    # operator lookup and random credentials; do not apply unrelated resources.
+    "$(dirname "$0")/tofu.sh" -- apply -auto-approve -target=authentik_policy_binding.miniflux_access
+    echo ""
+elif [[ "$READ_ONLY" == false && "$SKIP_GENERATED_REFRESH" == false ]] && needs_generated_refresh "$TAGS"; then
     echo "Refreshing OpenTofu generated OIDC secrets before Ansible loads vars_files..."
     "$(dirname "$0")/tofu.sh" --refresh-generated-secrets
     echo ""

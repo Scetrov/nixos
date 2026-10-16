@@ -43,6 +43,6 @@ repos:
 
       - id: tofu-fmt
         name: tofu fmt
-        entry: tofu fmt -write=true
+        entry: scripts/tofu.sh -- fmt -write=true
         language: system
         files: \.(tf|tfvars)$

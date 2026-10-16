@@ -27,6 +27,7 @@
         "habiki"
         "habiki.net.scetrov.live"
         "source.net.scetrov.live"
+        "feed.net.scetrov.live"
         "zomboid.net.scetrov.live"
         "metrics.net.scetrov.live"
         "identity.net.scetrov.live"

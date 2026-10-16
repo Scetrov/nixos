@@ -47,8 +47,11 @@ class MigrationTests(unittest.TestCase):
                     patch.object(upgrade, "inspect", return_value={"Mounts": [
                         {"Destination": "/data", "Source": str(redis)}
                     ]}), patch.object(upgrade, "stop_services"), \
+                    patch.object(upgrade.shutil, "disk_usage") as disk_usage, \
                     patch.object(upgrade, "run", side_effect=fake_run), \
                     patch.object(upgrade, "restore", side_effect=["postgres\n", RuntimeError("bad dump")]):
+                # Exercise restore failure, not the sandbox's 1 GiB tmpfs limit.
+                disk_usage.return_value.free = 4 * 1024**3
                 with self.assertRaises(RuntimeError):
                     upgrade.migrate(backup)
             for entry in entries.values():
