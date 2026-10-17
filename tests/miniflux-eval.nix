@@ -2,6 +2,7 @@
 {
   enable ? true,
   grafanaEnable ? true,
+  subscriptionsEnable ? false,
 }:
 let
   evaluated = import <nixpkgs/nixos/lib/eval-config.nix> {
@@ -44,7 +45,14 @@ let
           config = {
             system.stateVersion = "26.05";
             scetrov.services.authentik.enable = true;
-            scetrov.services.miniflux.enable = enable;
+            scetrov.services.miniflux = {
+              inherit enable;
+              subscriptions = {
+                enable = subscriptionsEnable;
+                toolFile = ../scripts/miniflux_subscriptions.py;
+                catalogueFile = ../config/miniflux/feeds.json;
+              };
+            };
             networking.hostName = "habiki";
             services.grafana.enable = grafanaEnable;
             services.prometheus.enable = true;
@@ -54,8 +62,31 @@ let
     ];
   };
   cfg = evaluated.config;
+  liblessUnits = builtins.listToAttrs (
+    map
+      (name: {
+        inherit name;
+        value = {
+          inherit (cfg.systemd.services.${name})
+            wantedBy
+            restartTriggers
+            restartIfChanged
+            stopIfChanged
+            after
+            requisite
+            ;
+          config = cfg.systemd.services.${name}.serviceConfig;
+        };
+      })
+      (
+        builtins.filter (name: builtins.match "miniflux-subscriptions.*" name != null) (
+          builtins.attrNames cfg.systemd.services
+        )
+      )
+  );
 in
 {
+  subscriptionUnits = liblessUnits;
   enabled = cfg.services.miniflux.enable;
   localDatabase = cfg.services.postgresql.enable;
   packageVersion = cfg.services.miniflux.package.version;

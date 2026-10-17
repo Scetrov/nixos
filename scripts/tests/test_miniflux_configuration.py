@@ -31,6 +31,37 @@ class ConfigurationTests(unittest.TestCase):
                 raise AssertionError("Miniflux configuration evaluation failed: " + result.stderr[-4000:])
             cls.configs[enabled, grafana] = json.loads(result.stdout)
 
+    def test_optional_subscription_units_are_explicit_and_hardened(self):
+        self.assertEqual(self.configs[True, True]["subscriptionUnits"], {})
+        args = ["nix-instantiate", "--eval", "--strict", "--json"]
+        if os.environ.get("NIXPKGS"):
+            args += ["-I", "nixpkgs=" + os.environ["NIXPKGS"]]
+        args += ["tests/miniflux-eval.nix", "--arg", "subscriptionsEnable", "true"]
+        result = subprocess.run(args, cwd=ROOT, capture_output=True, text=True, timeout=120)
+        self.assertEqual(result.returncode, 0, result.stderr[-4000:])
+        cfg = json.loads(result.stdout)
+        self.assertIn("miniflux_subscription_api_token", cfg["secretNames"])
+        self.assertEqual(len(cfg["subscriptionUnits"]), 2)
+        for name, unit in cfg["subscriptionUnits"].items():
+            self.assertEqual(unit["wantedBy"], [])
+            self.assertEqual(unit["restartTriggers"], [])
+            self.assertFalse(unit["restartIfChanged"])
+            self.assertFalse(unit["stopIfChanged"])
+            self.assertIn("miniflux.service", unit["requisite"])
+            service = unit["config"]
+            self.assertEqual(service["Type"], "oneshot")
+            self.assertEqual(service["ProtectSystem"], "strict")
+            self.assertTrue(service["NoNewPrivileges"])
+            self.assertLessEqual(service["TimeoutStartSec"], 2500)
+            self.assertEqual(service["IPAddressAllow"], "127.0.0.1/32")
+            self.assertIn("api-token:/run/agenix/miniflux_subscription_api_token", service["LoadCredential"])
+            self.assertIn("%d/api-token", service["ExecStart"])
+            self.assertIn(" plan " if name.endswith("-plan") else " apply ", service["ExecStart"])
+        args += ["--arg", "enable", "false"]
+        disabled = subprocess.run(args, cwd=ROOT, capture_output=True, text=True, timeout=120)
+        self.assertEqual(disabled.returncode, 0, disabled.stderr[-4000:])
+        self.assertEqual(json.loads(disabled.stdout)["subscriptionUnits"], {})
+
     def test_native_loopback_runtime_and_credentials(self):
         cfg = self.configs[True, True]
         self.assertTrue(cfg["enabled"])
@@ -66,7 +97,7 @@ class ConfigurationTests(unittest.TestCase):
         scrape, = cfg["scrapeConfigs"]
         self.assertEqual(scrape["static_configs"][0]["targets"], ["127.0.0.1:8091"])
         self.assertEqual(scrape["static_configs"][0]["labels"]["service"], "miniflux")
-        self.assertIn("miniflux(-dbsetup)?", cfg["journalConfig"])
+        self.assertIn("miniflux(-dbsetup|-subscriptions(-plan)?)?", cfg["journalConfig"])
         group, = cfg["alerting"]["groups"]
         rule, = group["rules"]
         self.assertEqual(rule["for"], "5m")
@@ -82,7 +113,7 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(cfg["secretNames"], [])
         self.assertEqual(cfg["scrapeConfigs"], [])
         self.assertNotIn("feed.net.scetrov.live", cfg["virtualHosts"])
-        self.assertNotIn("miniflux(-dbsetup)?", cfg["journalConfig"])
+        self.assertNotIn("miniflux(-dbsetup|-subscriptions(-plan)?)?", cfg["journalConfig"])
         self.assertEqual(cfg["alerting"]["groups"], [])
         self.assertEqual(cfg["alerting"]["deleteRules"], [{"orgId": 1, "uid": "miniflux-unavailable"}])
 
@@ -104,6 +135,53 @@ class DeploymentTests(unittest.TestCase):
                                     env=env, capture_output=True, text=True, timeout=10)
             calls = [json.loads(line) for line in events.read_text().splitlines()] if events.exists() else []
             return result, calls
+
+    def test_subscriptions_require_exact_scope_and_do_not_refresh_identity(self):
+        for suffix in ([], ["--", "-e", "miniflux_subscriptions_apply=true"],
+                       ["--", "--check"], ["--", "--syntax-check"], ["--", "--list-tasks"],
+                       ["--", "--list-tags"], ["--", "--list-hosts"]):
+            result, calls = self.run_play(["--limit", "habiki", "--tags", "miniflux-subscriptions", *suffix])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0][0], "ansible-playbook")
+            self.assertIn("src/miniflux-subscriptions.yml", calls[0])
+        for args in (["--tags", "miniflux-subscriptions"],
+                     ["--limit", "fyne", "--tags", "miniflux-subscriptions"],
+                     ["--limit", "habiki", "--tags", "miniflux-subscriptions,nixos"],
+                     ["--limit", "habiki", "--tags", "miniflux-subscriptions", "--", "-lfyne"]):
+            result, calls = self.run_play(args)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(calls, [])
+
+    def test_optional_token_delivery_is_guarded_and_not_logged(self):
+        tasks = yaml.safe_load((ROOT / "src/roles/secrets/tasks/miniflux.yml").read_text())
+        optional = [t for t in tasks if "subscription" in t["name"].lower()]
+        self.assertEqual(len(optional), 2)
+        for task in optional:
+            self.assertTrue(task["no_log"])
+            self.assertIn("miniflux_subscriptions_enabled | default(false)", task["when"])
+        declarations = (ROOT / "src/roles/secrets/files/secrets/secrets.nix").read_text()
+        self.assertIn('"miniflux_subscription_api_token.age".publicKeys = users ++ [ habiki ];', declarations)
+        copies = yaml.safe_load((ROOT / "src/roles/nixos/tasks/sync.yml").read_text())
+        tool_copy, = [t for t in copies if t["name"].startswith("Copy Miniflux subscription")]
+        self.assertEqual(tool_copy["when"], "miniflux_enabled | default(false)")
+        self.assertEqual([i["source"] for i in tool_copy["loop"]],
+                         ["scripts/miniflux_subscriptions.py", "config/miniflux/feeds.json"])
+
+    def test_subscription_play_default_plan_check_guard_and_synchronous_results(self):
+        play, = yaml.safe_load((ROOT / "src/miniflux-subscriptions.yml").read_text())
+        self.assertEqual(play["hosts"], "habiki")
+        self.assertIn("default(false)", play["vars"]["subscription_unit"])
+        block = play["tasks"][1]
+        self.assertEqual(block["when"], "not ansible_check_mode")
+        start = block["block"][0]
+        self.assertEqual(start["ansible.builtin.command"]["argv"][:2], ["systemctl", "start"])
+        self.assertNotIn("--no-block", start["ansible.builtin.command"]["argv"])
+        journal, = [t for t in block["block"] if t.get("register") == "subscription_journal"]
+        self.assertIn("--invocation=0", journal["ansible.builtin.command"]["argv"])
+        self.assertNotIn("when", journal)  # Successful inactive units clear InvocationID.
+        self.assertIn("subscription_result.rc == 0", block["block"][-1]["ansible.builtin.assert"]["that"])
+        self.assertNotIn("miniflux-subscriptions", (ROOT / "src/playbook.yml").read_text())
 
     def test_identity_apply_refresh_precedes_ansible_consumer_load(self):
         result, calls = self.run_play(["--limit", "habiki", "--tags", "miniflux"])

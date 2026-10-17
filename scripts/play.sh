@@ -23,6 +23,8 @@ Options:
                            - dependency-track : Dependency Track deployment & configuration
                            - miniflux         : Habiki feed reader: provision OIDC, refresh credentials,
                                                 render secrets and rebuild (requires --limit habiki)
+                           - miniflux-subscriptions : Explicit Habiki subscription plan (default), or apply
+                                                with -e miniflux_subscriptions_apply=true; requires enrollment
                            - immich           : Habiki native OIDC, protected recovery secrets and rebuild
                                                 (requires --limit habiki; no channel updates)
                            - frontier-indexer : Frontier cycle transition, secrets & host configuration
@@ -151,6 +153,21 @@ done
 
 # Database maintenance is deliberately separate from normal deployment roles.
 PLAYBOOK="src/playbook.yml"
+if has_tag miniflux-subscriptions; then
+    if [[ "$LIMIT" != "habiki" || "$TAGS" != "miniflux-subscriptions" ]]; then
+        echo "Error: miniflux-subscriptions requires --limit habiki and cannot be combined with other tags." >&2
+        exit 1
+    fi
+    for argument in "${EXTRA_ARGS[@]}"; do
+        case "$argument" in
+            --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*)
+                echo "Error: miniflux-subscriptions target/tag overrides after -- are not supported." >&2
+                exit 1
+                ;;
+        esac
+    done
+    PLAYBOOK="src/miniflux-subscriptions.yml"
+fi
 if has_tag hermes-runtime; then
     if [[ "$LIMIT" != "habiki" || "$TAGS" != "hermes-runtime" ]]; then
         echo "Error: hermes-runtime requires --limit habiki and cannot be combined with other tags." >&2

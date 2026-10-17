@@ -1,0 +1,49 @@
+# Explicit execution only: deploy/enroll the existing stack separately first.
+- name: Plan or apply Miniflux subscriptions on Habiki
+  hosts: habiki
+  gather_facts: false
+  tags: [miniflux-subscriptions]
+  vars:
+    subscription_unit: "{{ 'miniflux-subscriptions' if (miniflux_subscriptions_apply | default(false) | bool) else 'miniflux-subscriptions-plan' }}.service"
+  tasks:
+    - name: Require the explicit Habiki limit
+      ansible.builtin.assert:
+        that:
+          - ansible_limit | default('') == 'habiki'
+        quiet: true
+
+    - name: Execute the selected operation and surface its actual result
+      become: true
+      when: not ansible_check_mode
+      block:
+        - name: Wait for the explicitly invoked subscription oneshot
+          ansible.builtin.command:
+            argv: [systemctl, start, "{{ subscription_unit }}"]
+          register: subscription_result
+          changed_when: miniflux_subscriptions_apply | default(false) | bool
+          failed_when: false
+
+        # Successful oneshots become inactive and clear their live InvocationID.
+        # Resolve the latest invocation from the journal, not the inactive unit.
+        - name: Read only this subscription invocation's journal
+          ansible.builtin.command:
+            argv:
+              - journalctl
+              - "--unit={{ subscription_unit }}"
+              - --invocation=0
+              - --no-pager
+              - --output=cat
+              - --lines=100
+          register: subscription_journal
+          changed_when: false
+
+        - name: Show sanitized execution summaries
+          ansible.builtin.debug:
+            msg: "{{ subscription_journal.stdout_lines | default([]) }}"
+
+        - name: Require successful subscription execution
+          ansible.builtin.assert:
+            that:
+              - subscription_result.rc == 0
+            fail_msg: "Subscription operation incomplete. Review its journal, enrollment and catalogue; successful additions are retained."
+            quiet: true

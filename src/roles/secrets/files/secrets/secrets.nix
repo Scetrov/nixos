@@ -56,6 +56,7 @@ in
   "forgejo_oidc_client_id.age".publicKeys = users ++ systems;
   "forgejo_oidc_client_secret.age".publicKeys = users ++ systems;
   "forgejo_metrics_token.age".publicKeys = users ++ systems;
+  "miniflux_subscription_api_token.age".publicKeys = users ++ [ habiki ];
   "miniflux_db_password.age".publicKeys = users ++ [ habiki ];
   "miniflux_database_url.age".publicKeys = users ++ [ habiki ];
   "miniflux_oidc_client_id.age".publicKeys = users ++ [ habiki ];

@@ -18,6 +18,21 @@
       - "--exclude=*.j2"
       - "--chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r"
 
+# The catalogue stays authoritative at repository root; copy public inputs into
+# the self-contained remote NixOS tree after its recursive synchronization.
+- name: Copy Miniflux subscription tool and catalogue into the deployed tree
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../{{ item.source }}"
+    dest: "/etc/nixos/modules/{{ item.target }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - {source: scripts/miniflux_subscriptions.py, target: miniflux-subscriptions.py}
+    - {source: config/miniflux/feeds.json, target: miniflux-feeds.json}
+  when: miniflux_enabled | default(false)
+
 - name: Synchronize configuration.nix to /etc/nixos
   become: true
   template:

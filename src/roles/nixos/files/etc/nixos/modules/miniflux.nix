@@ -17,9 +17,86 @@ let
   ];
 in
 {
-  options.scetrov.services.miniflux.enable = lib.mkEnableOption "private native Miniflux feed reader";
+  options.scetrov.services.miniflux = {
+    enable = lib.mkEnableOption "private native Miniflux feed reader";
+    subscriptions = {
+      enable = lib.mkEnableOption "explicit, credential-backed subscription plan/apply";
+      operator = lib.mkOption {
+        type = lib.types.str;
+        default = "scetrov";
+        description = "Exact Miniflux username verified before subscription sync.";
+      };
+      toolFile = lib.mkOption {
+        type = lib.types.path;
+        default = ./miniflux-subscriptions.py;
+        internal = true;
+      };
+      catalogueFile = lib.mkOption {
+        type = lib.types.path;
+        default = ./miniflux-feeds.json;
+        internal = true;
+      };
+    };
+  };
 
   config = lib.mkMerge [
+    (lib.mkIf (cfg.enable && cfg.subscriptions.enable) {
+      age.secrets.miniflux_subscription_api_token = {
+        file = /root/secrets/miniflux_subscription_api_token.age;
+        mode = "0400";
+      };
+      users.groups.miniflux-subscriptions = { };
+      users.users.miniflux-subscriptions = {
+        isSystemUser = true;
+        group = "miniflux-subscriptions";
+      };
+      # Stable shared ownership and lock for both explicitly invoked services.
+      systemd.tmpfiles.rules = [
+        "d /run/miniflux-subscriptions 0700 miniflux-subscriptions miniflux-subscriptions -"
+      ];
+      systemd.services = lib.genAttrs [ "miniflux-subscriptions" "miniflux-subscriptions-plan" ] (
+        name:
+        let
+          operation = if name == "miniflux-subscriptions" then "apply" else "plan";
+        in
+        {
+          description = "Explicit Miniflux subscription ${operation}";
+          after = [ "miniflux.service" ];
+          requisite = [ "miniflux.service" ];
+          # No wantedBy, restart triggers or timers; switches must not invoke sync.
+          restartIfChanged = false;
+          stopIfChanged = false;
+          serviceConfig = {
+            Type = "oneshot";
+            User = "miniflux-subscriptions";
+            Group = "miniflux-subscriptions";
+            ExecStart = "${pkgs.python3}/bin/python3 -u ${cfg.subscriptions.toolFile} ${operation} --catalogue ${cfg.subscriptions.catalogueFile} --operator ${lib.escapeShellArg cfg.subscriptions.operator} --credential-file %d/api-token";
+            LoadCredential = [ "api-token:${config.age.secrets.miniflux_subscription_api_token.path}" ];
+            TimeoutStartSec = 2500;
+            UMask = "0077";
+            NoNewPrivileges = true;
+            PrivateTmp = true;
+            PrivateDevices = true;
+            ProtectSystem = "strict";
+            ProtectHome = true;
+            ProtectKernelTunables = true;
+            ProtectKernelModules = true;
+            ProtectControlGroups = true;
+            ProtectClock = true;
+            RestrictSUIDSGID = true;
+            LockPersonality = true;
+            MemoryDenyWriteExecute = true;
+            CapabilityBoundingSet = "";
+            RestrictAddressFamilies = [ "AF_INET" ];
+            IPAddressDeny = "any";
+            IPAddressAllow = "127.0.0.1/32";
+            ReadWritePaths = [ "/run/miniflux-subscriptions" ];
+            StandardOutput = "journal";
+            StandardError = "journal";
+          };
+        }
+      );
+    })
     (lib.mkIf config.services.grafana.enable {
       # Inherit existing Grafana notification policies; do not create a receiver
       # or mutate the shared routing tree. Explicit deletion prevents stale

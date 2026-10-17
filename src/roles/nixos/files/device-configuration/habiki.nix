@@ -57,6 +57,7 @@
 
   scetrov.services.authentik.enable = true;
   scetrov.services.miniflux.enable = true;
+  scetrov.services.miniflux.subscriptions.enable = true;
   scetrov.services.forgejo.enable = true;
   # Actions/runner is deferred; retain experimental code without activating it.
   scetrov.services.forgejo.runner.enable = false;

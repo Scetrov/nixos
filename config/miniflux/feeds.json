@@ -1,0 +1,338 @@
+[
+  {
+    "title": "Black Swan Security",
+    "category": "Security",
+    "url": "https://blog.blackswansecurity.com/feed/",
+    "enabled": true
+  },
+  {
+    "title": "Scott Helme",
+    "category": "Security",
+    "url": "https://scotthelme.co.uk/rss/",
+    "enabled": true
+  },
+  {
+    "title": "Troy Hunt",
+    "category": "Security",
+    "url": "https://www.troyhunt.com/rss/",
+    "enabled": true
+  },
+  {
+    "title": "NIST News",
+    "category": "Standards and Advisories",
+    "url": "https://www.nist.gov/news-events/news/rss.xml",
+    "enabled": true
+  },
+  {
+    "title": "FIRST Releases",
+    "category": "Standards and Advisories",
+    "url": "https://www.first.org/newsroom/releases/rss.xml",
+    "enabled": true
+  },
+  {
+    "title": "Schneier on Security",
+    "category": "Security",
+    "url": "https://www.schneier.com/feed/atom/",
+    "enabled": true
+  },
+  {
+    "title": "Cyber Security Hub",
+    "category": "Security News",
+    "url": "https://www.cshub.com/rss/articles",
+    "enabled": true
+  },
+  {
+    "title": "SANS Internet Storm Center",
+    "category": "Standards and Advisories",
+    "url": "https://isc.sans.edu/rssfeed_full.xml",
+    "enabled": true
+  },
+  {
+    "title": "Check Point Research",
+    "category": "Security",
+    "url": "https://blog.checkpoint.com/feed/",
+    "enabled": false,
+    "reason": "Publisher returned HTTP 403 during Habiki ingestion; disabled by the operator pending revalidation."
+  },
+  {
+    "title": "NCSC Reports",
+    "category": "Standards and Advisories",
+    "url": "https://www.ncsc.gov.uk/api/1/services/v1/report-rss-feed.xml",
+    "enabled": true
+  },
+  {
+    "title": "Architect Security",
+    "category": "Security",
+    "url": "https://architectsecurity.org/feed/",
+    "enabled": true
+  },
+  {
+    "title": "The Last Watchdog",
+    "category": "Security News",
+    "url": "https://www.lastwatchdog.com/feed/",
+    "enabled": true
+  },
+  {
+    "title": "Graham Cluley",
+    "category": "Security",
+    "url": "https://grahamcluley.com/feed/",
+    "enabled": true
+  },
+  {
+    "title": "TaoSecurity",
+    "category": "Security",
+    "url": "https://taosecurity.blogspot.com/feeds/posts/default",
+    "enabled": true
+  },
+  {
+    "title": "Unsupervised Learning",
+    "category": "Security",
+    "url": "https://rss.beehiiv.com/feeds/gQxaV1KHkQ.xml",
+    "enabled": true
+  },
+  {
+    "title": "CIO",
+    "category": "General Technology",
+    "url": "https://www.cio.com/feed/",
+    "enabled": true
+  },
+  {
+    "title": "CSO Online",
+    "category": "Security News",
+    "url": "https://www.csoonline.com/feed/",
+    "enabled": true
+  },
+  {
+    "title": "PCMag UK",
+    "category": "General Technology",
+    "url": "https://uk.pcmag.com/feed.xml",
+    "enabled": true
+  },
+  {
+    "title": "The Hacker News",
+    "category": "Security News",
+    "url": "https://feeds.feedburner.com/TheHackersNews",
+    "enabled": true
+  },
+  {
+    "title": "Ars Technica",
+    "category": "General Technology",
+    "url": "https://feeds.arstechnica.com/arstechnica/index",
+    "enabled": true
+  },
+  {
+    "title": "Help Net Security",
+    "category": "Security News",
+    "url": "https://www.helpnetsecurity.com/feed/",
+    "enabled": true
+  },
+  {
+    "title": "Computerworld",
+    "category": "General Technology",
+    "url": "https://www.computerworld.com/feed/",
+    "enabled": true
+  },
+  {
+    "title": "IT Security Guru",
+    "category": "Security News",
+    "url": "https://www.itsecurityguru.org/feed/",
+    "enabled": true
+  },
+  {
+    "title": "Security Boulevard",
+    "category": "Security News",
+    "url": "https://securityboulevard.com/feed/",
+    "enabled": false,
+    "reason": "Publisher returned HTTP 403 during Habiki ingestion; disabled by the operator pending revalidation."
+  },
+  {
+    "title": "GBHackers",
+    "category": "Security News",
+    "url": "https://gbhackers.com/feed/",
+    "enabled": true
+  },
+  {
+    "title": "Heimdal Security",
+    "category": "Security",
+    "url": "https://feeds.feedburner.com/HeimdalSecurityBlog",
+    "enabled": true
+  },
+  {
+    "title": "Krebs on Security",
+    "category": "Security",
+    "url": "https://krebsonsecurity.com/feed/",
+    "aliases": [
+      "http://krebsonsecurity.com/feed/"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "PortSwigger Research",
+    "category": "Security",
+    "url": "https://portswigger.net/blog/rss",
+    "aliases": [
+      "http://blog.portswigger.net/feeds/posts/default"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "The Register Security",
+    "category": "Security News",
+    "url": "https://www.theregister.com/security/headlines.atom",
+    "aliases": [
+      "https://api.theregister.com/api/v1/article?orderBy=published&site_id=2&remapper=rss&query=tag:security"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "Dark Reading",
+    "category": "Security News",
+    "url": "https://www.darkreading.com/rss.xml",
+    "aliases": [
+      "https://www.darkreading.com/rss_simple.asp"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "SC Media",
+    "category": "Security News",
+    "url": "https://www.scworld.com/rss",
+    "aliases": [
+      "https://www.scmagazine.com/home/security-news/feed/",
+      "https://www.scworld.com/feed/topic/latest"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "Microsoft Security",
+    "category": "Security",
+    "url": "https://www.microsoft.com/en-us/security/blog/feed/",
+    "aliases": [
+      "https://www.microsoft.com/security/blog/feed/"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "Security Affairs",
+    "category": "Security News",
+    "url": "https://securityaffairs.com/feed",
+    "aliases": [
+      "https://securityaffairs.co/wordpress/feed"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "Smashing Security",
+    "category": "Podcasts",
+    "url": "https://www.smashingsecurity.com/rss",
+    "aliases": [
+      "https://feeds.fireside.fm/smashingsecurity/rss",
+      "https://feeds.redcircle.com/c478d684-038f-4b13-8507-bc32af486a2c"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "BrakeSec Education Podcast",
+    "category": "Podcasts",
+    "url": "https://brakeingsecurity.libsyn.com/rss",
+    "aliases": [
+      "https://brakeingsecurity.com/rss",
+      "https://rss.libsyn.com/shows/50535/destinations/177487.xml"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "Google Security",
+    "category": "Security",
+    "url": "https://feeds.feedburner.com/GoogleOnlineSecurityBlog",
+    "aliases": [
+      "http://googleonlinesecurity.blogspot.com/atom.xml",
+      "https://security.googleblog.com/feeds/posts/default?alt=rss",
+      "http://feeds.feedburner.com/GoogleOnlineSecurityBlog"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "SecurityWeek",
+    "category": "Security News",
+    "url": "https://www.securityweek.com/feed/",
+    "aliases": [
+      "https://feeds.feedburner.com/securityweek"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "Europol News",
+    "category": "Standards and Advisories",
+    "url": "https://www.europol.europa.eu/cms/api/rss/news",
+    "aliases": [
+      "https://www.europol.europa.eu/rss.xml"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "ZDNet General News",
+    "category": "General News",
+    "url": "https://www.zdnet.com/rss/news/",
+    "aliases": [
+      "https://www.zdnet.com/blog/security/rss.xml"
+    ],
+    "enabled": true
+  },
+  {
+    "title": "Forbes Davey Winder",
+    "category": "Security News",
+    "url": "https://www.forbes.com/sites/daveywinder/feed/",
+    "enabled": false,
+    "reason": "403 with browser-like and Miniflux user agents; unverified."
+  },
+  {
+    "title": "ICO Decision Notices",
+    "category": "Standards and Advisories",
+    "url": "https://ico.org.uk/global/rss-feeds/decision-notices/",
+    "enabled": false,
+    "reason": "Publisher states RSS is unavailable after redesign."
+  },
+  {
+    "title": "ICO News and Blogs",
+    "category": "Standards and Advisories",
+    "url": "https://ico.org.uk/global/rss-feeds/news-and-blogs/",
+    "enabled": false,
+    "reason": "Publisher states RSS is unavailable after redesign."
+  },
+  {
+    "title": "ICO Enforcement",
+    "category": "Standards and Advisories",
+    "url": "https://ico.org.uk/global/rss-feeds/enforcement/",
+    "enabled": false,
+    "reason": "Publisher states RSS is unavailable after redesign."
+  },
+  {
+    "title": "SANS DFIR",
+    "category": "Security",
+    "url": "http://digital-forensics.sans.org/blog/feed/",
+    "enabled": false,
+    "reason": "Redirects to an HTML landing page, not a feed."
+  },
+  {
+    "title": "ShiftSec to the Left",
+    "category": "Security",
+    "url": "http://shiftsectotheleft.com/feed/",
+    "enabled": false,
+    "reason": "DNS resolution failed."
+  },
+  {
+    "title": "GreatHorn",
+    "category": "Security",
+    "url": "https://www.greathorn.com/feed/",
+    "enabled": false,
+    "reason": "Feed and homepage returned 404."
+  },
+  {
+    "title": "Threatpost",
+    "category": "Security News",
+    "url": "https://threatpost.com/feed/",
+    "enabled": false,
+    "reason": "Timed out twice; availability inconclusive."
+  }
+]
