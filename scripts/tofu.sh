@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
     cat <<'EOF'
-Usage: scripts/tofu.sh [--refresh-generated-secrets] [--] [tofu args...]
+Usage: scripts/tofu.sh [--refresh-generated-secrets | --test-fixture-dir DIR] [--] [tofu args...]
 
 Secure OpenTofu wrapper. It injects vault-backed credentials via environment
 variables, runs OpenTofu, and writes encrypted generated outputs to
@@ -16,10 +16,14 @@ Modes:
   scripts/tofu.sh -- plan                 Run arbitrary tofu args, then refresh after apply only
   scripts/tofu.sh -- fmt ...              Format caller-relative files without credentials/backend init
   scripts/tofu.sh -- validate             Validate installed providers locally without credentials/init
+  scripts/tofu.sh --test-fixture-dir DIR -- COMMAND ...
+                                          Disposable local test configuration only; never load vault,
+                                          production backend, or refresh generated secrets
 EOF
 }
 
 REFRESH_ONLY=false
+FIXTURE_DIR=""
 TOFU_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -27,6 +31,11 @@ while [[ $# -gt 0 ]]; do
         --refresh-generated-secrets)
             REFRESH_ONLY=true
             shift
+            ;;
+        --test-fixture-dir)
+            [[ $# -ge 2 ]] || { echo "Missing fixture directory" >&2; exit 2; }
+            FIXTURE_DIR="$2"
+            shift 2
             ;;
         -h|--help)
             usage
@@ -48,6 +57,24 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TERRAFORM_DIR="$ROOT_DIR/terraform"
 VAULT_PASSWORD_FILE="$HOME/.ansible/nixos_vault_password"
 GENERATED_SECRETS_FILE="$ROOT_DIR/src/generated-secrets.yml"
+
+# Test fixtures are generated under one ignored repository-local prefix. They
+# use local state and synthetic TF_VAR_authentik_test_* inputs supplied by the
+# runner, never production vault credentials or generated output capture.
+if [[ -n "$FIXTURE_DIR" ]]; then
+    [[ "$REFRESH_ONLY" == false && ${#TOFU_ARGS[@]} -gt 0 ]] || {
+        echo "Fixture mode requires an explicit command and forbids secret refresh" >&2
+        exit 2
+    }
+    FIXTURE_DIR="$(realpath -e -- "$FIXTURE_DIR")"
+    case "$FIXTURE_DIR" in
+        "$TERRAFORM_DIR"/.passkey-test-*) ;;
+        *) echo "Fixture directory must be under terraform/.passkey-test-*" >&2; exit 2 ;;
+    esac
+    unset PG_CONN_STR TF_VAR_authentik_token TF_VAR_grafana_token
+    export TF_IN_AUTOMATION=true
+    exec tofu -chdir="$FIXTURE_DIR" "${TOFU_ARGS[@]}"
+fi
 
 # Local checks neither need credentials nor initialize/upgrade the remote
 # backend. Keep pre-commit behind this wrapper without a hidden network action.

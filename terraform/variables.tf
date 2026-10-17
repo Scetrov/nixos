@@ -3,6 +3,14 @@ variable "authentik_token" {
   sensitive = true
 }
 
+# Persistently select the accepted native flow after operator approval.
+# Restore false for declarative rollback; the independent helper route stays intact.
+variable "authentik_passkey_first_enabled" {
+  description = "Select the accepted passkey-first candidate on the existing default brand."
+  type        = bool
+  default     = true
+}
+
 variable "grafana_token" {
   type      = string
   sensitive = true

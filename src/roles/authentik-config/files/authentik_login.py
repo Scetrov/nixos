@@ -66,14 +66,10 @@ def solve_challenge(challenge, username, password):
     if component == "xak-flow-redirect":
         return None
     if component == "ak-stage-access-denied":
-        fail(
-            "Authentication flow denied access",
-            response_errors=challenge.get("response_errors", {}),
-        )
-    fail(
-        f"Unsupported challenge component {component!r}",
-        response_errors=challenge.get("response_errors", {}),
-    )
+        fail("Authentication flow denied access")
+    # Challenges and component names are server input, not safe diagnostics.
+    # In particular, never echo assertions, recovery links or response_errors.
+    fail("Unsupported authentication challenge; interactive authentication may be required")
 
 def main():
     if len(sys.argv) not in (4, 5):
@@ -87,13 +83,14 @@ def main():
     username = sys.argv[2]
     password = sys.argv[3]
     flow_slug = sys.argv[4] if len(sys.argv) == 5 else "default-authentication-flow"
+    escaped_flow_slug = urllib.parse.quote(flow_slug, safe="")
     flow_url = (
-        f"{api_base}/flows/executor/{urllib.parse.quote(flow_slug)}/"
+        f"{api_base}/flows/executor/{escaped_flow_slug}/"
         "?query="
     )
     me_url = f"{api_base}/core/users/me/"
     ui_base = api_base.rsplit('/api/v3', 1)[0]
-    browser_flow_url = f"{ui_base}/if/flow/{urllib.parse.quote(flow_slug)}/"
+    browser_flow_url = f"{ui_base}/if/flow/{escaped_flow_slug}/"
     insecure = os.environ.get("AUTHENTIK_LOGIN_INSECURE", "0") == "1"
     if insecure:
         print(
@@ -123,10 +120,7 @@ def main():
             break
         challenge = request_json(opener, flow_url, 'POST', headers, body=answer)
     else:
-        fail(
-            "Authentication flow exceeded maximum supported steps",
-            last_component=challenge.get("component"),
-        )
+        fail("Authentication flow exceeded maximum supported steps")
 
     body = request_json(opener, me_url, 'GET', headers)
 
@@ -143,11 +137,7 @@ def main():
 
     cookie_header = build_cookie_header(cj)
     if not cookie_header or not csrf_token or not user.get('pk'):
-        fail(
-            "Missing session cookies, CSRF token, or user payload in response",
-            keys=list(body.keys()),
-            flow_slug=flow_slug,
-        )
+        fail("Missing session cookies, CSRF token, or authenticated user")
 
     print(json.dumps({
         "cookie_header": cookie_header,
@@ -156,13 +146,20 @@ def main():
         "flow_slug": flow_slug,
     }))
 
-if __name__ == '__main__':
+def run():
+    """Keep command failures machine-readable without disclosing response data."""
     try:
         main()
     except urllib.error.HTTPError as exc:
-        response_body = exc.read().decode(errors="replace")
-        print(json.dumps({"error": f"HTTP {exc.code}", "body": response_body}), file=sys.stderr)
-        sys.exit(1)
-    except Exception as exc:  # noqa: BLE001
-        print(json.dumps({"error": str(exc)}), file=sys.stderr)
-        sys.exit(1)
+        status = exc.code
+        # Close without reading/logging the body. Python can otherwise emit a
+        # ResourceWarning containing the HTTPError's untrusted reason string.
+        exc.close()
+        fail(f"Authentication request failed: HTTP {status}")
+    except Exception:  # noqa: BLE001
+        # Exception strings can contain request URLs, credentials or payloads.
+        fail("Authentication request failed unexpectedly")
+
+
+if __name__ == '__main__':
+    run()

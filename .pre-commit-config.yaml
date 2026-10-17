@@ -41,6 +41,13 @@ repos:
         pass_filenames: false
         files: ^(src/roles/authentik-config/|scripts/tests/test_authentik_group_preservation\.py$)
 
+      - id: authentik-passkey-configuration
+        name: Authentik passkey-first configuration
+        entry: python3 -m unittest scripts.tests.test_authentik_passkey_flows scripts.tests.test_authentik_login scripts.tests.test_tofu_fixture
+        language: system
+        pass_filenames: false
+        files: ^(terraform/(authentik(-flows|-settings)?\.tf|variables\.tf)$|src/roles/authentik-config/|scripts/tofu\.sh$|scripts/tests/(test_authentik_(passkey_flows|login)|test_tofu_fixture|run_authentik_passkey_browser)\.py$)
+
       - id: tofu-fmt
         name: tofu fmt
         entry: scripts/tofu.sh -- fmt -write=true

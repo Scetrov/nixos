@@ -17,24 +17,165 @@ This document covers:
 - the service-account and long-lived token workflow that now works
 - known API quirks and endpoints that should not be used in this repo
 
-It does not try to document all of Authentik. It only records behavior that was
-verified in this environment.
+It does not try to document all of Authentik. Candidate passkey-first behavior
+and outstanding acceptance checks are explicitly separated from verified
+production behavior below.
 
 ## Version And Runtime Model
 
-The current deployment uses:
+Verified/configured versions as of 2026-10-16:
 
-- Authentik image: `ghcr.io/goauthentik/server:2026.5`
-- Live API/schema version observed: `2026.5.6`
-- PostgreSQL image: `postgres:16-alpine`
+- Live Authentik API version: **2026.8.3** (authenticated version endpoint).
+- Configured Authentik image: `ghcr.io/goauthentik/server:2026.8.3@sha256:ab9b4e8cc4ab3f8d1198d2db6aeea66bafea1963b3f2843589e0d163f97d9849`.
+- Configured PostgreSQL image: `docker.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24` (configuration pin, not a live database-version probe).
+- Authentik OpenTofu provider: **2026.8.0**.
 
-Auth configuration is split across two layers:
+Auth configuration is split across three layers:
 
-- NixOS module: installs and runs the Authentik containers and runtime env
-- Ansible `authentik-config` role: performs controller-side API configuration after the service is reachable
+- NixOS module: runs the containers and runtime environment.
+- Ansible `authentik-config` role: bootstraps/reconciles managed admin and automation-token identities after readiness.
+- OpenTofu: owns application configuration, the existing default brand, and new passkey candidate flows/stages/policies. All operations use `scripts/tofu.sh`.
 
 The NixOS module is in [src/roles/nixos/files/etc/nixos/modules/authentik.nix](/home/scetrov/source/nixos/src/roles/nixos/files/etc/nixos/modules/authentik.nix).
 The API automation lives in [src/roles/authentik-config/tasks/main.yml](/home/scetrov/source/nixos/src/roles/authentik-config/tasks/main.yml) and [src/roles/authentik-config/tasks/deploy-blueprint.yml](/home/scetrov/source/nixos/src/roles/authentik-config/tasks/deploy-blueprint.yml).
+
+## Native passkey-first authentication (activated)
+
+The accepted native flow is now selected on the live brand:
+`passkey-first-candidate`. Activation was separately approved and applied on
+2026-10-17 at 13:12 UTC. The persistent source input is true, and the full
+post-activation wrapper plan is clean. The operator confirmed final normal-login
+passkey/fallback/MFA/application-return smoke checks with Firefox + KeePassXC.
+
+### Native login and fallback
+
+`terraform/authentik-flows.tf` manages:
+
+- `passkey-first-candidate`: automatically starts username-less WebAuthn with
+  required user verification. Trusted native success skips identification,
+  password, and redundant login MFA.
+- A visible native footer, **Use username/password instead**, opts into
+  identification + the existing packaged password and applicable MFA stages.
+  It works after cancellation without browser Back.
+- Both paths stay in one flow plan. A binding policy captures the validated
+  original root-relative return destination before the footer changes the
+  query. Client fallback/success markers cannot replace it or bypass password/
+  MFA. The captured destination ends with native plan cleanup.
+- `passkey-explicit-candidate`: the previously shared URL remains available as
+  a native context-preserving redirect to the main candidate.
+
+No custom passkey CSS/JavaScript, new enrollment requirement, credential deletion,
+or RP/origin change is introduced. Fallback identification does not offer
+conditional WebAuthn, avoiding a second passkey prompt after choosing password.
+OS autofill selection and untested devices are not claimed supported.
+
+The normal login entry now selects
+https://identity.net.scetrov.live/if/flow/passkey-first-candidate/.
+Its neutral shared heading is **Sign in**, including on password fallback.
+The unchanged independent fallback is
+https://identity.net.scetrov.live/if/flow/default-authentication-flow/.
+
+### Ownership and settings preservation
+
+The existing `authentik_brand.default` retains sole ownership of selection.
+Packaged password/MFA/session stages are referenced, not adopted or weakened.
+Provider authentication overrides and application authorization are unchanged.
+
+`terraform/authentik-settings.tf` imports the existing `system_settings`
+singleton and manages the native footer, which is tenant-wide in this version.
+The pre-adoption inventory contained no footer links. All existing provider-
+managed settings are explicit, including `core_default_app_access=true`.
+Live before/after comparison confirmed **only footer_links changed**; newer
+unexposed settings and the entire existing brand were unchanged. The earlier
+CSS drift was a missing `trimspace()` wrapper, now restored without restyling.
+The latest full wrapper plan is clean.
+
+### Acceptance status
+
+The operator confirmed the previous candidate with **Firefox + KeePassXC** and
+**Firefox on Windows + Windows Hello**, application login/return, and main-page
+password/MFA fallback. The earlier Windows Hello cancellation report was
+superseded by success after finding another open passkey window. Browser/
+manager/Windows versions and the KeePassXC test's OS were not supplied.
+
+For the revised automatic-prompt/native-footer candidate:
+
+- Three consecutive disposable suites using actual production resource text
+  passed, including return preservation, cancellation/footer fallback,
+  password/MFA denial, unsafe/replacement targets, invalid/unknown/replayed/
+  insufficient-UV assertions, native redirect alias, and sequential-plan checks.
+- Thirty focused offline tests, provider validation, formatting, and all
+  configured pre-commit gates passed.
+- In response to the revised live checklist, the operator reported that the
+  functionality works, with only the misleading passkey heading failing on
+  password fallback. The neutral shared heading was reproduced/fixed in the
+  container suite, applied through a title-only plan, and verified live.
+- Conditional separate activation approval was then exercised after checks
+  passed. Only brand authentication selection changed; post-activation routing
+  and a clean full plan were verified. An initial Grafana/Loki snapshot showed
+  200 informational entries and zero matching server-error/exception/5xx entries.
+- The operator confirmed post-activation normal-login passkey and fallback/MFA/
+  application-return smoke checks with **Firefox + KeePassXC**. The application
+  name and client versions were not supplied. A final full plan is clean; the
+  post-smoke telemetry query found no matching server-error/exception/5xx logs.
+  Six warning logs were native policy-driven stage-skip reevaluations.
+- Concurrent independent login tabs and comprehensive upstream conformance are
+  not certified.
+
+The original broken cross-flow prototype is historical evidence. Its duplicate
+fixture and special proof modes were retired after promotion; the ordinary
+browser runner now tests the production configuration directly.
+
+### Administrator, recovery, and enrollment routes
+
+The helper and all role callers explicitly retain `default-authentication-flow`
+through `authentik_config_admin_recovery_flow_slug`. Unsupported interactive
+MFA fails closed; no MFA exemption, bootstrap-account enablement, or intentional
+token invalidation is introduced. Diagnostics omit arbitrary upstream bodies.
+
+Existing credentials, packaged enrollment, and RP identity
+`identity.net.scetrov.live` over HTTPS remain unchanged. There is no selected
+self-service recovery flow. Preserve existing operator-assisted recovery;
+this change does not certify its identity checks or require a live token-repair
+exercise when its routing is unchanged.
+
+### Activation and rollback procedure
+
+All OpenTofu operations use `scripts/tofu.sh`; credentials stay vaulted and
+runtime-injected. Do not save raw secret-bearing plan/state artifacts.
+
+1. For a future candidate revision, keep the previous accepted route selected
+   until passkey, cancellation/footer/password/MFA, and application-return checks
+   pass. While a candidate is unselected, preserve the application query when
+   changing its login-flow URL; do not share authorization URLs.
+2. Retain an authenticated admin session and independent fallback access; obtain
+   **separate activation approval**. Review/apply the persistent selection through
+   the wrapper. The current accepted source has
+   `authentik_passkey_first_enabled=true`; a normal deployment retains it.
+   Temporary environment overrides alone are not durable.
+3. Smoke-test passkey and fallback, inspect existing Grafana/Loki authentication
+   telemetry without sensitive payloads, and verify a subsequent full wrapper
+   plan shows no unintended drift.
+4. To roll back selection, restore the persistent input to false, review and
+   apply through the wrapper, then verify the independent fallback. Retain
+   users, credentials, packaged routes, and candidate resources. The global
+   footer remains managed; removing it entirely is a separate reviewed source
+   change, not deletion of credentials or packaged flows.
+
+No NixOS restart/rebuild, new host alias, persistent port, recovery audit,
+hardware-class matrix, or production rollback drill is required.
+
+For authorized local testing run
+`RUN_PASSKEY_BROWSER_TESTS=1 python3 scripts/tests/run_authentik_passkey_browser.py`.
+The runner uses repository-digest-pinned rootless Podman images, one dynamic
+localhost-only port, synthetic identities, and Chromium/CDP without new packages.
+Wrapper fixture mode never loads production vault/backend credentials. Temporary
+state, containers, volumes, network, and browser profile are removed afterward.
+Authenticated success checks wait for final navigation before checking identity;
+earlier polling could race with login and expire the new session cookie.
+
+Detailed historical and current outcomes are recorded in
+`openspec/changes/archive/2026-10-17-add-authentik-passkey-first/evidence.md`.
 
 ## Installation Model
 

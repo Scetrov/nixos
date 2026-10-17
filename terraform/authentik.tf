@@ -440,7 +440,9 @@ resource "authentik_brand" "default" {
   EOT
   )
 
-  flow_authentication = data.authentik_flow.default_authentication.id
+  # Candidate provisioning retains the existing default. Change this input only
+  # after candidate acceptance and explicit approval; false restores fallback.
+  flow_authentication = var.authentik_passkey_first_enabled ? authentik_flow.passkey_candidate.uuid : data.authentik_flow.default_authentication.id
 }
 
 # --- Outpost ---
