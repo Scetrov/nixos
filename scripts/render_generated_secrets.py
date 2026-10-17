@@ -40,6 +40,8 @@ GENERATED_KEYS = [
     ("forgejo_oidc_client_secret", "forgejo_oidc_client_secret", True),
     ("miniflux_oidc_client_id", "miniflux_oidc_client_id", False),
     ("miniflux_oidc_client_secret", "miniflux_oidc_client_secret", True),
+    ("immich_oidc_client_id", "immich_oidc_client_id", False),
+    ("immich_oidc_client_secret", "immich_oidc_client_secret", True),
     ("grafana_oncall_api_key", "grafana_oncall_token", False),
     ("grafana_authentik_client_id", "grafana_oidc_client_id", False),
     ("grafana_authentik_client_secret", "grafana_oidc_client_secret", True),

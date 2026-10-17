@@ -30,6 +30,20 @@ Deploy assets first using the `authentik-branding` command below, then review
 and apply `authentik_application.hermes` through `scripts/tofu.sh`. Existing
 clients need a launcher reload to receive the updated application metadata.
 
+## Immich
+
+`immich-a4cda3df8fe5.png` is the official 512 × 512 application favicon,
+copied unchanged from the deployed release's immutable upstream commit:
+<https://raw.githubusercontent.com/immich-app/immich/db6e11ecc851228aec9c525abb0ee026d1f5055e/web/static/favicon.png>.
+Its SHA-256 is `a4cda3df8fe52ccf11431cf691ebbfcbc3694d4d8b4d922d6ae43fedf25c43ff`.
+The checksum-qualified filename avoids stale browser caches. The logo remains
+the property of the Immich project; it is served locally, not hotlinked.
+
+Deploy assets with the `authentik-branding` command below, then use
+`scripts/tofu.sh -- plan -target=authentik_application.immich` and
+`scripts/tofu.sh -- apply -target=authentik_application.immich` to update only
+its application metadata. No NixOS rebuild or service restart is required.
+
 ## Forgejo and Miniflux
 
 Both icons use a 512 × 512 pixel canvas. Forgejo is rendered on a transparent

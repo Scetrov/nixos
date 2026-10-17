@@ -3,7 +3,7 @@
 
 - name: Include Nix Channel tasks
   ansible.builtin.include_tasks: channel.yml
-  when: not (nixos_miniflux_only | bool)
+  when: not (nixos_miniflux_only | bool) and not (nixos_immich_only | bool)
 
 # sync.yml recursively deploys files/etc/nixos/, so new modules such as
 # modules/authentik.nix are copied without adding another include task here.
@@ -26,6 +26,7 @@
     - home-assistant.png
     - forgejo.png
     - miniflux.png
+    - immich-a4cda3df8fe5.png
   when: authentik_config_enabled | default(false)
 
 - name: Include NixOS rebuild tasks
@@ -36,12 +37,12 @@
 
 - name: Enroll Habiki in the Headscale tailnet
   ansible.builtin.include_tasks: headscale-enrolment.yml
-  when: not (nixos_miniflux_only | bool)
+  when: not (nixos_miniflux_only | bool) and not (nixos_immich_only | bool)
 
 - name: Provision Garage storage
   ansible.builtin.include_tasks: garage-provisioning.yml
-  when: not (nixos_miniflux_only | bool)
+  when: not (nixos_miniflux_only | bool) and not (nixos_immich_only | bool)
 
 - name: Include Podman Restarts
   ansible.builtin.include_tasks: podman.yml
-  when: not (nixos_miniflux_only | bool)
+  when: not (nixos_miniflux_only | bool) and not (nixos_immich_only | bool)

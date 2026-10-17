@@ -24,6 +24,7 @@ all:
       authentik_config_enabled: true
       forgejo_enabled: true
       miniflux_enabled: true
+      immich_enabled: true
       dependency_track_config_enabled: true
       esphome_enabled: true
       esphome_device_host: 10.229.5.40

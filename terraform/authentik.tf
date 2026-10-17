@@ -73,6 +73,71 @@ resource "random_password" "forgejo_client_secret" {
   special = false
 }
 
+# --- Immich native OIDC ---
+resource "random_id" "immich_client_id" {
+  byte_length = 20
+}
+
+resource "random_password" "immich_client_secret" {
+  length  = 40
+  special = false
+}
+
+resource "authentik_provider_oauth2" "immich" {
+  name               = "Immich"
+  client_id          = random_id.immich_client_id.hex
+  client_secret      = random_password.immich_client_secret.result
+  client_type        = "confidential"
+  signing_key        = data.authentik_certificate_key_pair.default.id
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  grant_types        = ["authorization_code", "refresh_token"]
+
+  # Immich 3.3.1 web login, account linking, and native mobile callback.
+  allowed_redirect_uris = [for uri in [
+    "https://immich.net.scetrov.live/auth/login",
+    "https://immich.net.scetrov.live/user-settings",
+    "app.immich:///oauth-callback",
+    ] : {
+    url               = uri
+    matching_mode     = "strict"
+    redirect_uri_type = "authorization"
+  }]
+
+  property_mappings = [
+    data.authentik_property_mapping_provider_scope.openid.id,
+    data.authentik_property_mapping_provider_scope.profile.id,
+    data.authentik_property_mapping_provider_scope.email.id,
+  ]
+}
+
+resource "authentik_application" "immich" {
+  name               = "Immich"
+  slug               = "immich"
+  protocol_provider  = authentik_provider_oauth2.immich.id
+  policy_engine_mode = "all"
+  meta_launch_url    = "https://immich.net.scetrov.live"
+  meta_icon          = "/static/dist/branding/immich-a4cda3df8fe5.png"
+}
+
+# Operator-confirmed boundary: do not grant access to General User.
+resource "authentik_policy_binding" "immich_access" {
+  target  = authentik_application.immich.uuid
+  group   = authentik_group.all_applications.id
+  order   = 0
+  enabled = true
+}
+
+output "immich_oidc_client_id" {
+  value     = authentik_provider_oauth2.immich.client_id
+  sensitive = true
+}
+
+output "immich_oidc_client_secret" {
+  value     = authentik_provider_oauth2.immich.client_secret
+  sensitive = true
+}
+
 # --- Certificates ---
 data "authentik_certificate_key_pair" "default" {
   name = "authentik Self-signed Certificate"

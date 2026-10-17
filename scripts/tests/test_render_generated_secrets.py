@@ -47,6 +47,8 @@ def valid_outputs(**overrides):
         "forgejo_oidc_client_secret": {"value": "forgejo-secret-fixture", "sensitive": True},
         "miniflux_oidc_client_id": {"value": "miniflux-id-fixture", "sensitive": True},
         "miniflux_oidc_client_secret": {"value": "miniflux-secret-fixture", "sensitive": True},
+        "immich_oidc_client_id": {"value": "immich-id-fixture", "sensitive": True},
+        "immich_oidc_client_secret": {"value": "immich-secret-fixture", "sensitive": True},
         "grafana_oncall_token": {"value": "oncall-token-fixture", "sensitive": True},
         "grafana_oidc_client_id": {"value": "grafana-client-id-fixture", "sensitive": False},
         "grafana_oidc_client_secret": {"value": "grafana-secret-fixture", "sensitive": True},

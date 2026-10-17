@@ -23,6 +23,8 @@ Options:
                            - dependency-track : Dependency Track deployment & configuration
                            - miniflux         : Habiki feed reader: provision OIDC, refresh credentials,
                                                 render secrets and rebuild (requires --limit habiki)
+                           - immich           : Habiki native OIDC, protected recovery secrets and rebuild
+                                                (requires --limit habiki; no channel updates)
                            - frontier-indexer : Frontier cycle transition, secrets & host configuration
                            - esphome          : ESPHome secret rendering, validation, build, and OTA deploy
                            - secrets          : Secrets generation and deployment
@@ -118,6 +120,19 @@ if has_tag miniflux; then
     MINIFLUX_DEPLOY=true
 fi
 
+IMMICH_DEPLOY=false
+if has_tag immich; then
+    if [[ "$LIMIT" != "habiki" || "$TAGS" != "immich" ]]; then
+        echo "Error: immich requires --limit habiki and cannot be combined with other tags." >&2
+        exit 1
+    fi
+    if [[ "$SKIP_GENERATED_REFRESH" == true ]]; then
+        echo "Error: immich cannot skip authoritative generated-secret refresh." >&2
+        exit 1
+    fi
+    IMMICH_DEPLOY=true
+fi
+
 # Introspection and check mode must not apply infrastructure or refresh secrets.
 READ_ONLY=false
 for argument in "${EXTRA_ARGS[@]}"; do
@@ -126,8 +141,8 @@ for argument in "${EXTRA_ARGS[@]}"; do
             READ_ONLY=true
             ;;
         --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*)
-            if [[ "$MINIFLUX_DEPLOY" == true ]]; then
-                echo "Error: miniflux target/tag overrides after -- are not supported." >&2
+            if [[ "$MINIFLUX_DEPLOY" == true || "$IMMICH_DEPLOY" == true ]]; then
+                echo "Error: targeted identity deploy target/tag overrides after -- are not supported." >&2
                 exit 1
             fi
             ;;
@@ -200,7 +215,7 @@ needs_generated_refresh() {
     IFS=',' read -ra tag_list <<< "$tags"
     for tag in "${tag_list[@]}"; do
         case "${tag// /}" in
-            authentik|nixos|dependency-track|secrets|forgejo|miniflux)
+            authentik|nixos|dependency-track|secrets|forgejo|miniflux|immich)
                 return 0
                 ;;
         esac
@@ -209,7 +224,11 @@ needs_generated_refresh() {
     return 1
 }
 
-if [[ "$MINIFLUX_DEPLOY" == true && "$READ_ONLY" == false ]]; then
+if [[ "$IMMICH_DEPLOY" == true && "$READ_ONLY" == false ]]; then
+    echo "Provisioning Immich identity and refreshing credentials before Ansible loads vars_files..."
+    "$(dirname "$0")/tofu.sh" -- apply -auto-approve -target=authentik_policy_binding.immich_access
+    echo ""
+elif [[ "$MINIFLUX_DEPLOY" == true && "$READ_ONLY" == false ]]; then
     echo "Provisioning Miniflux identity and refreshing credentials before Ansible loads vars_files..."
     # The binding's dependency graph includes its application/provider, group,
     # operator lookup and random credentials; do not apply unrelated resources.
