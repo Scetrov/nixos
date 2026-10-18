@@ -41,7 +41,7 @@ in
 
   services.garage = {
     enable = true;
-    package = pkgs.garage;
+    package = pkgs.garage_2;
     environmentFile = config.age.secrets.garage_rpc_secret.path;
     settings = {
       replication_factor = 1;

@@ -16,6 +16,18 @@ variable "grafana_token" {
   sensitive = true
 }
 
+# Authentik machine JWT for the Caddy broker. Never the native Garage token.
+variable "garage_authentik_token" {
+  type      = string
+  sensitive = true
+  default   = "bootstrap-unused"
+}
+
+variable "garage_resources_enabled" {
+  type    = bool
+  default = false
+}
+
 variable "hermes_external_host" {
   type    = string
   default = "https://hermes.net.scetrov.live"

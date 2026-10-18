@@ -23,6 +23,10 @@ terraform {
       source  = "grafana/grafana"
       version = "4.49.0"
     }
+    garage = {
+      source  = "xenOs76/garage"
+      version = "0.1.1"
+    }
   }
 }
 provider "authentik" {

@@ -60,7 +60,7 @@ class FixtureWrapperTests(unittest.TestCase):
                 'assert os.environ["TF_VAR_authentik_token"] == "synthetic-authentik"\n'
                 'assert os.environ["TF_VAR_grafana_token"] == "synthetic-grafana"\n'
                 'assert os.environ["PG_CONN_STR"] == '
-                '"postgres://terraform:synthetic-postgres@10.229.10.2:5433/terraform_state?sslmode=disable"\n'
+                '"postgres://terraform:synthetic-postgres@habiki.net.scetrov.live:5433/terraform_state?sslmode=verify-full&sslrootcert=/etc/ssl/certs/ca-certificates.crt"\n'
                 'print("reached-mocked-init")\n'
                 'sys.exit(73)\n'
             )
@@ -78,6 +78,28 @@ class FixtureWrapperTests(unittest.TestCase):
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 2)
         self.assertIn("terraform/.passkey-test-*", result.stderr)
+
+    def test_fmt_does_not_acquire_a_machine_token(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            binary = home / "bin"
+            binary.mkdir()
+            tofu = binary / "tofu"
+            tofu.write_text("#!/bin/sh\nprintf '%s\\n' \"$@\"\n")
+            tofu.chmod(0o700)
+            broker = binary / "python3"
+            broker.write_text("#!/bin/sh\nexit 91\n")
+            broker.chmod(0o700)
+            env = {"HOME": str(home), "PATH": str(binary) + os.pathsep + os.environ["PATH"]}
+            result = subprocess.run([str(WRAPPER), "--", "fmt", "-check"], env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout.splitlines(), ["fmt", "-check"])
+
+    def test_wrapper_does_not_retrieve_the_native_garage_token(self):
+        text = WRAPPER.read_text()
+        self.assertNotIn("extract_secret garage_admin", text)
+        self.assertNotIn("ssh ", text)
+        self.assertIn("unset GARAGE_TOKEN GARAGE_ADMIN_TOKEN", text)
 
     def test_production_symlink_cannot_escape_fixture_prefix(self):
         with tempfile.TemporaryDirectory(prefix=".passkey-test-", dir=ROOT / "terraform") as directory:

@@ -72,6 +72,7 @@ in
   "garage_admin_environment.age".publicKeys = users ++ systems;
   "garage_metrics_token.age".publicKeys = users ++ systems;
   "garage_metrics_environment.age".publicKeys = users ++ systems;
+  "garage_admin_automation_token.age".publicKeys = users ++ systems;
   "grafana_mcp_token.age".publicKeys = users ++ systems;
   "github_repository_observability_app_id.age".publicKeys = users ++ systems;
   "github_repository_observability_private_key.age".publicKeys = users ++ systems;

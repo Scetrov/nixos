@@ -48,6 +48,8 @@ GENERATED_KEYS = [
     ("grafana_mcp_token", "grafana_mcp_token", False),
     ("flyingfire_initial_password", "flyingfire_initial_password", False),
     ("pinkgiraffes_initial_password", "pinkgiraffes_initial_password", False),
+    ("garage_admin_broker_client_id", "garage_admin_broker_client_id", False),
+    ("garage_admin_broker_app_password", "garage_admin_broker_app_password", False),
 ]
 
 HEADER = [

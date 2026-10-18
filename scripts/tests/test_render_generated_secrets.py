@@ -55,6 +55,8 @@ def valid_outputs(**overrides):
         "grafana_mcp_token": {"value": "mcp-token-fixture", "sensitive": True},
         "flyingfire_initial_password": {"value": "ff-pw-fixture", "sensitive": True},
         "pinkgiraffes_initial_password": {"value": "pg-pw-fixture", "sensitive": True},
+        "garage_admin_broker_client_id": {"value": "garage-broker-client", "sensitive": False},
+        "garage_admin_broker_app_password": {"value": "garage-broker-app-password", "sensitive": True},
     }
     base.update(overrides)
     return base

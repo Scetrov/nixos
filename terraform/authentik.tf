@@ -510,6 +510,63 @@ resource "authentik_brand" "default" {
   flow_authentication = var.authentik_passkey_first_enabled ? authentik_flow.passkey_candidate.uuid : data.authentik_flow.default_authentication.id
 }
 
+# Dedicated machine identity for the private Garage admin broker. It is not a
+# member of any human group and must never be distributed to Minecraft.
+resource "authentik_user" "garage_admin_broker" {
+  username  = "garage-admin-broker"
+  name      = "Garage admin broker"
+  path      = "service-accounts"
+  type      = "service_account"
+  is_active = true
+}
+
+resource "authentik_token" "garage_admin_broker" {
+  identifier   = "garage-admin-broker"
+  user         = authentik_user.garage_admin_broker.id
+  intent       = "app_password"
+  expiring     = false
+  retrieve_key = true
+  description  = "Non-interactive credential for the Garage admin broker"
+}
+
+resource "authentik_provider_proxy" "garage_admin" {
+  name                  = "Garage admin"
+  external_host         = "https://garage-admin.net.scetrov.live"
+  mode                  = "forward_single"
+  authorization_flow    = data.authentik_flow.default_authorization.id
+  invalidation_flow     = data.authentik_flow.default_invalidation.id
+  intercept_header_auth = true
+  access_token_validity = "hours=1"
+}
+
+resource "authentik_application" "garage_admin" {
+  name              = "Garage admin"
+  slug              = "garage-admin"
+  protocol_provider = authentik_provider_proxy.garage_admin.id
+  meta_hide         = true
+  meta_launch_url   = "blank://blank"
+}
+
+resource "authentik_policy_expression" "garage_admin_broker_only" {
+  name       = "garage-admin-broker-only"
+  expression = "return request.user.username == \"garage-admin-broker\""
+}
+
+resource "authentik_policy_binding" "garage_admin_broker" {
+  target = authentik_application.garage_admin.uuid
+  policy = authentik_policy_expression.garage_admin_broker_only.id
+  order  = 0
+}
+
+output "garage_admin_broker_client_id" {
+  value = authentik_provider_proxy.garage_admin.client_id
+}
+
+output "garage_admin_broker_app_password" {
+  value     = authentik_token.garage_admin_broker.key
+  sensitive = true
+}
+
 # --- Outpost ---
 # This manages the embedded outpost that provides forward_auth for Caddy.
 resource "authentik_outpost" "proxy" {
@@ -519,7 +576,8 @@ resource "authentik_outpost" "proxy" {
   protocol_providers = [
     authentik_provider_proxy.hermes.id,
     authentik_provider_proxy.metrics.id,
-    authentik_provider_proxy.homeassistant.id
+    authentik_provider_proxy.homeassistant.id,
+    authentik_provider_proxy.garage_admin.id,
   ]
 
   config = jsonencode({

@@ -20,10 +20,18 @@ lib.mkIf config.services.grafana.enable {
     owner = "caddy";
   };
 
+  age.secrets.garage_admin_automation_token = {
+    file = /root/secrets/garage_admin_automation_token.age;
+    owner = "caddy";
+    group = "caddy";
+    mode = "0400";
+  };
+
   systemd.services.caddy.serviceConfig.EnvironmentFile = [
     "/run/agenix/loki_token_hash"
     "/run/agenix/mcp_client_token"
     "/run/agenix/mimir_write_token_hash"
+    config.age.secrets.garage_admin_automation_token.path
   ];
 
   services.caddy = {
@@ -149,6 +157,33 @@ lib.mkIf config.services.grafana.enable {
             reverse_proxy 127.0.0.1:8123
           '';
         };
+
+    # Ordered private broker. Peer admission is the socket address, then
+    # Authentik must authorise the machine JWT before Caddy replaces it with
+    # the server-side scoped Garage token. Missing auth never reaches Garage.
+    virtualHosts."garage-admin.net.scetrov.live" = {
+      useACMEHost = "scetrov.live";
+      extraConfig = ''
+        route {
+          @notInternal not remote_ip 10.229.0.0/16 127.0.0.0/24 100.64.0.0/10
+          respond @notInternal "Forbidden" 403
+
+          forward_auth http://127.0.0.1:9000 {
+            uri /outpost.goauthentik.io/auth/caddy
+
+            @denied status 3xx 401 403 5xx
+            handle_response @denied {
+              header Cache-Control no-store
+              respond "Unauthorized" 401
+            }
+          }
+
+          reverse_proxy 127.0.0.1:3903 {
+            header_up Authorization "Bearer {$GARAGE_ADMIN_AUTOMATION_TOKEN}"
+          }
+        }
+      '';
+    };
 
     virtualHosts."s3.net.scetrov.live" = {
       useACMEHost = "scetrov.live";

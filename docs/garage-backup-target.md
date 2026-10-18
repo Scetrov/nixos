@@ -23,6 +23,64 @@ for TLS verification and S3 signatures.
 This is a single-host backup target, not disaster recovery: data is stored on
 Habiki's SSD and is not replicated off-host.
 
+## Minecraft operator backups
+
+The `minecraft` bucket replaces a cloud Drive folder for manually uploading,
+inspecting and pruning Minecraft backup ZIPs from the operator's laptop. It is
+not immutable backup storage. The dedicated key may overwrite and delete
+objects; that is the intended Drive-style behaviour. Irreplaceable data needs
+a separate recovery mechanism.
+
+Client settings:
+
+| Setting | Value |
+| --- | --- |
+| Endpoint | `https://s3.net.scetrov.live` |
+| Region | `garage` |
+| Addressing | path-style |
+| Bucket | `minecraft` |
+
+The access key ID and secret are the main Vault entries
+`garage_minecraft_access_key_id` and `garage_minecraft_secret_access_key`.
+OpenTofu stores the same pair as sensitive remote-state values. Do not give
+the pair, the Authentik management identity, or the native Garage token to the
+Minecraft server, backup automation, or any other client.
+
+The key has read, list and write on `minecraft` only. Owner and bucket-creation
+authority are disabled. List is part of Garage's read permission; there is no
+separate list flag. `xenOs76/garage` 0.1.1 sends `DenyBucketKey` for a false
+permission and `deny.createBucket` for `allow_create_bucket = false`, because
+Garage ignores false flags on `AllowBucketKey`.
+
+If apply creates the key but Vault persistence fails, rerun `scripts/tofu.sh`.
+The wrapper reads the existing sensitive state output and writes that same pair.
+It will not create a replacement key. A Vault entry that already differs is left
+unchanged and reported as a failure.
+
+## Private administration route
+
+`https://garage-admin.net.scetrov.live` is a private Caddy broker for OpenTofu.
+Admission uses the socket peer ranges above, not forwarded headers. IPv6 peers
+are denied. After Authentik authorises the dedicated `garage-admin-broker`
+machine JWT, Caddy replaces `Authorization` with the server-side scoped Garage
+automation token. That native token stays in the Vault entry
+`garage_admin_automation_token` and the agenix file
+`garage_admin_automation_token.age`. The wrapper never retrieves it.
+
+The machine identity is infrastructure administration, not a Minecraft
+credential. Its scoped token can manage buckets and keys beyond `minecraft`.
+That cross-bucket reach is accepted only for this identity. It is not approval
+to use the unscoped config-file `admin_token`. If a future Garage package
+cannot scope tokens, stop and obtain approval before deploying that token.
+
+Rollback disables this route, the Authentik application/outpost binding, and
+the automation token. Do not destroy the bucket, objects, Vault pair, or
+remote state. Existing S3 endpoints remain available.
+
+Recovery of the operator pair is the Vault entry above, or the sensitive
+OpenTofu state output if Vault persistence failed. Do not run `garage key info
+--show-secret` or print provider output.
+
 ## Provisioning a project bucket
 
 `src/roles/nixos/tasks/garage-provisioning.yml` is the authoritative,

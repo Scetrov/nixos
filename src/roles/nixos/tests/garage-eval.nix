@@ -67,9 +67,13 @@ let
   garageService = config.systemd.services.garage;
   s3Vhost = config.services.caddy.virtualHosts."s3.tailnet.net.scetrov.live";
   internalS3Vhost = config.services.caddy.virtualHosts."s3.net.scetrov.live";
+  adminVhost = config.services.caddy.virtualHosts."garage-admin.net.scetrov.live";
   scrapeJobs = map (job: job.job_name) config.services.prometheus.scrapeConfigs;
 in
 assert lib.assertMsg garage.enable "Garage must be enabled";
+assert lib.assertMsg (
+  garage.package == evaluated.pkgs.garage_2 && garage.package.version == "2.4.1"
+) "Garage must use pkgs.garage_2 at version 2.4.1";
 assert lib.assertMsg (
   garage.settings.data_dir == "/var/lib/garage/data"
   && garage.settings.metadata_dir == "/var/lib/garage/meta"
@@ -109,6 +113,20 @@ assert lib.assertMsg (
   && builtins.elem "s3.net.scetrov.live" config.networking.hosts."10.229.10.2"
 ) "Internal S3 must retain peer filtering, the Garage upstream, wildcard TLS and its LAN alias";
 assert lib.assertMsg (builtins.elem "garage" scrapeJobs) "Prometheus must scrape Garage metrics";
+assert lib.assertMsg (
+  adminVhost.useACMEHost == "scetrov.live"
+  && lib.hasInfix "route {" adminVhost.extraConfig
+  && lib.hasInfix "@notInternal not remote_ip 10.229.0.0/16 127.0.0.0/24 100.64.0.0/10" adminVhost.extraConfig
+  && lib.hasInfix ''respond @notInternal "Forbidden" 403'' adminVhost.extraConfig
+  && lib.hasInfix "forward_auth http://127.0.0.1:9000" adminVhost.extraConfig
+  && lib.hasInfix "reverse_proxy 127.0.0.1:3903" adminVhost.extraConfig
+  && lib.hasInfix ''header_up Authorization "Bearer {$GARAGE_ADMIN_AUTOMATION_TOKEN}"'' adminVhost.extraConfig
+  && !(lib.hasInfix "reverse_proxy 127.0.0.1:3903" internalS3Vhost.extraConfig)
+  && config.age.secrets.garage_admin_automation_token.owner == "caddy"
+  && config.age.secrets.garage_admin_automation_token.mode == "0400"
+  && builtins.elem "garage-admin.net.scetrov.live" config.networking.hosts."10.229.10.2"
+  && garage.settings.admin.api_bind_addr == "127.0.0.1:3903"
+) "Garage admin broker must stay private, ordered, and loopback-upstream";
 {
   passed = true;
   s3Bind = s3Vhost.listenAddresses;

@@ -103,9 +103,36 @@ extract_secret() {
 export TF_IN_AUTOMATION=true
 export TF_VAR_authentik_token="$(extract_secret authentik_api_token)"
 export TF_VAR_grafana_token="$GRAFANA_SERVICE_TOKEN"
+unset GARAGE_TOKEN GARAGE_ADMIN_TOKEN
+export TF_VAR_garage_resources_enabled=false
+export TF_VAR_garage_authentik_token="bootstrap-unused"
 
-PG_PASS="$(extract_secret authentik_postgresql_password)"
-export PG_CONN_STR="postgres://terraform:${PG_PASS}@10.229.10.2:5433/terraform_state?sslmode=disable"
+# URI-encode the existing password without placing it in process arguments.
+PG_PASS="$(extract_secret authentik_postgresql_password | python3 -c 'import sys; from urllib.parse import quote; print(quote(sys.stdin.read().rstrip("\n"), safe=""))')"
+export PG_CONN_STR="postgres://terraform:${PG_PASS}@habiki.net.scetrov.live:5433/terraform_state?sslmode=verify-full&sslrootcert=/etc/ssl/certs/ca-certificates.crt"
+
+prepare_garage_broker() {
+    local generated_plain token state_list
+    [[ -f "$GENERATED_SECRETS_FILE" ]] || return 0
+    generated_plain="$(mktemp /dev/shm/garage-broker.XXXXXX)"
+    chmod 0600 "$generated_plain"
+    if ! ansible-vault view "$GENERATED_SECRETS_FILE" --vault-password-file "$VAULT_PASSWORD_FILE" >"$generated_plain"; then
+        rm -f "$generated_plain"
+        echo "Unable to read generated secrets for Garage broker authentication" >&2
+        exit 1
+    fi
+    state_list="$(tofu -chdir="$TERRAFORM_DIR" state list 2>/dev/null || true)"
+    if ! token="$(python3 "$ROOT_DIR/scripts/garage_broker.py" prepare --generated "$generated_plain" --state-list "$state_list")"; then
+        rm -f "$generated_plain"
+        exit 1
+    fi
+    rm -f "$generated_plain"
+    if [[ "$token" == "disabled" ]]; then
+        return 0
+    fi
+    export TF_VAR_garage_resources_enabled=true
+    export TF_VAR_garage_authentik_token="$token"
+}
 
 refresh_generated_secrets() {
     local json_outputs tmp_sec_file
@@ -114,6 +141,12 @@ refresh_generated_secrets() {
     chmod 0600 "$tmp_sec_file"
     # Clean the protected plaintext even if validation or encryption fails.
     trap 'rm -f "$tmp_sec_file"' EXIT
+
+    # Persist before rendering so a generated-secret failure can still recover
+    # the same state-held Minecraft pair on retry.
+    python3 "$ROOT_DIR/scripts/garage_broker.py" persist-pair \
+        --vault "$ROOT_DIR/src/secrets.yml" \
+        --password-file "$VAULT_PASSWORD_FILE" <<< "$json_outputs" >&2
 
     # Render + validate through the shared, unit-tested renderer. It fails
     # closed (non-zero, nothing written) on missing/empty/null/placeholder
@@ -141,6 +174,13 @@ fi
 
 # Keep command stdout machine-readable (e.g. output -raw) for Ansible callers.
 tofu -chdir="$TERRAFORM_DIR" init -reconfigure -upgrade >&2
+
+case "${TOFU_ARGS[0]}" in
+    plan|apply|destroy|import|refresh)
+        prepare_garage_broker
+        ;;
+esac
+
 tofu -chdir="$TERRAFORM_DIR" "${TOFU_ARGS[@]}"
 
 if [[ " ${TOFU_ARGS[*]} " == *" apply "* ]]; then
