@@ -1,8 +1,27 @@
-# Garage tailnet backup target
+# Garage private backup target
 
-Habiki provides the private S3 endpoint `https://s3.tailnet.net.scetrov.live` to
-Headscale clients only. It is a single-host backup target, not disaster
-recovery: data is stored on Habiki's SSD and is not replicated off-host.
+Habiki provides two private HTTPS S3 endpoints:
+
+| Endpoint | Internal address | Allowed socket peers |
+| --- | --- | --- |
+| `https://s3.tailnet.net.scetrov.live` | `100.64.0.1` | Headscale IPv4 clients (`100.64.0.0/10`) only |
+| `https://s3.net.scetrov.live` | `10.229.10.2` | LAN (`10.229.0.0/16`), loopback (`127.0.0.0/24`) and tailnet (`100.64.0.0/10`) |
+
+Configure S3 clients with region `garage`, **path-style addressing**, and the
+chosen endpoint URL. Both endpoints use the same existing Garage credentials
+and bucket permissions; neither adds browser SSO or anonymous bucket access.
+Forwarded headers do not grant network admission. IPv6 peers, including `::1`,
+are not allowed.
+
+The LAN hostname resolves through the existing internal DNS/hosts mapping and
+requires a route to `10.229.10.2`, even for tailnet clients. Tailnet-only clients
+without LAN routing must continue using `https://s3.tailnet.net.scetrov.live`;
+no client changes or subnet routing are required for that endpoint. Habiki-local
+tests may resolve the LAN hostname to `127.0.0.1` while retaining its hostname
+for TLS verification and S3 signatures.
+
+This is a single-host backup target, not disaster recovery: data is stored on
+Habiki's SSD and is not replicated off-host.
 
 ## Provisioning a project bucket
 

@@ -96,7 +96,8 @@ SECRETS="$(ansible-vault view "$ROOT_DIR/src/secrets.yml" --vault-password-file 
 
 extract_secret() {
     local key="$1"
-    printf '%s\n' "$SECRETS" | awk -v key="$key:" '$1 == key {print $2; exit}'
+    # Drain the input so printf cannot receive SIGPIPE under pipefail.
+    printf '%s\n' "$SECRETS" | awk -v key="$key:" '$1 == key && !found {print $2; found=1}'
 }
 
 export TF_IN_AUTOMATION=true

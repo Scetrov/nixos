@@ -51,6 +51,7 @@ let
       ../files/etc/nixos/modules/garage.nix
       ../files/etc/nixos/modules/prometheus.nix
       ../files/etc/nixos/modules/caddy.nix
+      ../files/etc/nixos/modules/local-networking.nix
       {
         system.stateVersion = "26.05";
         services.grafana.enable = true;
@@ -65,6 +66,7 @@ let
   garage = config.services.garage;
   garageService = config.systemd.services.garage;
   s3Vhost = config.services.caddy.virtualHosts."s3.tailnet.net.scetrov.live";
+  internalS3Vhost = config.services.caddy.virtualHosts."s3.net.scetrov.live";
   scrapeJobs = map (job: job.job_name) config.services.prometheus.scrapeConfigs;
 in
 assert lib.assertMsg garage.enable "Garage must be enabled";
@@ -93,11 +95,19 @@ assert lib.assertMsg (
   && builtins.elem "/run/agenix/garage_metrics_environment" garageService.serviceConfig.EnvironmentFile
 ) "Garage secrets must be injected with restricted filesystem permissions";
 assert lib.assertMsg (
-  s3Vhost.listenAddresses == [ "100.64.0.1" ]
+  lib.hasInfix "@notTailnet not remote_ip 100.64.0.0/10" s3Vhost.extraConfig
+  && lib.hasInfix ''respond @notTailnet "Forbidden" 403'' s3Vhost.extraConfig
   && lib.hasInfix "reverse_proxy 127.0.0.1:3900" s3Vhost.extraConfig
   && !(builtins.elem 3900 config.networking.firewall.allowedTCPPorts)
   && !(builtins.elem 3903 config.networking.firewall.allowedTCPPorts)
 ) "Garage S3 and admin APIs must not receive direct firewall exposure";
+assert lib.assertMsg (
+  internalS3Vhost.useACMEHost == "scetrov.live"
+  && lib.hasInfix "@notInternal not remote_ip 10.229.0.0/16 127.0.0.0/24 100.64.0.0/10" internalS3Vhost.extraConfig
+  && lib.hasInfix ''respond @notInternal "Forbidden" 403'' internalS3Vhost.extraConfig
+  && lib.hasInfix "reverse_proxy 127.0.0.1:3900" internalS3Vhost.extraConfig
+  && builtins.elem "s3.net.scetrov.live" config.networking.hosts."10.229.10.2"
+) "Internal S3 must retain peer filtering, the Garage upstream, wildcard TLS and its LAN alias";
 assert lib.assertMsg (builtins.elem "garage" scrapeJobs) "Prometheus must scrape Garage metrics";
 {
   passed = true;

@@ -150,6 +150,16 @@ lib.mkIf config.services.grafana.enable {
           '';
         };
 
+    virtualHosts."s3.net.scetrov.live" = {
+      useACMEHost = "scetrov.live";
+      extraConfig = ''
+        @notInternal not remote_ip 10.229.0.0/16 127.0.0.0/24 100.64.0.0/10
+        respond @notInternal "Forbidden" 403
+
+        reverse_proxy 127.0.0.1:3900
+      '';
+    };
+
     # Keep this site on Caddy's shared HTTPS listener so Caddy can start before
     # tailscaled has assigned Habiki's tailnet address. Restrict access by the
     # peer source address instead of binding to an address that may not exist.

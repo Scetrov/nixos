@@ -26,6 +26,7 @@
       "10.229.10.2" = [
         "habiki"
         "habiki.net.scetrov.live"
+        "s3.net.scetrov.live"
         "source.net.scetrov.live"
         "feed.net.scetrov.live"
         "zomboid.net.scetrov.live"

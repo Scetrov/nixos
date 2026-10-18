@@ -73,6 +73,11 @@ We use **Grafana** and **Loki** for central observability.
     *   `dependency-track`: Perform end-to-end Dependency Track deployment (secrets, host services, Authentik SSO, and API mappings).
 *   **Agent Guideline:** When executing tasks as an agent, always prefer targeted runs using `--limit` and `--tags` to speed up execution, reduce resource utilization, and minimize blast radius (e.g., `./scripts/play.sh --limit habiki --tags hermes`).
 
+### **Bubblewrap and Nix evaluation**
+*   Use the installed `bubblewrap-isolation` skill's launcher for local commands. Its cleared environment omits `NIX_PATH`; `<nixpkgs>` evaluation can fail even when `nix-instantiate` runs.
+*   Apply function-valued tests: `nix-instantiate --eval --strict --expr 'import ./src/roles/nixos/tests/garage-eval.nix {}'`. Evaluating the file without applying `{}` returns `<LAMBDA>` and does not run assertions.
+*   If `<nixpkgs>` is unavailable, pause for approval of a specific read-only nixpkgs path or host-side evaluation using the installed search path. Preserve the sandbox's network and credential isolation; host-side approval is command-scoped, not permission for builds or deployments.
+
 ### **Repository Hygiene**
 *   The `terraform/.gitignore` MUST exclude `.terraform/`, `.opentofu/`, and any `*.tfstate` files to prevent accidental leakage of resource metadata or cached secrets.
 *   The `terraform/.terraform.lock.hcl` should also be ignored to avoid platform-specific lock conflicts in this environment.
