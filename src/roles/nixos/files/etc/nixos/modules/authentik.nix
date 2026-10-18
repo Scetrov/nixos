@@ -61,7 +61,9 @@ let
 
     env_path = Path(os.environ["AUTHENTIK_ENV_FILE"])
     entries = {
-        "AUTHENTIK_POSTGRESQL__HOST": "authentik-postgresql",
+        "AUTHENTIK_POSTGRESQL__HOST": "postgres.net.scetrov.live",
+        "AUTHENTIK_POSTGRESQL__SSLMODE": "verify-full",
+        "AUTHENTIK_POSTGRESQL__SSLROOTCERT": "/etc/ssl/certs/ca-certificates.crt",
         "AUTHENTIK_POSTGRESQL__NAME": "authentik",
         "AUTHENTIK_POSTGRESQL__USER": "authentik",
         "AUTHENTIK_POSTGRESQL__PORT": "5432",
@@ -84,6 +86,8 @@ let
   '';
 in
 {
+  imports = [ ./postgresql-tls.nix ];
+
   options.scetrov.services.authentik = {
     enable = lib.mkEnableOption "Authentik identity service";
 
@@ -284,6 +288,8 @@ in
           autoStart = true;
           extraOptions = [
             "--network=authentik"
+            # Private Podman DNS only; host clients use habiki.net.scetrov.live.
+            "--network-alias=postgres.net.scetrov.live"
             "--memory=${cfg.postgresqlMemoryLimit}"
             "--cpus=${cfg.postgresqlCpuLimit}"
           ];

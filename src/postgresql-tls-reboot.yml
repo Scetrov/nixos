@@ -1,0 +1,100 @@
+# Separate opt-in phase. Run only after real renewal and cleanup pass.
+- name: Verify shared PostgreSQL TLS across an approved Habiki reboot
+  hosts: habiki
+  become: true
+  gather_facts: false
+  vars:
+    boot_probe: |
+      import hashlib,json,pathlib,socket,ssl,struct,subprocess
+      from urllib.request import urlopen
+      def run(*args):
+          return subprocess.check_output(args,text=True,timeout=20).strip()
+      for path in ['/run/postgresql-tls-renewal-check','/run/systemd/system/acme-order-renew-scetrov.live.service.d/90-postgresql-tls-acceptance.conf']:
+          assert not pathlib.Path(path).exists(), 'Acceptance runtime override remains'
+      assert run('systemctl','is-active','acme-renew-scetrov.live.timer')=='active'
+      for unit in ['postgresql-tls-prepare','podman-authentik-postgresql','podman-authentik-server','podman-authentik-worker','miniflux','caddy','alloy']:
+          assert run('systemctl','is-active',unit)=='active'
+      host='habiki.net.scetrov.live'
+      with socket.create_connection((host,5433),timeout=10) as raw:
+          raw.sendall(struct.pack('!II',8,80877103))
+          assert raw.recv(1)==b'S'
+          with ssl.create_default_context(cafile='/etc/ssl/certs/ca-certificates.crt').wrap_socket(raw,server_hostname=host) as conn:
+              fingerprint=hashlib.sha256(conn.getpeercert(binary_form=True)).hexdigest()
+      with socket.create_connection(('identity.net.scetrov.live',443),timeout=10) as raw:
+          with ssl.create_default_context().wrap_socket(raw,server_hostname='identity.net.scetrov.live') as conn:
+              assert hashlib.sha256(conn.getpeercert(binary_form=True)).hexdigest()==fingerprint
+      for endpoint in ['https://feed.net.scetrov.live/healthcheck','https://identity.net.scetrov.live/-/health/ready/','https://identity.net.scetrov.live/application/o/miniflux/.well-known/openid-configuration']:
+          with urlopen(endpoint,timeout=15) as response:
+              assert response.status==200
+      def sql(query):
+          return run('podman','exec','authentik-postgresql','psql','-XAt','--no-password','-U','authentik','-d','postgres','-c',query)
+      assert sql('SHOW ssl')=='on'
+      assert sql('SELECT count(*) FROM pg_hba_file_rules WHERE error IS NOT NULL')=='0'
+      assert sql("SELECT count(*) FROM pg_hba_file_rules WHERE type='hostnossl' AND auth_method='reject'")=='1'
+      assert sql('SELECT count(*) FROM pg_stat_activity a JOIN pg_stat_ssl s USING(pid) WHERE a.client_addr IS NOT NULL AND NOT s.ssl')=='0'
+      key_mode=run('podman','exec','authentik-postgresql','stat','-Lc','%u:%g %a','/run/postgresql-tls/current/key.pem')
+      assert key_mode=='0:70 640'
+      prepared=int(run('systemctl','show','postgresql-tls-prepare','-p','ActiveEnterTimestampMonotonic','--value'))
+      database_started=int(run('systemctl','show','podman-authentik-postgresql','-p','ExecMainStartTimestampMonotonic','--value'))
+      assert 0 < prepared <= database_started, 'Preparation did not finish before PostgreSQL startup'
+      print(json.dumps({'boot_id':pathlib.Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
+                        'fingerprint':fingerprint,'postgres_started':sql('SELECT pg_postmaster_start_time()'),
+                        'prepared_monotonic_us':prepared,'database_started_monotonic_us':database_started,'key_mode':key_mode}))
+  tasks:
+    - name: Require exact scope and explicit reboot plus recovery confirmation
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname == 'habiki'
+          - postgresql_tls_acceptance_reboot | default(false) | bool
+          - postgresql_tls_recovery_confirmed | default(false) | bool
+          - postgresql_tls_expected_fingerprint is defined
+          - (postgresql_tls_expected_fingerprint | default('')) is match('^[a-f0-9]{64}$')
+          - not ansible_check_mode
+        fail_msg: "Requires approved Habiki reboot, confirmed recovery route and accepted replacement fingerprint."
+
+    - name: Capture healthy pre-reboot certificate and boot state
+      ansible.builtin.command:
+        argv: [python3, -c, "{{ boot_probe }}"]
+      register: before_boot
+      changed_when: false
+
+    - name: Confirm the accepted replacement certificate is live
+      ansible.builtin.assert:
+        that:
+          - (before_boot.stdout | from_json).fingerprint == postgresql_tls_expected_fingerprint
+
+    - name: Verify the declared NixOS shutdown executable exists
+      ansible.builtin.command:
+        argv: [test, -x, /run/current-system/sw/bin/shutdown]
+      changed_when: false
+
+    - name: Reboot only the explicitly approved host
+      ansible.builtin.reboot:
+        # The reboot action ignores PATH and otherwise searches only FHS paths.
+        search_paths: [/run/current-system/sw/bin]
+        reboot_timeout: 600
+        connect_timeout: 10
+        post_reboot_delay: 10
+        test_command: systemctl is-active sshd.service
+
+    - name: Wait for verified TLS and application readiness on the new boot
+      ansible.builtin.command:
+        argv: [python3, -c, "{{ boot_probe }}"]
+      register: after_boot
+      changed_when: false
+      retries: 60
+      delay: 5
+      until: after_boot.rc == 0
+
+    - name: Verify new boot retained the accepted certificate and safe startup order
+      ansible.builtin.assert:
+        that:
+          - (after_boot.stdout | from_json).boot_id != (before_boot.stdout | from_json).boot_id
+          - (after_boot.stdout | from_json).fingerprint == postgresql_tls_expected_fingerprint
+          - (after_boot.stdout | from_json).postgres_started != (before_boot.stdout | from_json).postgres_started
+
+    - name: Report public reboot acceptance evidence
+      ansible.builtin.debug:
+        msg:
+          before: "{{ before_boot.stdout | from_json }}"
+          after: "{{ after_boot.stdout | from_json }}"

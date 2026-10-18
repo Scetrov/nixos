@@ -1,0 +1,270 @@
+# Opt-in, one-shot acceptance only. No normal deployment includes this play.
+- name: Verify one real shared PostgreSQL certificate renewal
+  hosts: habiki
+  become: true
+  gather_facts: false
+  vars:
+    renewal_unit: acme-order-renew-scetrov.live.service
+    renewal_timer: acme-renew-scetrov.live.timer
+    original_script: /nix/store/7vn89wy0ljiv9w6xqmf1dbhf6whx3cxn-unit-script-acme-order-renew-scetrov.live-start/bin/acme-order-renew-scetrov.live-start
+    runtime_dir: /run/postgresql-tls-renewal-check
+    dropin_dir: /run/systemd/system/acme-order-renew-scetrov.live.service.d
+    dropin_path: /run/systemd/system/acme-order-renew-scetrov.live.service.d/90-postgresql-tls-acceptance.conf
+    acceptance_probe: |
+      import hashlib, json, socket, ssl, struct, subprocess
+      from urllib.request import urlopen
+      def run(*args):
+          return subprocess.check_output(args, text=True, timeout=20).strip()
+      def sql(query):
+          return run('podman','exec','authentik-postgresql','psql','-XAt',
+                     '--no-password','-U','authentik','-d','postgres','-c',query)
+      host='habiki.net.scetrov.live'
+      with socket.create_connection((host,5433),timeout=10) as raw:
+          raw.sendall(struct.pack('!II',8,80877103))
+          assert raw.recv(1)==b'S'
+          with ssl.create_default_context(cafile='/etc/ssl/certs/ca-certificates.crt').wrap_socket(raw,server_hostname=host) as conn:
+              fingerprint=hashlib.sha256(conn.getpeercert(binary_form=True)).hexdigest()
+              serial=conn.getpeercert()['serialNumber']
+      with socket.create_connection(('identity.net.scetrov.live',443),timeout=10) as raw:
+          with ssl.create_default_context().wrap_socket(raw,server_hostname='identity.net.scetrov.live') as conn:
+              caddy_fingerprint=hashlib.sha256(conn.getpeercert(binary_form=True)).hexdigest()
+      services=['postgresql-tls-prepare','podman-authentik-postgresql',
+                'podman-authentik-server','podman-authentik-worker','miniflux','caddy','alloy']
+      assert all(run('systemctl','is-active',unit)=='active' for unit in services)
+      assert sql('SELECT count(*) FROM pg_hba_file_rules WHERE error IS NOT NULL')=='0'
+      assert sql("SELECT count(*) FROM pg_hba_file_rules WHERE type='hostnossl' AND auth_method='reject'")=='1'
+      assert sql('SELECT count(*) FROM pg_stat_activity a JOIN pg_stat_ssl s USING(pid) WHERE a.client_addr IS NOT NULL AND NOT s.ssl')=='0'
+      for endpoint in ['https://feed.net.scetrov.live/healthcheck','https://identity.net.scetrov.live/-/health/ready/']:
+          with urlopen(endpoint,timeout=15) as response:
+              assert response.status==200
+      print(json.dumps({'fingerprint':fingerprint,'serial':serial,'caddy_fingerprint':caddy_fingerprint,
+                        'postgres_started':sql('SELECT pg_postmaster_start_time()'),
+                        'container_id':json.loads(run('podman','inspect','authentik-postgresql'))[0]['Id']}))
+  tasks:
+    - name: Require exact host and explicit one-time renewal approval
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname == 'habiki'
+          - postgresql_tls_acceptance_renew | default(false) | bool
+          - not ansible_check_mode
+        fail_msg: "Requires explicit approved acceptance; do not use check mode or another host."
+
+    - name: Inspect runtime paths before accepting ownership
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ runtime_dir }}"
+        - "{{ dropin_path }}"
+        - "{{ dropin_dir }}"
+      register: runtime_paths
+
+    - name: Refuse to overwrite existing acceptance artifacts
+      ansible.builtin.assert:
+        that:
+          - not runtime_paths.results[0].stat.exists
+          - not runtime_paths.results[1].stat.exists
+
+    - name: Record timer state
+      ansible.builtin.command:
+        argv: [systemctl, is-active, "{{ renewal_timer }}"]
+      register: timer_before
+      changed_when: false
+      failed_when: timer_before.rc not in [0, 3]
+
+    - name: Verify original inactive renewal unit
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import pathlib, subprocess, sys
+            unit, expected = sys.argv[1:]
+            state=subprocess.check_output(['systemctl','show',unit,'-p','ActiveState','--value'],text=True).strip()
+            assert state=='inactive', 'Renewal unit must be idle before the test'
+            start=subprocess.check_output(['systemctl','show',unit,'-p','ExecStart','--value'],text=True)
+            assert 'path='+expected+' ;' in start, 'Unexpected renewal script'
+            assert pathlib.Path(expected).read_text().count('renew --no-random-sleep --dynamic')==1
+          - "{{ renewal_unit }}"
+          - "{{ original_script }}"
+      changed_when: false
+
+    - name: Capture healthy baseline without credentials
+      ansible.builtin.command:
+        argv: [python3, -c, "{{ acceptance_probe }}"]
+      register: baseline
+      changed_when: false
+
+    - name: Exercise one renewal with mandatory cleanup
+      block:
+        - name: Pause only this certificate renewal timer
+          ansible.builtin.systemd_service:
+            name: "{{ renewal_timer }}"
+            state: stopped
+
+        - name: Recheck renewal is idle after pausing its timer
+          ansible.builtin.command:
+            argv: [systemctl, show, "{{ renewal_unit }}", -p, ActiveState, --value]
+          register: paused_renewal
+          changed_when: false
+          failed_when: paused_renewal.stdout != 'inactive'
+
+        - name: Atomically claim the acceptance directory
+          ansible.builtin.command:
+            argv: [mkdir, -m, '0750', "{{ runtime_dir }}"]
+          register: runtime_claim
+          changed_when: true
+
+        - name: Permit the original renewal identity to read the public script
+          ansible.builtin.file:
+            path: "{{ runtime_dir }}"
+            owner: root
+            group: caddy
+            mode: '0750'
+
+        - name: Prepare a strictly guarded one-token script change
+          ansible.builtin.command:
+            argv:
+              - python3
+              - -c
+              - |
+                import grp, os, pathlib, subprocess, sys
+                original, target=sys.argv[1:]
+                source=pathlib.Path(original).read_text()
+                old='renew --no-random-sleep --dynamic'
+                new='renew --no-random-sleep --days 90'
+                assert source.count(old)==1 and new not in source
+                modified=source.replace(old,new)
+                assert modified.replace(new,old)==source
+                path=pathlib.Path(target)
+                with path.open('x') as handle:
+                    handle.write(modified)
+                os.chown(path,0,grp.getgrnam('caddy').gr_gid)
+                path.chmod(0o750)
+                subprocess.run([source.splitlines()[0][2:],'-n',str(path)],check=True)
+              - "{{ original_script }}"
+              - "{{ runtime_dir }}/renew-once"
+          changed_when: true
+
+        - name: Create a runtime drop-in directory only if absent
+          ansible.builtin.file:
+            path: "{{ dropin_dir }}"
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+          when: not runtime_paths.results[2].stat.exists
+          register: dropin_directory
+
+        - name: Override only the renewal command and prevent forced retries
+          ansible.builtin.copy:
+            dest: "{{ dropin_path }}"
+            owner: root
+            group: root
+            mode: '0644'
+            content: |
+              [Service]
+              ExecStart=
+              ExecStart={{ runtime_dir }}/renew-once
+              Restart=no
+              TimeoutStartSec=20min
+          register: acceptance_dropin
+
+        - name: Reload definitions and invoke the existing renewal unit once
+          ansible.builtin.systemd_service:
+            daemon_reload: true
+            name: "{{ renewal_unit }}"
+            state: started
+          no_log: true
+
+        - name: Verify actual replacement and unchanged database after hooks finish
+          ansible.builtin.command:
+            argv: [python3, -c, "{{ acceptance_probe }}"]
+          register: after_renewal
+          changed_when: false
+          retries: 30
+          delay: 2
+          until:
+            - after_renewal.rc == 0
+            - (after_renewal.stdout | from_json).fingerprint != (baseline.stdout | from_json).fingerprint
+            - (after_renewal.stdout | from_json).caddy_fingerprint == (after_renewal.stdout | from_json).fingerprint
+
+        - name: Assert renewal did not restart PostgreSQL
+          ansible.builtin.assert:
+            that:
+              - (after_renewal.stdout | from_json).serial != (baseline.stdout | from_json).serial
+              - (after_renewal.stdout | from_json).postgres_started == (baseline.stdout | from_json).postgres_started
+              - (after_renewal.stdout | from_json).container_id == (baseline.stdout | from_json).container_id
+
+        - name: Report public replacement acceptance evidence
+          ansible.builtin.debug:
+            msg:
+              before: "{{ baseline.stdout | from_json }}"
+              after: "{{ after_renewal.stdout | from_json }}"
+      always:
+        # Continue each cleanup action, then explicitly fail if any failed.
+        - name: Remove only our runtime drop-in
+          ansible.builtin.file:
+            path: "{{ dropin_path }}"
+            state: absent
+          when: acceptance_dropin is defined and not (acceptance_dropin.skipped | default(false))
+          register: cleanup_dropin
+          ignore_errors: true
+
+        - name: Restore original unit definition
+          ansible.builtin.systemd_service:
+            daemon_reload: true
+          register: cleanup_reload
+          ignore_errors: true
+
+        - name: Remove only our claimed runtime directory
+          ansible.builtin.file:
+            path: "{{ runtime_dir }}"
+            state: absent
+          when: runtime_claim is defined and runtime_claim.rc | default(1) == 0
+          register: cleanup_runtime
+          ignore_errors: true
+
+        - name: Remove newly created empty drop-in directory
+          ansible.builtin.command:
+            argv: [rmdir, "{{ dropin_dir }}"]
+          when:
+            - not runtime_paths.results[2].stat.exists
+            - dropin_directory is defined and not (dropin_directory.skipped | default(false)) and not (dropin_directory.failed | default(false))
+          register: cleanup_directory
+          changed_when: cleanup_directory.rc == 0
+          ignore_errors: true
+
+        - name: Restore timer to its prior active state
+          ansible.builtin.systemd_service:
+            name: "{{ renewal_timer }}"
+            state: "{{ 'started' if timer_before.stdout == 'active' else 'stopped' }}"
+          register: cleanup_timer
+          ignore_errors: true
+
+        - name: Fail visibly if any cleanup failed
+          ansible.builtin.assert:
+            that:
+              - not (cleanup_dropin.failed | default(false))
+              - not (cleanup_reload.failed | default(false))
+              - not (cleanup_runtime.failed | default(false))
+              - not (cleanup_directory.failed | default(false))
+              - not (cleanup_timer.failed | default(false))
+
+    - name: Confirm original renewal executable is restored and idle
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import pathlib, subprocess, sys
+            unit, expected, directory, dropin=sys.argv[1:]
+            start=subprocess.check_output(['systemctl','show',unit,'-p','ExecStart','--value'],text=True)
+            assert 'path='+expected+' ;' in start
+            assert not pathlib.Path(directory).exists() and not pathlib.Path(dropin).exists()
+            state=subprocess.check_output(['systemctl','show',unit,'-p','ActiveState','--value'],text=True).strip()
+            assert state=='inactive', 'Renewal unit did not return idle'
+          - "{{ renewal_unit }}"
+          - "{{ original_script }}"
+          - "{{ runtime_dir }}"
+          - "{{ dropin_path }}"
+      changed_when: false

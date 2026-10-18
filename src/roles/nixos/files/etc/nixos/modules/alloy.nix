@@ -51,6 +51,13 @@
 
       rule {
         source_labels = ["__journal__systemd_unit"]
+        regex         = "(postgresql-tls-prepare|authentik-prepare-env|authentik-network|podman-authentik-(postgresql|server|worker))\\.service"
+        replacement   = "authentik"
+        target_label  = "service"
+      }
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
         regex         = "(oncall-prepare-env|oncall-migrate|podman-oncall-(engine|celery|postgres|redis))\\.service"
         replacement   = "oncall"
         target_label  = "service"

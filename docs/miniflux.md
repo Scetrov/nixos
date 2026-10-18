@@ -2,8 +2,10 @@
 
 Miniflux runs natively at **https://feed.net.scetrov.live**, behind Caddy on
 `127.0.0.1:8091`. It uses a dedicated `miniflux` database/role in the existing
-`authentik-postgresql` container (`127.0.0.1:5433`). No separate database server,
-public application port, local-password account or PostgreSQL backup job is added.
+`authentik-postgresql` container (`habiki.net.scetrov.live:5433`) with verified
+TLS (`verify-full` and the host CA bundle). See [shared PostgreSQL TLS](postgresql-tls.md)
+for the initial cutover prerequisite, renewal and recovery. No separate database
+server, public application port, local-password account or PostgreSQL backup job is added.
 
 ## Deploy
 
