@@ -14,6 +14,8 @@ Options:
                            - database-upgrade : Explicit PG16→17/Redis maintenance on habiki
                                                 Requires --limit habiki and -e upgrade_confirm=true
                            - nixos            : Host configuration & linting
+                           - github-sbom-collector : Focused Habiki collector plan; apply with
+                                                -e github_sbom_collector_apply=true (no channel updates)
                            - authentik        : Authentik applications & OpenTofu
                            - hermes           : Hermes service, secrets & SSO setup
                            - hermes-runtime   : Hermes-only secret/config/runtime deploy (requires --limit habiki;
@@ -153,6 +155,21 @@ done
 
 # Database maintenance is deliberately separate from normal deployment roles.
 PLAYBOOK="src/playbook.yml"
+if has_tag github-sbom-collector; then
+    if [[ "$LIMIT" != "habiki" || "$TAGS" != "github-sbom-collector" ]]; then
+        echo "Error: github-sbom-collector requires --limit habiki and cannot be combined with other tags." >&2
+        exit 1
+    fi
+    for argument in "${EXTRA_ARGS[@]}"; do
+        case "$argument" in
+            --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*)
+                echo "Error: collector target/tag overrides after -- are not supported." >&2
+                exit 1
+                ;;
+        esac
+    done
+    PLAYBOOK="src/github-sbom-collector.yml"
+fi
 if has_tag miniflux-subscriptions; then
     if [[ "$LIMIT" != "habiki" || "$TAGS" != "miniflux-subscriptions" ]]; then
         echo "Error: miniflux-subscriptions requires --limit habiki and cannot be combined with other tags." >&2

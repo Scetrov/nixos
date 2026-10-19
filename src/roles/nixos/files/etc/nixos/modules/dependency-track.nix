@@ -130,6 +130,8 @@ let
   '';
 in
 {
+  imports = [ ./github-sbom-collector.nix ];
+
   options.scetrov.services.dependency-track = {
     enable = lib.mkEnableOption "OWASP Dependency Track";
 

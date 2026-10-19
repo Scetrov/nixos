@@ -51,6 +51,13 @@
 
       rule {
         source_labels = ["__journal__systemd_unit"]
+        regex         = "github-sbom-collector\\.service"
+        replacement   = "github-sbom-collector"
+        target_label  = "service"
+      }
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
         regex         = "(postgresql-tls-prepare|authentik-prepare-env|authentik-network|podman-authentik-(postgresql|server|worker))\\.service"
         replacement   = "authentik"
         target_label  = "service"
@@ -149,6 +156,11 @@
 
     prometheus.exporter.unix "local" {
       include_exporter_metrics = true
+      ${lib.optionalString (config.scetrov.services.github-sbom-collector.enable or false) ''
+        textfile {
+          directory = "/var/lib/github-sbom-collector-metrics"
+        }
+      ''}
     }
 
     prometheus.scrape "local" {

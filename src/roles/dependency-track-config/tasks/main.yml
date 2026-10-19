@@ -102,3 +102,7 @@
           group: "{{ dtrack_oidc_group_uuid }}"
         status_code: [200, 201]
       delegate_to: localhost
+
+    - name: Provision the approved SBOM collector project and upload team
+      ansible.builtin.include_tasks: sbom-collector.yml
+      when: github_sbom_collector_provision | default(true)

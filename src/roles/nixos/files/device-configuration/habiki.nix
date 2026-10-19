@@ -67,6 +67,24 @@
   # Actions/runner is deferred; retain experimental code without activating it.
   scetrov.services.forgejo.runner.enable = false;
   scetrov.services.dependency-track.enable = true;
+  scetrov.services.github-sbom-collector = {
+    enable = true;
+    reportOnly = false;
+    githubAppId = 5385731;
+    githubInstallationIds = [ 173146141 ];
+    sources = [
+      {
+        repository = "Scetrov/efctl";
+        repositoryId = 1166984576;
+        workflowId = 238717662;
+        branch = "main";
+        artifact = "cyclonedx-sbom-v1";
+        path = "bom.json";
+        project = "3761ac8d-a1ce-4b1e-bfa6-7ae29141160a";
+        version = "main";
+      }
+    ];
+  };
   scetrov.services.home-assistant = {
     enable = true;
     bluetooth.enable = true;

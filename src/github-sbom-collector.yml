@@ -1,0 +1,60 @@
+# Focused activation of an already-provisioned collector. Review host drift first.
+# Default: build and show dry-activation only. No channels, secrets or container restarts.
+- name: Activate the approved SBOM collector on Habiki
+  hosts: habiki
+  gather_facts: false
+  tags: [github-sbom-collector]
+  tasks:
+    - name: Require the explicit Habiki limit
+      ansible.builtin.assert:
+        that:
+          - ansible_limit == 'habiki'
+        quiet: true
+
+    - name: Parse-check collector configuration
+      ansible.builtin.command:
+        argv:
+          - nix-instantiate
+          - --parse
+          - "{{ playbook_dir }}/roles/nixos/files/{{ item }}"
+      loop:
+        - etc/nixos/modules/github-sbom-collector.nix
+        - device-configuration/habiki.nix
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      check_mode: false
+
+    - name: Copy only collector files
+      become: true
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/roles/nixos/files/{{ item.source }}"
+        dest: "/etc/nixos/{{ item.target }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - {source: etc/nixos/modules/github-sbom-collector.nix, target: modules/github-sbom-collector.nix}
+        - {source: device-configuration/habiki.nix, target: device-configuration.nix}
+
+    - name: Show the activation plan without switching
+      become: true
+      ansible.builtin.command:
+        argv: [nixos-rebuild, dry-activate]
+      register: github_sbom_activation_plan
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Report the activation plan
+      ansible.builtin.debug:
+        msg: "{{ github_sbom_activation_plan.stdout_lines + github_sbom_activation_plan.stderr_lines }}"
+      when: not ansible_check_mode
+
+    - name: Switch only after explicit activation-plan review
+      become: true
+      ansible.builtin.command:
+        argv: [nixos-rebuild, switch]
+      changed_when: true
+      when:
+        - not ansible_check_mode
+        - github_sbom_collector_apply | default(false) | bool

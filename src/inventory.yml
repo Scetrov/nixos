@@ -27,6 +27,7 @@ all:
       miniflux_subscriptions_enabled: true
       immich_enabled: true
       dependency_track_config_enabled: true
+      github_sbom_collector_enabled: true
       esphome_enabled: true
       esphome_device_host: 10.229.5.40
       nixos_architecture: x86

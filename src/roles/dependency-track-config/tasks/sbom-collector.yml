@@ -1,0 +1,33 @@
+# Idempotent project/team/ACL provisioning. The script never prints credentials.
+- name: Provision approved SBOM collector Dependency-Track target
+  ansible.builtin.command:
+    argv:
+      - python3
+      - "{{ playbook_dir }}/../scripts/provision_github_sbom_target.py"
+  environment:
+    DT_URL: "{{ dependency_track_url }}"
+    DT_ADMIN_TOKEN: "{{ dtrack_token }}"
+    DT_PROJECT_NAME: "{{ github_sbom_project_name }}"
+    DT_PROJECT_VERSION: "{{ github_sbom_project_version }}"
+    DT_TEAM_NAME: "{{ github_sbom_team_name }}"
+    DT_ENABLE_ACL: "{{ '1' if (github_sbom_enable_portfolio_acl | bool) else '0' }}"
+    DT_VAULT: "{{ playbook_dir }}/secrets.yml"
+    DT_VAULT_PASSWORD_FILE: "{{ lookup('env', 'HOME') }}/.ansible/nixos_vault_password"
+    DT_EVIDENCE_PATH: "{{ playbook_dir }}/../openspec/changes/ingest-github-sbom-artifacts/target.json"
+  delegate_to: localhost
+  register: github_sbom_target
+  changed_when: "'\"changed\": true' in github_sbom_target.stdout"
+  failed_when: github_sbom_target.rc not in [0, 2]
+  no_log: true
+
+- name: Report SBOM target provisioning without credentials
+  ansible.builtin.debug:
+    msg: "{{ github_sbom_target.stdout }}"
+
+- name: Fail closed when the upload identity is not ACL-restricted
+  ansible.builtin.fail:
+    msg: >-
+      SBOM collector target was not activated. Portfolio ACL must be enabled
+      before an upload key is issued. Re-run only after reviewing
+      github_sbom_enable_portfolio_acl; do not grant an unrestricted BOM_UPLOAD key.
+  when: github_sbom_target.rc != 0

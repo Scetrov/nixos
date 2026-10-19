@@ -50,6 +50,8 @@ in
   "mimir_write_token_hash.age".publicKeys = users ++ systems;
   "dtrack_db_password.age".publicKeys = users ++ systems;
   "dtrack_github_pat.age".publicKeys = users ++ systems;
+  "github_sbom_collector_private_key.age".publicKeys = users ++ [ habiki ];
+  "dtrack_sbom_collector_token.age".publicKeys = users ++ [ habiki ];
   "dtrack_nvd_api_key.age".publicKeys = users ++ systems;
   "dtrack_oidc_client_id.age".publicKeys = users ++ systems;
   "dtrack_oidc_client_secret.age".publicKeys = users ++ systems;
