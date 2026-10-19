@@ -210,6 +210,198 @@ state, and mounts only the supplied static executable read-only. Run offline
 unit tests via the Bubblewrap launcher; the image check needs approved Podman
 access. The smoke check also runs without `--gh` to test only WebUI behavior.
 
+## Native Scheduling Repair
+
+Live diagnosis for `fix-hermes-scheduled-jobs` found a running gateway but
+`GET /api/gateway/status` returned `running: false`, `configured: true`, and
+`health.reason: gateway_stale_running_state`. `GET /api/crons` returned zero
+jobs: missing jobs were an empty inventory, not evidence of lost definitions.
+The shared `gateway_state.json` was over 6,000 seconds old with
+`gateway_state: running` and `active_agents: 0`.
+
+The actual agent image was `94995a84baa3`, upstream revision
+`c7bfc938d54538d960a7e09c0db3c13139723951`, version `0.16.0`, manifest
+`sha256:1db923c70d67174b17471051418767894b06e8eae6cafe4be50fe82a388447aa`.
+Its cron ticker starts every 60 seconds but does not refresh runtime metadata.
+The WebUI image remains pinned at `5fb831ca2a9f…`. Gateway source in the
+persistent `hermes-agent-src` volume exactly matched the deployed image
+(SHA256 of `gateway/run.py`: `1c19311df0bcda978960c0c9d475ae5a5806ea6d4f8f42565a851f48558e1d2c`).
+That volume masks image source, so an image-only upgrade cannot refresh it.
+
+A disposable rootful Podman reproduction with fresh tmpfs home, no network,
+no credentials and no published ports reproduced stale metadata: the old
+image reached age 144.5 seconds (freshness assertion exit 1); released
+`v0.21.6` remained at age 3.0 seconds (exit 0). Rootless extraction failed
+because the controller lacks sufficient subordinate IDs; rootful Podman
+worked. Native journal logs report the cron ticker starting and no enabled
+messaging platforms; the latter explicitly permits cron-only operation.
+A six-hour Loki query through Grafana returned HTTP/status 200 with gateway,
+cron and other Hermes events. No evidence established a scheduler execution
+failure separately from the stale-metadata warning.
+
+Registry and GitHub release checks identified `v0.22.2` as latest, but it and
+`v0.22.1`/`v0.22.0` were younger than seven days on the controller/host clocks.
+`v0.21.6` passed the agent-only heartbeat and no-model native job checks,
+but was **rejected before deployment**: paired WebUI startup failed to stage
+its root-only `tools/.install.lock` (rsync permission denied). No permission
+loosening or upstream source patch was applied. The next published release,
+`v2026.9.24`, passed paired startup, native scheduling and WebUI checks. Its
+published multiarch digest is
+`sha256:fca358f12efd65bfaaca05884166f15c0e2788375ca30d77061ac1ebc96452b7`.
+Habiki pins this compatible release and uses `hermes-agent-src-v2026-9-24`
+for image code/venv, leaving `hermes-home`, workspace and the old source volume
+untouched. Always change the source-volume version with the agent image;
+otherwise existing source masks the new image.
+Diagnostic machine timestamps reported October 2026; these are environment
+clock observations, not an assertion of wall-clock accuracy.
+
+### Reproducible Scheduling Checks
+
+Run the probe as the native container user (UID may differ by deployment):
+
+```bash
+ssh scetrov@10.229.10.2 'sudo -n podman exec -i --user hermes hermes-agent python3 - health' < scripts/tests/check_hermes_scheduling.py
+# Choose a unique lowercase fixture suffix and keep it for the whole lifecycle.
+ssh scetrov@10.229.10.2 'sudo -n podman exec -i --user hermes hermes-agent python3 - create --fixture acceptance-UNIQUE' < scripts/tests/check_hermes_scheduling.py
+ssh scetrov@10.229.10.2 'sudo -n podman exec -i --user hermes hermes-agent python3 - verify --fixture acceptance-UNIQUE --minimum-runs 1' < scripts/tests/check_hermes_scheduling.py
+# After each operation, require MORE runs than recorded before the operation.
+# At the end, remove only the fixture through the native API:
+ssh scetrov@10.229.10.2 'sudo -n podman exec -i --user hermes hermes-agent python3 - cleanup --fixture acceptance-UNIQUE' < scripts/tests/check_hermes_scheduling.py
+```
+
+Replace `acceptance-UNIQUE` with a lowercase unique value before running.
+The probe calls native `cron.jobs.create_job`/`list_jobs`/`remove_job`; it never
+edits job definitions directly. Its one-minute script-only job appends a local
+timestamp, delivers locally, makes no model calls and stops after 12 attempts.
+Scripts must live under `$HERMES_HOME/scripts`; a disposable out-of-directory
+fixture was correctly rejected and surfaced a native `last_error`. Native
+execution history is retained; cleanup removes only the test definition,
+script and timestamp marker.
+
+The disposable paired fixture used separate synthetic home/source volumes,
+agent networking disabled and no credentials or published ports. The WebUI
+requires outbound connectivity for its existing startup dependency installer;
+network-isolated full WebUI startup could not complete. With outbound access,
+the pinned WebUI read `v2026.9.24` source successfully and reported
+`running: true`, `health.state: alive`,
+`health.reason: cross_container_freshness` with **zero jobs**. The native
+fixture then executed with `last_status: ok` and appeared in `/api/crons`.
+Stopping the disposable gateway left recent metadata temporarily fresh;
+after 125 seconds the WebUI reported `running: false` and
+`gateway_stale_running_state`, as expected from its 120-second freshness
+window. Do not interpret container liveness or a freshly restarted process
+as proof of successful scheduled execution.
+
+Local checks passed: 21 Hermes configuration/environment/freshness/migration unit tests,
+10 disposable Caddy session-expiry tests, the pinned WebUI auth smoke check,
+and three deployed frontend API-helper auth cases. Strict OpenSpec validation
+and every configured `pre-commit run --all-files` gate passed, including
+Gitleaks, nixfmt, Authentik ownership/passkey checks and wrapper-based Tofu fmt. Use `nix-shell -p age
+python3Packages.jinja2 python3Packages.pyyaml` when controller tools are absent.
+
+### Habiki Rollout and Lifecycle Evidence
+
+Both focused deployments used exactly:
+
+```bash
+nix-shell -p age --run './scripts/play.sh --limit habiki --tags hermes-runtime'
+```
+
+The first returned `ok=12 changed=6 failed=0`; the verification rebuild returned
+`ok=12 changed=5 failed=0`. Both also passed GitHub CLI availability and normal
+unauthenticated behavior in both containers, absent WebUI password variable,
+and active Caddy/agent/WebUI service checks. No channel or identity changes
+were made. Preflight found no streaming/pending chats or running cron jobs.
+A non-activating build of the existing remote configuration differed from the
+active generation only in `/etc/issue`; all repository-managed host files
+matched before the intended device-configuration change.
+
+Two consecutive `health` probes observed metadata advancing on Habiki. The
+WebUI API reported `running: true`, `state: alive`,
+`reason: cross_container_freshness`. Native fixture
+`opsx-schedule-habiki-20261019`, ID `a61917cc81a2`, produced one successful
+marker initially, a second after controlled service restart, and a third
+after the focused rebuild. `/api/crons` retained that same ID and
+`last_status: ok` at every stage. Restarts used Ansible automation:
+
+```bash
+ansible -i src/inventory.yml habiki --become -m ansible.builtin.systemd_service -a 'name=podman-hermes-agent.service state=restarted'
+ansible -i src/inventory.yml habiki --become -m ansible.builtin.systemd_service -a 'name=podman-hermes-webui.service state=restarted'
+```
+
+The test definition/script/marker were removed through the probe's `cleanup`
+action; native execution history was retained. All disposable local containers
+and explicitly test-owned volumes were removed. Original `hermes-home`,
+workspace and old `hermes-agent-src` remain intact. The agent publishes no
+port; WebUI remains `127.0.0.1:8787`. Public unauthenticated `/` returned `302`
+to Authentik, while `/health` and `/api/crons` returned JSON `401`, `no-store`,
+and no redirect.
+
+**Authenticated acceptance confirmed:** the operator confirmed site access
+works following the 502 repair and explicitly confirmed that Scheduled Jobs
+no longer shows `GATEWAY METADATA STALE`. KeePass is not configured for the
+DevTools browser, so this was operator verification, not automated browser
+verification. No authentication bypass was used.
+
+### Authenticated 502 Follow-up: Retired Hostport Rules
+
+Authenticated access exposed a distinct 502 that unauthenticated redirects
+and container-local API checks had missed. Caddy logged host-loopback dial
+timeouts/no-route; host curl failed, while the live container IP returned 200.
+An orphaned Netavark DNAT to `10.89.1.9:8787` shadowed the current destination.
+Its dispatch referenced absent container
+`9496cc5c73f1fa5e3b8e1f74173a539e02df2aa2f7ab67595be56fc82133d14b`.
+Targeted `podman network reload hermes-webui` did not repair that orphan.
+
+The focused runtime play now removes only those two exact obsolete rules with
+Ansible's iptables module, guarded by absent retired-container identity and a
+current address different from `10.89.1.9`. It never flushes chains or edits
+other publications. It also polls **host-loopback** HTTP readiness after
+restart. A disposable network namespace reproduced the shadowed destination
+and verified that exact deletion restores 200 while retaining active DNAT:
+
+```bash
+sudo -n unshare --net python3 scripts/tests/check_hermes_hostport.py
+```
+
+The targeted migration returned `ok=9 changed=2 failed=0`; host access recovered
+to 200. A subsequent complete focused runtime rebuild returned
+`ok=17 changed=5 failed=0`, with both cleanup tasks unchanged and host HTTP
+readiness passing. This confirms the migration is idempotent and publication
+survives container recreation. No proxy route, identity policy or port was
+changed. Do not restore the obsolete rules during runtime rollback.
+
+### Health, Logs and Rollback
+
+```bash
+# Native health must advance, not merely say the container is alive:
+ssh scetrov@10.229.10.2 'sudo -n podman exec -i --user hermes hermes-agent python3 - health' < scripts/tests/check_hermes_scheduling.py
+# Query exactly the WebUI reader (private container-local API, not a new route):
+ssh scetrov@10.229.10.2 'sudo -n podman exec hermes-webui python -c '\''import json,urllib.request; print(json.load(urllib.request.urlopen("http://127.0.0.1:8787/api/gateway/status")))'\'''
+# Inspect locally; do not paste unredacted logs or job prompts into tickets:
+ssh scetrov@10.229.10.2 'sudo -n journalctl -u podman-hermes-agent.service -u podman-hermes-webui.service --since "10 minutes ago" --no-pager'
+ssh scetrov@10.229.10.2 'sudo -n podman exec hermes-agent tail -80 /home/hermes/.hermes/logs/gateway.log'
+```
+
+The s6 gateway also writes `logs/gateways/default/current`. The journal shows
+container startup/failure; inner scheduler errors may be visible in native
+files even when container health is green. Query Loki through Grafana's
+datasource API using the existing investigator, never a public scheduler
+endpoint. A repeated stale-running reason beyond 120 seconds is actionable;
+check native ticker errors, the effective source version, shared state mounts
+and timestamps. For a job execution error, inspect its native `last_error`
+without exposing prompts or credentials. Do not touch production schedules to
+probe failure modes.
+
+To roll back an incompatible runtime, declaratively set Habiki's `agentImage`
+to the previous exact image
+`docker.io/nousresearch/hermes-agent@sha256:1db923c70d67174b17471051418767894b06e8eae6cafe4be50fe82a388447aa`
+and `agentSourceVolume` to `hermes-agent-src`, then rerun the same focused
+runtime play. This restores the old runtime, including its known metadata
+limitation. Retain the new source volume until investigation is complete.
+Never delete/reinitialize `hermes-home`, restore job files blindly, remove
+Authentik, or loosen code-tree permissions as a rollback shortcut.
+
 ## Expired Authentik Sessions
 
 The host Caddy site reads `modules/hermes-auth.caddy`. For `/api`, `/api/*`,

@@ -89,6 +89,68 @@
         - podman-hermes-webui.service
       when: not ansible_check_mode
 
+    # One-time, idempotent migration for the demonstrated orphaned Netavark
+    # rules on Habiki. Never flush a table/chain or rewrite active forwarding.
+    - name: Check the retired Hermes container is absent
+      become: true
+      ansible.builtin.command:
+        argv: [podman, container, exists, '9496cc5c73f1fa5e3b8e1f74173a539e02df2aa2f7ab67595be56fc82133d14b']
+      register: hermes_retired_container
+      failed_when: hermes_retired_container.rc not in [0, 1]
+      changed_when: false
+      check_mode: false
+
+    - name: Read only current Hermes network addresses
+      become: true
+      ansible.builtin.command:
+        argv: [podman, inspect, --format, "{{ '{{json .NetworkSettings.Networks}}' }}", hermes-webui]
+      register: hermes_current_networks
+      changed_when: false
+      check_mode: false
+
+    - name: Remove only the retired Hermes port forwarding rules
+      become: true
+      when:
+        - hermes_retired_container.rc == 1
+        - (hermes_current_networks.stdout | from_json)['hermes-net'].IPAddress != '10.89.1.9'
+      block:
+        - name: Remove the obsolete loopback DNAT destination
+          ansible.builtin.iptables:
+            table: nat
+            chain: NETAVARK-DN-D4BDE74017622
+            destination: 127.0.0.1/32
+            protocol: tcp
+            match: tcp
+            destination_port: '8787'
+            jump: DNAT
+            to_destination: '10.89.1.9:8787'
+            state: absent
+            wait: '10'
+
+        - name: Remove the retired container hostport dispatch
+          ansible.builtin.iptables:
+            table: nat
+            chain: NETAVARK-HOSTPORT-DNAT
+            protocol: tcp
+            match: tcp
+            destination_port: '8787'
+            comment: 'dnat name: hermes-net id: 9496cc5c73f1fa5e3b8e1f74173a539e02df2aa2f7ab67595be56fc82133d14b'
+            jump: NETAVARK-DN-D4BDE74017622
+            state: absent
+            wait: '10'
+
+    - name: Verify Hermes is reachable through the host loopback publication
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8787/
+        use_proxy: false
+        status_code: 200
+        return_content: false
+      register: hermes_host_backend
+      until: hermes_host_backend.status | default(0) == 200
+      retries: 60
+      delay: 5
+      when: not ansible_check_mode
+
     - name: Verify GitHub CLI inside both agent execution environments
       become: true
       ansible.builtin.command:
