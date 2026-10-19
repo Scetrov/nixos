@@ -15,7 +15,7 @@ in
       bat
       dig
       gcc
-      go
+      go_1_27
       niv
       nixos-generators
       nodejs_24

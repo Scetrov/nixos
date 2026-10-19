@@ -46,7 +46,7 @@ in
         gh
         jq
         gnumake
-        go
+        go_1_27
         hugo
         llvmPackages.libclang
         lsb-release
