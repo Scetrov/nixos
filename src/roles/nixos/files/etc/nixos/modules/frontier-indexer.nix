@@ -229,7 +229,7 @@ in
 
     indexerImage = lib.mkOption {
       type = lib.types.str;
-      default = "ghcr.io/algo-net/frontier-indexer:v0.4.0@sha256:20c64a1c96fa96c29569fa8343398566d22cb17fb62b1dd8ee6a0d21d7af5fc9";
+      default = "ghcr.io/algo-net/frontier-indexer:v0.5.0@sha256:1d108d4538522c3bace60f792475bd808e44f09a6bff911c1afce6406811e74f";
       description = "Container image for Frontier Indexer.";
     };
 
