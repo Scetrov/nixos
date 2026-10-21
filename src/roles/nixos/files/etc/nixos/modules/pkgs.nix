@@ -19,6 +19,7 @@ in
       niv
       nixos-generators
       nodejs_24
+      osv-scanner
       pnpm
       networkmanager-openvpn
       opentofu
