@@ -95,7 +95,7 @@
 
       rule {
         source_labels = ["__journal__systemd_unit"]
-        regex         = "forgejo\\.service"
+        regex         = "forgejo(-mirrors)?\\.service"
         replacement   = "forgejo"
         target_label  = "service"
       }
@@ -162,6 +162,32 @@
         }
       ''}
     }
+
+    ${lib.optionalString (config.scetrov.services.forgejo.mirrors.enable or false) ''
+      prometheus.exporter.unix "forgejo_mirrors" {
+        set_collectors = ["textfile"]
+        textfile {
+          directory = "/var/lib/forgejo-mirrors-metrics"
+        }
+      }
+      discovery.relabel "forgejo_mirrors" {
+        targets = prometheus.exporter.unix.forgejo_mirrors.targets
+        rule {
+          target_label = "job"
+          replacement = "forgejo-mirrors"
+        }
+        rule {
+          target_label = "service"
+          replacement = "forgejo-mirrors"
+        }
+      }
+      prometheus.scrape "forgejo_mirrors" {
+        targets = discovery.relabel.forgejo_mirrors.output
+        forward_to = [prometheus.remote_write.central.receiver]
+        job_name = "forgejo-mirrors"
+        scrape_interval = "60s"
+      }
+    ''}
 
     prometheus.scrape "local" {
       targets    = prometheus.exporter.unix.local.targets

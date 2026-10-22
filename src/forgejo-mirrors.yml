@@ -1,0 +1,204 @@
+# Focused activation. Imports require both managed policy and explicit phase approval.
+# No channel updates, shared OpenTofu refresh, recursive sync or unrelated restarts.
+- name: Deploy approved Forgejo discovery on Habiki
+  hosts: habiki
+  gather_facts: false
+  vars_files:
+    - secrets.yml
+  tags: [forgejo-mirrors]
+  tasks:
+    - name: Require explicit Habiki scope
+      ansible.builtin.assert:
+        that:
+          - ansible_limit == 'habiki'
+          - forgejo_mirrors_enabled | default(false) | bool
+        quiet: true
+
+    - name: Validate the dedicated runtime token
+      ansible.builtin.assert:
+        that:
+          - (forgejo_mirrors_token | default('')) is match('^[0-9a-f]{40}$')
+        quiet: true
+      no_log: true
+
+    - name: Render only the dedicated encrypted runtime credential
+      when: not ansible_check_mode
+      block:
+        - name: Allocate protected RAM-backed identity directory
+          ansible.builtin.tempfile:
+            state: directory
+            path: /dev/shm
+            prefix: forgejo-mirrors-age-
+          delegate_to: localhost
+          register: mirror_age_directory
+          no_log: true
+
+        - name: Decrypt the existing agenix identity into protected RAM
+          ansible.builtin.copy:
+            src: "{{ playbook_dir }}/roles/secrets/files/id/id_ed25519"
+            dest: "{{ mirror_age_directory.path }}/identity"
+            mode: '0600'
+            decrypt: true
+          delegate_to: localhost
+          no_log: true
+
+        - name: Converge only the encrypted mirror token
+          ansible.builtin.shell: |
+            set -euo pipefail
+            cd "{{ playbook_dir }}/roles/secrets/files/secrets"
+            if [ -f forgejo_mirrors_token.age ] && [ "$(agenix -d forgejo_mirrors_token.age -i "$MIRROR_IDENTITY")" = "$MIRROR_TOKEN" ]; then
+              exit 0
+            fi
+            printf '%s' "$MIRROR_TOKEN" | agenix -i "$MIRROR_IDENTITY" -e forgejo_mirrors_token.age
+            printf changed
+          args:
+            executable: /run/current-system/sw/bin/bash
+          environment:
+            MIRROR_IDENTITY: "{{ mirror_age_directory.path }}/identity"
+            MIRROR_TOKEN: "{{ forgejo_mirrors_token }}"
+          register: mirror_token_render
+          changed_when: mirror_token_render.stdout == 'changed'
+          delegate_to: localhost
+          no_log: true
+      always:
+        - name: Remove the temporary plaintext agenix identity
+          ansible.builtin.file:
+            path: "{{ mirror_age_directory.path }}"
+            state: absent
+          when: mirror_age_directory.path is defined
+          delegate_to: localhost
+          no_log: true
+
+    - name: Install only mirror encrypted credential and recipient policy
+      become: true
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/roles/secrets/files/secrets/{{ item }}"
+        dest: "/root/secrets/{{ item }}"
+        owner: root
+        group: root
+        mode: '0600'
+      loop: [forgejo_mirrors_token.age, secrets.nix]
+
+    - name: Copy only approved Forgejo mirror NixOS files
+      become: true
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/roles/nixos/files/{{ item.source }}"
+        dest: "/etc/nixos/{{ item.target }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - {source: etc/nixos/modules/forgejo.nix, target: modules/forgejo.nix}
+        - {source: etc/nixos/modules/forgejo-mirrors.nix, target: modules/forgejo-mirrors.nix}
+        - {source: etc/nixos/modules/forgejo-mirrors.py, target: modules/forgejo-mirrors.py}
+        - {source: etc/nixos/modules/alloy.nix, target: modules/alloy.nix}
+        - {source: device-configuration/habiki.nix, target: device-configuration.nix}
+
+    - name: Verify approved phase, fixed namespaces and public-only eligibility
+      become: true
+      ansible.builtin.command:
+        argv:
+          - nix-instantiate
+          - --eval
+          - --strict
+          - --json
+          - --expr
+          - >-
+            let host = (import <nixpkgs/nixos> { configuration = /etc/nixos/configuration.nix; }).config;
+                c = host.scetrov.services.forgejo.mirrors;
+                approved = {{ (forgejo_mirrors_imports_approved | default(false) | bool) | ternary('true', 'false') }};
+            in c.enable && ((c.reportOnly && !c.importApproved) ||
+              (approved && !c.reportOnly && c.importApproved && c.lfsVerified && host.services.forgejo.lfs.enable))
+            && !c.githubCredential && !c.privateAuthVerified
+            && builtins.all (p: !p.includePrivate && !p.includeForks && !p.includeArchived) c.policies
+            && map (p: { inherit (p) owner ownerId namespace namespaceId pattern; }) c.policies == [
+              { owner = "Scetrov"; ownerId = 144595937; namespace = "gh-Scetrov"; namespaceId = 6; pattern = "*"; }
+              { owner = "RichardSlater"; ownerId = 630786; namespace = "gh-RichardSlater"; namespaceId = 4; pattern = "*"; }
+              { owner = "storytold"; ownerId = 76897702; namespace = "gh-storytold"; namespaceId = 3; pattern = "*craft"; }
+            ]
+      register: mirror_phase_guard
+      changed_when: false
+      failed_when: mirror_phase_guard.rc != 0 or mirror_phase_guard.stdout != 'true'
+      when: not ansible_check_mode
+
+    - name: Preserve the approved 500 GiB storage reserve before activation
+      become: true
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - "import shutil; assert shutil.disk_usage('/var/lib/forgejo').free > 500 * 1024**3, 'Forgejo storage reserve exhausted'"
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Build and show dry activation without switching
+      become: true
+      ansible.builtin.command:
+        argv: [nixos-rebuild, dry-activate]
+      register: mirror_activation_plan
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Report dry activation for review
+      ansible.builtin.debug:
+        msg: "{{ mirror_activation_plan.stdout_lines + mirror_activation_plan.stderr_lines }}"
+      when: not ansible_check_mode
+
+    - name: Switch after explicit dry activation review
+      become: true
+      ansible.builtin.command:
+        argv: [nixos-rebuild, switch]
+      changed_when: true
+      when:
+        - not ansible_check_mode
+        - forgejo_mirrors_apply | default(false) | bool
+
+    - name: Verify restart persistence only when explicitly requested
+      become: true
+      ansible.builtin.systemd_service:
+        name: forgejo.service
+        state: restarted
+      when:
+        - not ansible_check_mode
+        - forgejo_mirrors_apply | default(false) | bool
+        - forgejo_mirrors_verify_acceptance | default(false) | bool
+
+    - name: Run the approved discovery phase immediately
+      become: true
+      ansible.builtin.systemd_service:
+        name: forgejo-mirrors.service
+        state: started
+      when:
+        - not ansible_check_mode
+        - forgejo_mirrors_apply | default(false) | bool
+
+    - name: Queue native synchronization of verified managed mirrors for acceptance
+      become: true
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import json, urllib.parse, urllib.request
+            token = open('/run/agenix/forgejo_mirrors_token').read().strip()
+            state = json.load(open('/var/lib/forgejo-mirrors/ownership.json'))
+            allowed = {'gh-Scetrov': 6, 'gh-RichardSlater': 4, 'gh-storytold': 3}
+            for entry in state['sources'].values():
+                destination = entry['destination']
+                owner, name = destination.split('/')
+                assert allowed.get(owner) == entry['namespaceId']
+                url = 'http://127.0.0.1:3002/api/v1/repos/' + urllib.parse.quote(destination, safe='/')
+                headers = {'Authorization': 'token ' + token}
+                with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=15) as response:
+                    repo = json.load(response)
+                assert repo['id'] == entry['destinationId'] and repo['mirror'] and repo['private']
+                assert repo['owner']['id'] == entry['namespaceId']
+                with urllib.request.urlopen(urllib.request.Request(url + '/mirror-sync', headers=headers, method='POST'), timeout=15):
+                    pass
+      changed_when: true
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - forgejo_mirrors_apply | default(false) | bool
+        - forgejo_mirrors_imports_approved | default(false) | bool
+        - forgejo_mirrors_verify_acceptance | default(false) | bool

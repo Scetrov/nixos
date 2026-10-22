@@ -4,13 +4,20 @@ Operational runbook for the private Forgejo Git forge on Habiki.
 
 ## Architecture
 
-- Service: native NixOS `services.forgejo` (Forgejo 16.0.5, SQLite) owned by the `forgejo` user.
+- Service: native NixOS `services.forgejo` (Forgejo 16.0.6, SQLite) owned by the `forgejo` user.
 - HTTPS: `https://source.net.scetrov.live` through the shared Caddy listener (`scetrov.live` wildcard certificate). The virtual host admits only the private source networks and denies the internal `/metrics` and `/api/internal` routes.
 - Git SSH: Forgejo built-in SSH on TCP `2222`, source-scoped to the private networks on both iptables and nftables. Administrative SSH on 22 is untouched. Clone form: `ssh://git@source.net.scetrov.live:2222/<owner>/<repo>.git`.
 - Identity: native Authentik OIDC (`authentik` authentication source), restricted to members of the `Forgejo Owners` group. Open registration, anonymous repository access, and local password sign-in are disabled.
 - Storage: `/var/lib/forgejo` (SQLite database, repositories, attachments, built-in SSH host key). No high availability, no formal backup guarantee.
 - Observability: journal logs flow to central Loki under `service=forgejo`; `/metrics` is bearer-token protected and scraped privately by Prometheus (job `forgejo`); a `ForgejoServiceUnavailable` Prometheus alert rule and the `Forgejo Service` Grafana dashboard surface availability.
 - Actions: **disabled and deferred**. `scetrov.services.forgejo.runner.enable` stays `false` on Habiki; no runner account, units, timer, or egress rules exist. Retained experimental runner code is future-work reference only.
+
+## GitHub mirrors
+
+Selected-source mirroring has a disabled-by-default module and a separate
+[mirroring runbook](forgejo-mirrors.md). Habiki explicitly enables report-only
+discovery with its dedicated non-admin identity and three private organizations.
+Bulk imports and post-import production acceptance remain unapproved/pending.
 
 ## Deployment
 
@@ -63,6 +70,57 @@ Query both Blocky servers after rollout to confirm they answer
 
 - Admission is by Authentik group membership: the `Forgejo Owners` group (currently only `scetrov`). The OIDC source grants Forgejo administration from that signed claim; email strings are never used for authorization.
 - To admit or remove a member, change the group in the managed Authentik configuration and re-run the Authentik deployment path. OIDC auto-enrollment creates the Forgejo account on first sign-in; removing a member does **not** immediately revoke existing Forgejo sessions, SSH keys, or tokens (see revocation below).
+
+## Automatic browser SSO
+
+Anonymous root visits use Forgejo's native `LANDING_PAGE = login`. Caddy sends
+only interactive GET document navigation on `/user/login` to the existing
+`/user/oauth2/authentik` entry, and only when Forgejo returned a 200 login page.
+Existing sessions open normally; native remember-me redirects are not replaced.
+Authentik dashboard launch and direct entry therefore share the same native OIDC
+flow. Repository paths and `redirect_to` queries retain Forgejo's native return
+cookie and safe-local redirect validation; external destinations fall back safely.
+
+- Git SSH/HTTPS, API tokens, webhooks, health endpoints, non-navigation requests,
+  callbacks, and POST login remain native; there is no blanket forward-auth.
+- Logout clears the Forgejo session and sets a secure HttpOnly
+  `forgejo_sso_pause` cookie for the first native login landing only. Displaying
+  that page consumes the pause, so it does not immediately sign in again, but
+  reopening the site (or reloading the page) starts SSO automatically. The
+  existing **Sign in with authentik** button also resumes sign-in. This does
+  not log out of Authentik itself.
+- Native flash errors suppress automatic retry, so denied access and callback
+  failures remain visible. Provider outages stop at the provider/error response;
+  they never grant access. Retry explicitly once the provider recovers.
+- `/user/login?sso=manual` shows the normal provider-selection page for diagnosis.
+  It is **not** a password-login or authorization bypass. Browsers without Fetch
+  Metadata headers also retain the manual page.
+
+### Secure administrative recovery
+
+Use private administrative SSH to Habiki and sudo, independently of browser SSO.
+`systemctl show forgejo -p ExecStart` identifies the installed binary (it is not
+on the host's normal PATH). Run that binary as the `forgejo` user with
+`GITEA_WORK_DIR=/var/lib/forgejo` and
+`--config /var/lib/forgejo/custom/conf/app.ini`:
+
+- `admin auth list` verifies the enabled `authentik` source without exposing its
+  client secret; `admin auth update-oauth --help` describes supported repairs.
+- Repair managed source configuration/credentials in automation, using
+  `scripts/tofu.sh` for identity changes, then run
+  `./scripts/play.sh --limit habiki --tags forgejo`. The existing startup
+  reconciler restores the source using systemd runtime credentials.
+- Restore Authentik first during an identity outage. Host-side CLI administration
+  remains available, but there is deliberately no alternative browser password
+  login. Do not edit SQLite, expose credentials in CLI arguments, or remove the
+  access-group restriction.
+- To roll back auto-entry only, remove `LANDING_PAGE = login` and the browser
+  SSO routing/cookie block in `forgejo.nix`, then use the same targeted deploy.
+  No account, repository, session database, or identity-client deletion is needed.
+
+`forgejo`-only deployment skips channel updates, unrelated container restarts,
+Frontier writer transitions, Headscale enrollment, and Garage provisioning.
+NixOS still builds the whole host, so review drift before activation.
 
 ## Credential and session lifecycle
 

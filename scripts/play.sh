@@ -33,6 +33,9 @@ Options:
                            - esphome          : ESPHome secret rendering, validation, build, and OTA deploy
                            - secrets          : Secrets generation and deployment
                            - local-dns        : Shared DNS aliases only (existing Fyne/Habiki config)
+                           - forgejo-mirrors  : Focused Habiki discovery; dry activation by default,
+                                                import policy requires -e forgejo_mirrors_imports_approved=true;
+                                                switch with -e forgejo_mirrors_apply=true after review
                            - forgejo          : Habiki Forgejo consumer deploy (generated-secret refresh,
                                                 runtime secrets, NixOS rebuild; OIDC reconciliation
                                                 happens at service start). First deploy requires a
@@ -155,6 +158,21 @@ done
 
 # Database maintenance is deliberately separate from normal deployment roles.
 PLAYBOOK="src/playbook.yml"
+if has_tag forgejo-mirrors; then
+    if [[ "$LIMIT" != "habiki" || "$TAGS" != "forgejo-mirrors" ]]; then
+        echo "Error: forgejo-mirrors requires --limit habiki and cannot be combined with other tags." >&2
+        exit 1
+    fi
+    for argument in "${EXTRA_ARGS[@]}"; do
+        case "$argument" in
+            --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*)
+                echo "Error: forgejo-mirrors target/tag overrides after -- are not supported." >&2
+                exit 1
+                ;;
+        esac
+    done
+    PLAYBOOK="src/forgejo-mirrors.yml"
+fi
 if has_tag github-sbom-collector; then
     if [[ "$LIMIT" != "habiki" || "$TAGS" != "github-sbom-collector" ]]; then
         echo "Error: github-sbom-collector requires --limit habiki and cannot be combined with other tags." >&2

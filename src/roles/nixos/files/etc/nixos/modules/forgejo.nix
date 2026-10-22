@@ -30,7 +30,10 @@ let
     ]) privateIPv6;
 in
 {
-  imports = [ ./forgejo-runner.nix ];
+  imports = [
+    ./forgejo-runner.nix
+    ./forgejo-mirrors.nix
+  ];
 
   options.scetrov.services.forgejo.enable = lib.mkEnableOption "private Forgejo on Habiki";
 
@@ -99,6 +102,7 @@ in
         server = {
           DOMAIN = "source.net.scetrov.live";
           ROOT_URL = "https://source.net.scetrov.live/";
+          LANDING_PAGE = "login";
           HTTP_ADDR = "127.0.0.1";
           HTTP_PORT = 3002;
           DISABLE_SSH = false;
@@ -191,6 +195,36 @@ in
           respond @internal "Not Found" 404
 
           encode zstd gzip
+          # Logout pauses auto-entry for one native login landing only.
+          # Consuming the pause lets the next visit resume SSO; it grants no access.
+          @logout {
+            method POST
+            path /user/logout
+          }
+          header @logout +Set-Cookie "forgejo_sso_pause=1; Path=/; Secure; HttpOnly; SameSite=Lax"
+          @consumePause path /user/login /user/oauth2/authentik
+          header @consumePause +Set-Cookie "forgejo_sso_pause=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax"
+
+          @browserLogin {
+            method GET
+            path /user/login
+            header Sec-Fetch-Mode navigate
+            header Sec-Fetch-Dest document
+            not query sso=manual
+            not header_regexp Cookie "(^|;[ ]*)(forgejo_sso_pause=1|flash=)"
+          }
+          reverse_proxy @browserLogin 127.0.0.1:3002 {
+            # Ask Forgejo first: signed/remembered sessions and errors retain
+            # their native responses. Never rewrite callbacks or machine routes.
+            @loginPage status 200
+            handle_response @loginPage {
+              copy_response_headers {
+                include Set-Cookie
+              }
+              header Cache-Control no-store
+              redir * /user/oauth2/authentik?{query} 302
+            }
+          }
           # Native OIDC and Git/API tokens: deliberately no forward_auth.
           reverse_proxy 127.0.0.1:3002
         '';

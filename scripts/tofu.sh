@@ -14,6 +14,9 @@ Modes:
   scripts/tofu.sh --refresh-generated-secrets
                                           Refresh src/generated-secrets.yml from current state only
   scripts/tofu.sh -- plan                 Run arbitrary tofu args, then refresh after apply only
+  scripts/tofu.sh --forgejo-mirrors -- COMMAND ...
+                                          Isolated Forgejo provisioning state/provider; bootstrap via
+                                          scripts/provision_forgejo_mirrors.py, never enable password auth
   scripts/tofu.sh -- fmt ...              Format caller-relative files without credentials/backend init
   scripts/tofu.sh -- validate             Validate installed providers locally without credentials/init
   scripts/tofu.sh --test-fixture-dir DIR -- COMMAND ...
@@ -24,12 +27,17 @@ EOF
 
 REFRESH_ONLY=false
 FIXTURE_DIR=""
+FORGEJO_MIRRORS=false
 TOFU_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --refresh-generated-secrets)
             REFRESH_ONLY=true
+            shift
+            ;;
+        --forgejo-mirrors)
+            FORGEJO_MIRRORS=true
             shift
             ;;
         --test-fixture-dir)
@@ -55,6 +63,13 @@ done
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TERRAFORM_DIR="$ROOT_DIR/terraform"
+if [[ "$FORGEJO_MIRRORS" == true ]]; then
+    [[ -z "$FIXTURE_DIR" && "$REFRESH_ONLY" == false ]] || {
+        echo "Forgejo provisioning cannot use fixture/secret-refresh modes" >&2
+        exit 2
+    }
+    TERRAFORM_DIR="$TERRAFORM_DIR/forgejo-mirrors"
+fi
 VAULT_PASSWORD_FILE="$HOME/.ansible/nixos_vault_password"
 GENERATED_SECRETS_FILE="$ROOT_DIR/src/generated-secrets.yml"
 
@@ -89,9 +104,6 @@ if [[ "$REFRESH_ONLY" == false ]]; then
     esac
 fi
 
-# shellcheck source=/dev/null
-source "$HOME/env/grafana.env"
-
 SECRETS="$(ansible-vault view "$ROOT_DIR/src/secrets.yml" --vault-password-file "$VAULT_PASSWORD_FILE")"
 
 extract_secret() {
@@ -99,6 +111,32 @@ extract_secret() {
     # Drain the input so printf cannot receive SIGPIPE under pipefail.
     printf '%s\n' "$SECRETS" | awk -v key="$key:" '$1 == key && !found {print $2; found=1}'
 }
+
+# Isolated state and a checksum-pinned provider; never initialize/apply the
+# shared Authentik/Grafana stack for Forgejo application provisioning.
+if [[ "$FORGEJO_MIRRORS" == true ]]; then
+    unset TF_LOG TF_LOG_PATH TF_LOG_PROVIDER TF_LOG_CORE
+    unset TF_CLI_ARGS TF_CLI_ARGS_plan TF_CLI_ARGS_apply
+    unset FORGEJO_HOST FORGEJO_API_TOKEN FORGEJO_USERNAME FORGEJO_PASSWORD
+    export TF_IN_AUTOMATION=true
+    export TF_VAR_forgejo_host="https://source.net.scetrov.live"
+    export TF_VAR_human_owner="scetrov"
+    PG_PASS="$(extract_secret authentik_postgresql_password | python3 -c 'import sys; from urllib.parse import quote; print(quote(sys.stdin.read().rstrip("\n"), safe=""))')"
+    export PG_CONN_STR="postgres://terraform:${PG_PASS}@habiki.net.scetrov.live:5433/terraform_state?sslmode=verify-full&sslrootcert=/etc/ssl/certs/ca-certificates.crt"
+    export TF_VAR_mirror_password="$(extract_secret forgejo_mirrors_password)"
+    if [[ "${TOFU_ARGS[0]:-}" == plan || "${TOFU_ARGS[0]:-}" == apply ]]; then
+        [[ -n "${TF_VAR_forgejo_api_token:-}" && -n "$TF_VAR_mirror_password" ]] || {
+            echo "Forgejo provisioning requires its temporary bootstrap credential and vault password" >&2
+            exit 1
+        }
+    fi
+    export TF_CLI_CONFIG_FILE="$(python3 "$ROOT_DIR/scripts/forgejo_provider.py" "$TERRAFORM_DIR")"
+    tofu -chdir="$TERRAFORM_DIR" init -reconfigure >&2
+    exec tofu -chdir="$TERRAFORM_DIR" "${TOFU_ARGS[@]}"
+fi
+
+# shellcheck source=/dev/null
+source "$HOME/env/grafana.env"
 
 export TF_IN_AUTOMATION=true
 export TF_VAR_authentik_token="$(extract_secret authentik_api_token)"

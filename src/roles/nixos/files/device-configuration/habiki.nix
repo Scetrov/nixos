@@ -64,6 +64,36 @@
   scetrov.services.miniflux.enable = true;
   scetrov.services.miniflux.subscriptions.enable = true;
   scetrov.services.forgejo.enable = true;
+  # Approved public-only inventory; native LFS and its warning/recovery path verified.
+  scetrov.services.forgejo.mirrors = {
+    enable = true;
+    reportOnly = false;
+    importApproved = true;
+    lfsVerified = true;
+    privateAuthVerified = false;
+    staleAfterSeconds = 10800;
+    policies = [
+      {
+        owner = "Scetrov";
+        ownerId = 144595937;
+        namespace = "gh-Scetrov";
+        namespaceId = 6;
+      }
+      {
+        owner = "RichardSlater";
+        ownerId = 630786;
+        namespace = "gh-RichardSlater";
+        namespaceId = 4;
+      }
+      {
+        owner = "storytold";
+        ownerId = 76897702;
+        pattern = "*craft";
+        namespace = "gh-storytold";
+        namespaceId = 3;
+      }
+    ];
+  };
   # Actions/runner is deferred; retain experimental code without activating it.
   scetrov.services.forgejo.runner.enable = false;
   scetrov.services.dependency-track.enable = true;

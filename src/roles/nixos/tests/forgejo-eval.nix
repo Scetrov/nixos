@@ -95,6 +95,7 @@ assert lib.assertMsg (
   && settings.server.HTTP_ADDR == "127.0.0.1"
   && settings.server.HTTP_PORT == 3002
   && settings.server.ROOT_URL == "https://source.net.scetrov.live/"
+  && settings.server.LANDING_PAGE == "login"
 ) "Forgejo must use persistent SQLite/state and a private HTTP listener";
 assert lib.assertMsg (
   service.serviceConfig.User == "forgejo"
@@ -123,6 +124,11 @@ assert lib.assertMsg (
   && lib.hasInfix "/metrics" site.extraConfig
   && lib.hasInfix "/api/internal/*" site.extraConfig
   && !(lib.hasInfix "forward_auth " site.extraConfig)
+  && lib.hasInfix "header Sec-Fetch-Mode navigate" site.extraConfig
+  && lib.hasInfix "header Sec-Fetch-Dest document" site.extraConfig
+  && lib.hasInfix "@loginPage status 200" site.extraConfig
+  && lib.hasInfix "forgejo_sso_pause=1; Path=/; Secure; HttpOnly; SameSite=Lax" site.extraConfig
+  && lib.hasInfix "not query sso=manual" site.extraConfig
   && settings.security.REVERSE_PROXY_TRUSTED_PROXIES == "127.0.0.1/32"
 ) "Caddy must restrict private peers and internal routes without forward auth";
 assert lib.assertMsg (
