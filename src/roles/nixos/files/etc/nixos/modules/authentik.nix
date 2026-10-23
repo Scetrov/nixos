@@ -34,7 +34,8 @@ let
   authentikPrepareEnvScript = pkgs.writeShellScript "authentik-prepare-env" ''
         set -euo pipefail
 
-        ${pkgs.coreutils}/bin/install -d -m 0750 ${stateDir} ${dataDir} ${brandingDir} ${templatesDir}
+        ${pkgs.coreutils}/bin/install -d -m 0750 ${stateDir} ${dataDir} ${templatesDir}
+        ${pkgs.coreutils}/bin/install -d -m 0755 ${brandingDir}
         ${pkgs.coreutils}/bin/install -m 0444 ${config.age.secrets.authentik_postgresql_password.path} ${postgresqlPasswordFile}
 
         export AUTHENTIK_ENV_FILE=${authentikEnvFile}
@@ -214,7 +215,8 @@ in
       systemd.tmpfiles.rules = [
         "d ${stateDir} 0750 root root - -"
         "d ${dataDir} 0750 root root - -"
-        "d ${brandingDir} 0750 root root - -"
+        # Public branding must be traversable by the unprivileged container user.
+        "d ${brandingDir} 0755 root root - -"
         "d ${templatesDir} 0750 root root - -"
       ];
 
