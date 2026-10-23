@@ -15,6 +15,16 @@
               server_name: headscale.net.scetrov.live
             headers:
               Host: headscale.net.scetrov.live
+        filebrowser_https:
+          prober: http
+          timeout: 10s
+          http:
+            fail_if_not_ssl: true
+            valid_status_codes: [200]
+            tls_config:
+              server_name: files.net.scetrov.live
+            headers:
+              Host: files.net.scetrov.live
     '';
   };
 

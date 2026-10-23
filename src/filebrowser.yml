@@ -1,0 +1,93 @@
+# Explicit Habiki-only rollout. Close public access before identity/runtime work;
+# never let an unverified scope set become reachable through Caddy.
+- name: Deploy private Filebrowser Documents service
+  hosts: habiki
+  gather_facts: true
+  vars_files:
+    - secrets.yml
+  tags: [filebrowser]
+  pre_tasks:
+    - name: Enforce the focused Filebrowser deployment boundary
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname == 'habiki'
+          - (ansible_run_tags | list) == ['filebrowser']
+        fail_msg: "Use scripts/play.sh --limit habiki --tags filebrowser."
+
+    - name: Close the Filebrowser readiness gate before any deployment change
+      become: true
+      ansible.builtin.file:
+        path: /run/filebrowser/ready
+        state: absent
+      when: not ansible_check_mode
+
+    - name: Reject deferred offboarding or identity reassignment before provisioning
+      become: true
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import json, pathlib, sys
+            desired = json.load(sys.stdin)
+            path = pathlib.Path('/var/lib/filebrowser-enrollment/enrollment.json')
+            old = json.loads(path.read_text())['enrollments'] if path.exists() else []
+            before = {r['identity_uuid']: r['unix_username'] for r in old}
+            after = {r['identity_uuid']: r['unix_username'] for r in desired}
+            if set(before) - set(after) or any(before[k] != after[k] for k in set(before) & set(after)):
+                raise SystemExit('Automated offboarding/reassignment is deferred; public access remains closed')
+        stdin: "{{ lookup('file', playbook_dir + '/filebrowser-enrollments.json') }}"
+      changed_when: false
+      check_mode: false
+
+    - name: Provision only Filebrowser identity resources through the secure wrapper
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - "{{ playbook_dir }}/../scripts/tofu.sh"
+          - --
+          - apply
+          - -auto-approve
+          - -target=authentik_policy_binding.filebrowser_group
+          - -target=authentik_policy_binding.filebrowser_enrollment
+          - -target=authentik_policy_binding.filebrowser_machine
+          - -target=authentik_token.filebrowser_reconciler
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Load the freshly encrypted generated credentials after provisioning
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/generated-secrets.yml"
+      no_log: true
+
+  roles:
+    - role: secrets
+    - role: nixos
+
+  post_tasks:
+    - name: Restart only Filebrowser through its verified preparation dependency
+      become: true
+      ansible.builtin.systemd_service:
+        name: podman-filebrowser.service
+        state: restarted
+      when: not ansible_check_mode and (filebrowser_enabled | default(false) | bool)
+
+    - name: Require successful scope reconciliation before finishing deployment
+      become: true
+      ansible.builtin.command:
+        argv: [systemctl, start, --wait, filebrowser-reconcile.service]
+      changed_when: false
+      when: not ansible_check_mode and (filebrowser_enabled | default(false) | bool)
+
+    - name: Verify the public readiness gate was published
+      become: true
+      ansible.builtin.stat:
+        path: /run/filebrowser/ready
+      register: filebrowser_ready
+      when: not ansible_check_mode and (filebrowser_enabled | default(false) | bool)
+
+    - name: Fail closed if scope reconciliation did not publish readiness
+      ansible.builtin.assert:
+        that: filebrowser_ready.stat.exists
+        fail_msg: "Filebrowser remains unavailable; inspect filebrowser-reconcile.service."
+      when: not ansible_check_mode and (filebrowser_enabled | default(false) | bool)

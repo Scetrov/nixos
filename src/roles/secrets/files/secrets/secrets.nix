@@ -65,6 +65,11 @@ in
   "miniflux_database_url.age".publicKeys = users ++ [ habiki ];
   "miniflux_oidc_client_id.age".publicKeys = users ++ [ habiki ];
   "miniflux_oidc_client_secret.age".publicKeys = users ++ [ habiki ];
+  "filebrowser_oidc_client_id.age".publicKeys = users ++ [ habiki ];
+  "filebrowser_oidc_client_secret.age".publicKeys = users ++ [ habiki ];
+  "filebrowser_reconciler_client_id.age".publicKeys = users ++ [ habiki ];
+  "filebrowser_reconciler_app_password.age".publicKeys = users ++ [ habiki ];
+  "filebrowser_reconciler_public_key.age".publicKeys = users ++ [ habiki ];
   "immich_oidc_client_id.age".publicKeys = users ++ [ habiki ];
   "immich_oidc_client_secret.age".publicKeys = users ++ [ habiki ];
   "immich_admin_email.age".publicKeys = users ++ [ habiki ];

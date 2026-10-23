@@ -1,0 +1,17 @@
+[
+  {
+    "identity_uuid": "c719e38e-de05-413d-a3fd-5f0c346c4981",
+    "authentik_pk": 9,
+    "unix_username": "scetrov"
+  },
+  {
+    "identity_uuid": "b6d44f49-e8fe-4452-9878-e10cf43f79f3",
+    "authentik_pk": 12,
+    "unix_username": "pinkgiraffes"
+  },
+  {
+    "identity_uuid": "d06bec1d-51e5-4d7e-bf3c-2e68f60d78d9",
+    "authentik_pk": 11,
+    "unix_username": "flyingfire"
+  }
+]

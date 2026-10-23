@@ -46,7 +46,19 @@ class IdentityTests(unittest.TestCase):
         self.assertIn("when: miniflux_enabled | default(false)", tasks)
         self.assertIn("Validate generated Miniflux OIDC values", tasks)
         consumer = (ROOT / "src/roles/secrets/tasks/miniflux.yml").read_text()
-        self.assertEqual(consumer.count("no_log: true"), 2)
+        protected_tasks = {
+            block.partition("\n")[0]: block.partition("\n")[2]
+            for block in consumer.split("- name: ")[1:]
+        }
+        for name in (
+            "Require the Vault-backed Miniflux database password",
+            "Validate optional subscription enrollment",
+            "Add optional subscription token to protected agenix rendering",
+            "Add Miniflux runtime credentials to the protected agenix workflow",
+        ):
+            with self.subTest(task=name):
+                self.assertIn(name, protected_tasks)
+                self.assertRegex(protected_tasks[name], r"(?m)^  no_log: true$")
         self.assertIn("miniflux_db_password is defined", consumer)
         self.assertNotIn("lookup('password'", consumer)
         runtime = (ROOT / "src/roles/nixos/files/etc/nixos/modules/miniflux.nix").read_text()

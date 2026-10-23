@@ -1,0 +1,98 @@
+# Application-state recovery only. Documents are never a source or destination.
+- name: Back up or restore private Filebrowser application state
+  hosts: habiki
+  gather_facts: false
+  become: true
+  vars:
+    filebrowser_state_action: backup
+  tasks:
+    - name: Require an explicit safe snapshot name and restore confirmation
+      ansible.builtin.assert:
+        that:
+          - filebrowser_state_action in ['backup', 'restore']
+          - filebrowser_state_id is defined
+          - filebrowser_state_id is match('^[A-Za-z0-9_-]{1,80}$')
+          - filebrowser_state_action != 'restore' or (filebrowser_state_restore_confirm | default(false) | bool)
+        fail_msg: "Supply a safe filebrowser_state_id; restore also requires filebrowser_state_restore_confirm=true."
+
+    - name: Protect the fixed application-state snapshot directory
+      ansible.builtin.file:
+        path: /var/backups/filebrowser
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Inspect the selected snapshot without following symlinks
+      ansible.builtin.stat:
+        path: "/var/backups/filebrowser/{{ filebrowser_state_id }}"
+        follow: false
+      register: filebrowser_snapshot
+
+    - name: Refuse snapshot overwrite or untrusted restore roots
+      ansible.builtin.assert:
+        that:
+          - filebrowser_state_action != 'backup' or not filebrowser_snapshot.stat.exists
+          - filebrowser_state_action != 'restore' or (filebrowser_snapshot.stat.isdir | default(false))
+          - filebrowser_state_action != 'restore' or not (filebrowser_snapshot.stat.islnk | default(false))
+          - filebrowser_state_action != 'restore' or (filebrowser_snapshot.stat.uid | default(-1)) == 0
+
+    - name: Record whether the runtime was active before maintenance
+      ansible.builtin.command:
+        argv: [systemctl, is-active, --quiet, podman-filebrowser.service]
+      register: filebrowser_was_active
+      changed_when: false
+      failed_when: false
+
+    - name: Close the public readiness gate
+      ansible.builtin.file:
+        path: /run/filebrowser/ready
+        state: absent
+
+    - name: Stop Quantum before copying SQLite and enrollment snapshots
+      ansible.builtin.systemd_service:
+        name: podman-filebrowser.service
+        state: stopped
+
+    - name: Create a new root-private snapshot
+      ansible.builtin.file:
+        path: "/var/backups/filebrowser/{{ filebrowser_state_id }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+      when: filebrowser_state_action == 'backup'
+
+    - name: Copy only the two fixed application-state trees into the snapshot
+      ansible.builtin.command:
+        argv:
+          - rsync
+          - --archive
+          - --safe-links
+          - --
+          - /var/lib/filebrowser
+          - /var/lib/filebrowser-enrollment
+          - "/var/backups/filebrowser/{{ filebrowser_state_id }}/"
+      when: filebrowser_state_action == 'backup'
+      no_log: true
+
+    - name: Restore only the fixed application-state trees, never Documents
+      ansible.builtin.command:
+        argv:
+          - rsync
+          - --archive
+          - --safe-links
+          - --delete
+          - --
+          - "/var/backups/filebrowser/{{ filebrowser_state_id }}/{{ item }}/"
+          - "/var/lib/{{ item }}/"
+      loop: [filebrowser, filebrowser-enrollment]
+      when: filebrowser_state_action == 'restore'
+      no_log: true
+
+    # No rescue restart: a failed copy/restore must leave access closed.
+    - name: Restart through verified preparation only if it was previously active
+      ansible.builtin.systemd_service:
+        name: podman-filebrowser.service
+        state: started
+      when: filebrowser_was_active.rc == 0

@@ -24,7 +24,7 @@
     ./modules/tempo.nix
     ./modules/hermes.nix
     ./modules/headscale.nix
-    ./modules/user-scetrov-filebrowser.nix
+    ./modules/filebrowser.nix
     ./modules/user-scetrov-syncthing.nix
     ./modules/grafana-mcp.nix
     ./modules/github-repository-observability.nix
@@ -61,6 +61,7 @@
   };
 
   scetrov.services.authentik.enable = true;
+  scetrov.services.filebrowser.enable = true;
   scetrov.services.miniflux.enable = true;
   scetrov.services.miniflux.subscriptions.enable = true;
   scetrov.services.forgejo.enable = true;

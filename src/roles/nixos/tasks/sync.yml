@@ -33,6 +33,22 @@
     - {source: config/miniflux/feeds.json, target: miniflux-feeds.json}
   when: miniflux_enabled | default(false)
 
+- name: Copy Filebrowser enrollment and automation into the deployed tree
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../{{ item.source }}"
+    dest: "/etc/nixos/modules/{{ item.target }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - {source: src/filebrowser-enrollments.json, target: filebrowser-enrollments.json}
+    - {source: scripts/filebrowser_acl.py, target: filebrowser_acl.py}
+    - {source: scripts/filebrowser_host.py, target: filebrowser_host.py}
+    - {source: scripts/filebrowser_runtime.py, target: filebrowser_runtime.py}
+    - {source: scripts/filebrowser_reconcile.py, target: filebrowser_reconcile.py}
+  when: filebrowser_enabled | default(false)
+
 - name: Synchronize configuration.nix to /etc/nixos
   become: true
   template:

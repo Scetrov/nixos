@@ -93,6 +93,15 @@
         }
       ''}
 
+      ${lib.optionalString (config.scetrov.services.filebrowser.enable or false) ''
+        rule {
+          source_labels = ["__journal__systemd_unit"]
+          regex         = "(podman-filebrowser|filebrowser-reconcile)\\.service"
+          replacement   = "filebrowser"
+          target_label  = "service"
+        }
+      ''}
+
       rule {
         source_labels = ["__journal__systemd_unit"]
         regex         = "forgejo(-mirrors)?\\.service"

@@ -23,6 +23,8 @@ Options:
                            - hermes-auth      : Proxy-only Hermes auth repair (requires --limit habiki;
                                                 no channel updates or blanket container restarts)
                            - dependency-track : Dependency Track deployment & configuration
+                           - filebrowser      : Habiki Documents service: identity, secrets, runtime and
+                                                verified scopes (requires --limit habiki; standalone tag)
                            - miniflux         : Habiki feed reader: provision OIDC, refresh credentials,
                                                 render secrets and rebuild (requires --limit habiki)
                            - miniflux-subscriptions : Explicit Habiki subscription plan (default), or apply
@@ -127,6 +129,19 @@ if has_tag miniflux; then
     MINIFLUX_DEPLOY=true
 fi
 
+FILEBROWSER_DEPLOY=false
+if has_tag filebrowser; then
+    if [[ "$LIMIT" != "habiki" || "$TAGS" != "filebrowser" ]]; then
+        echo "Error: filebrowser requires --limit habiki and cannot be combined with other tags." >&2
+        exit 1
+    fi
+    if [[ "$SKIP_GENERATED_REFRESH" == true ]]; then
+        echo "Error: filebrowser cannot skip authoritative generated-secret refresh." >&2
+        exit 1
+    fi
+    FILEBROWSER_DEPLOY=true
+fi
+
 IMMICH_DEPLOY=false
 if has_tag immich; then
     if [[ "$LIMIT" != "habiki" || "$TAGS" != "immich" ]]; then
@@ -148,7 +163,7 @@ for argument in "${EXTRA_ARGS[@]}"; do
             READ_ONLY=true
             ;;
         --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*)
-            if [[ "$MINIFLUX_DEPLOY" == true || "$IMMICH_DEPLOY" == true ]]; then
+            if [[ "$MINIFLUX_DEPLOY" == true || "$IMMICH_DEPLOY" == true || "$FILEBROWSER_DEPLOY" == true ]]; then
                 echo "Error: targeted identity deploy target/tag overrides after -- are not supported." >&2
                 exit 1
             fi
@@ -158,6 +173,9 @@ done
 
 # Database maintenance is deliberately separate from normal deployment roles.
 PLAYBOOK="src/playbook.yml"
+if [[ "$FILEBROWSER_DEPLOY" == true ]]; then
+    PLAYBOOK="src/filebrowser.yml"
+fi
 if has_tag forgejo-mirrors; then
     if [[ "$LIMIT" != "habiki" || "$TAGS" != "forgejo-mirrors" ]]; then
         echo "Error: forgejo-mirrors requires --limit habiki and cannot be combined with other tags." >&2

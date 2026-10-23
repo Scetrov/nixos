@@ -30,6 +30,7 @@
         "garage-admin.net.scetrov.live"
         "source.net.scetrov.live"
         "feed.net.scetrov.live"
+        "files.net.scetrov.live"
         "zomboid.net.scetrov.live"
         "metrics.net.scetrov.live"
         "identity.net.scetrov.live"
