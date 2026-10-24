@@ -98,6 +98,13 @@ assert lib.assertMsg (
   && builtins.elem "/run/agenix/garage_admin_environment" garageService.serviceConfig.EnvironmentFile
   && builtins.elem "/run/agenix/garage_metrics_environment" garageService.serviceConfig.EnvironmentFile
 ) "Garage secrets must be injected with restricted filesystem permissions";
+assert lib.assertMsg (builtins.all (secret: builtins.elem secret.file garageService.restartTriggers)
+  [
+    config.age.secrets.garage_rpc_secret
+    config.age.secrets.garage_admin_environment
+    config.age.secrets.garage_metrics_environment
+  ]
+) "Garage must restart when an injected credential changes";
 assert lib.assertMsg (
   lib.hasInfix "@notTailnet not remote_ip 100.64.0.0/10" s3Vhost.extraConfig
   && lib.hasInfix ''respond @notTailnet "Forbidden" 403'' s3Vhost.extraConfig

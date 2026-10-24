@@ -63,6 +63,15 @@ in
     };
   };
 
+  # EnvironmentFile paths stay constant when agenix rotates their contents.
+  # Track the encrypted inputs so switch restarts Garage with fresh credentials,
+  # rather than leaving the daemon and the CLI using different RPC secrets.
+  systemd.services.garage.restartTriggers = [
+    config.age.secrets.garage_rpc_secret.file
+    config.age.secrets.garage_admin_environment.file
+    config.age.secrets.garage_metrics_environment.file
+  ];
+
   systemd.services.garage.serviceConfig = {
     StateDirectoryMode = "0750";
     UMask = "0077";
