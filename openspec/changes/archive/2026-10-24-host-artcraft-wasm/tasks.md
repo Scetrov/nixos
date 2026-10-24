@@ -15,9 +15,13 @@ The operator replaced compilation with official release downloads. The earlier c
 ## 3. Validate and deliver
 
 - [x] 3.1 Add focused regression checks for the thirteen routes/tiles/icons, auth ordering, asset MIME/cache behavior, missing paths, download/checksum failures, unsafe archives, unchanged-input reuse and preservation/rollback of published packages; run applicable NixOS, Ansible, OpenTofu and pre-commit gates, using `scripts/tofu.sh` for every OpenTofu invocation.
-- [ ] 3.2 Deploy with Habiki/component targeting and verify DNS/TLS, anonymous and unauthorized denial (including direct assets), authorized access, callback return paths, fail-closed outpost behavior, tile visibility and local icon delivery; confirm unrelated applications are unchanged and Caddy requests reach existing log collection.
-- [ ] 3.3 Smoke-test browser initialization and a basic local interaction in every editor, checking fonts/assets and any necessary browser-security headers; exercise failed-candidate preservation and rollback through automation.
-- [ ] 3.4 Record validation evidence and unresolved blockers truthfully; after successful acceptance, archive this OpenSpec change before the final signed commit/PR, check for secrets and stage all required implementation files.
+- [x] 3.2 Deploy with Habiki/component targeting and verify DNS/TLS, anonymous and unauthorized denial (including direct assets), authorized access, callback return paths, fail-closed outpost behavior, tile visibility and local icon delivery; confirm unrelated applications are unchanged and Caddy requests reach existing log collection.
+- [x] 3.3 Smoke-test browser initialization and a basic local interaction in every editor, checking fonts/assets and any necessary browser-security headers; exercise failed-candidate preservation and rollback through automation.
+- [x] 3.4 Record validation evidence and unresolved blockers truthfully; after successful acceptance, archive this OpenSpec change before the final signed commit/PR, check for secrets and stage all required implementation files.
+
+## Acceptance evidence
+
+On 2026-10-24, the operator reported testing was successful and explicitly confirmed acceptance complete for the listed deployment/security, browser/rollback and sign-off checks when asked about tasks 3.2–3.4. These acceptance results are operator-reported; the archiving agent did not rerun deployment or tests. No unresolved blockers were reported. Requirements were synced to the main ArtCraft specification before archival; archive files and the main specification were checked for sensitive material and staged for commit. No commit or PR was requested as part of archival.
 
 ## Implementation history — superseded compilation approach
 
