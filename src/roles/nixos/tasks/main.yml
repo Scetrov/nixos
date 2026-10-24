@@ -27,6 +27,7 @@
     - forgejo.png
     - miniflux.png
     - immich-a4cda3df8fe5.png
+    - filebrowser-quantum-636c950ca219.png
   when: authentik_config_enabled | default(false)
 
 - name: Include NixOS rebuild tasks

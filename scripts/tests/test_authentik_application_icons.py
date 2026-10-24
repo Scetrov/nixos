@@ -30,6 +30,7 @@ class ApplicationIconTests(unittest.TestCase):
             ("forgejo", "authentik.tf"),
             ("miniflux", "miniflux.tf"),
             ("hermes", "authentik.tf"),
+            ("filebrowser", "filebrowser.tf"),
         ]:
             with self.subTest(application=app):
                 source = (ROOT / "terraform" / filename).read_text()

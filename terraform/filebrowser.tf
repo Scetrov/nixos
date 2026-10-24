@@ -97,6 +97,7 @@ resource "authentik_application" "filebrowser" {
   protocol_provider  = authentik_provider_oauth2.filebrowser.id
   policy_engine_mode = "all"
   meta_launch_url    = "https://files.net.scetrov.live"
+  meta_icon          = "/static/dist/branding/filebrowser-quantum-636c950ca219.png"
 }
 
 resource "authentik_policy_binding" "filebrowser_group" {
