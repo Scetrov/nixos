@@ -10,6 +10,8 @@
     ./modules/xrdp.nix
   ];
 
+  environment.systemPackages = [ pkgs.cloudflared ];
+
   networking = {
     networkmanager = {
       enable = true;

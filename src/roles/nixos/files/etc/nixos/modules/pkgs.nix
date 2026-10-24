@@ -24,6 +24,7 @@ in
       networkmanager-openvpn
       opentofu
       openvpn
+      pass
       (python3.withPackages (ps: with ps; [ cryptography ]))
       semgrep
       wget
