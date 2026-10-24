@@ -22,9 +22,6 @@ let
 
   backendBin = "${backendPackage}/bin/${cfg.backend}";
   shellBin = "${pkgs.runtimeShell}";
-  catBin = "${pkgs.coreutils}/bin/cat";
-  chmodBin = "${pkgs.coreutils}/bin/chmod";
-  chownBin = "${pkgs.coreutils}/bin/chown";
   installBin = "${pkgs.coreutils}/bin/install";
   mkdirBin = "${pkgs.coreutils}/bin/mkdir";
   setupUnit = "hermes-webui-oci-setup.service";
@@ -68,21 +65,23 @@ let
         fi
       '';
   webuiEnvFile = "${toString cfg.home}/webui.env";
-  loadModelEnv = lib.optionalString (cfg.environmentFile != null) ''
-    if [ -r ${lib.escapeShellArg cfg.environmentFile} ]; then
-      while IFS='=' read -r key value; do
-        case "$key" in
-          ""|\#*) continue ;;
-        esac
-        if [ "$key" = ${lib.escapeShellArg cfg.defaultModelEnvVar} ]; then
-          value="''${value%\"}"
-          value="''${value#\"}"
-          value="''${value%\'}"
-          value="''${value#\'}"
-          [ -n "$value" ] && default_model="$value"
-        fi
-      done < ${lib.escapeShellArg cfg.environmentFile}
-    fi
+  configPython = pkgs.python3.withPackages (p: [ p.pyyaml ]);
+  managedSettings = pkgs.writeText "hermes-managed-settings.json" (
+    builtins.toJSON {
+      inherit (cfg) defaultModel localQwen;
+      modelEnvVar = cfg.defaultModelEnvVar;
+      provider = cfg.inferenceProvider;
+      baseUrl = cfg.baseUrl;
+    }
+  );
+  reconcileConfig = ''
+    ${configPython}/bin/python ${./hermes-config.py} \
+      --settings ${managedSettings} --home "$home_mount" \
+      --webui-env ${lib.escapeShellArg webuiEnvFile} \
+      --uid ${toString containerUid} --gid ${toString containerGid} \
+      ${lib.optionalString (
+        cfg.environmentFile != null
+      ) "--environment ${lib.escapeShellArg cfg.environmentFile}"}
   '';
 in
 {
@@ -215,10 +214,34 @@ in
       description = "Provider base URL written to config.yaml.";
     };
 
+    localQwen = {
+      enable = mkEnableOption "managed local Qwen OpenAI-compatible provider";
+      baseUrl = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Non-secret HTTP(S) endpoint reachable from both containers; never container localhost.";
+      };
+      model = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Exact model ID served by the local endpoint.";
+      };
+      contextLength = mkOption {
+        type = types.nullOr types.ints.positive;
+        default = null;
+        description = "Confirmed server context limit in tokens.";
+      };
+      requireApiKey = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Require HERMES_LOCAL_QWEN_API_KEY from environmentFile; never put its value in Nix.";
+      };
+    };
+
     manageConfig = mkOption {
       type = types.bool;
       default = true;
-      description = "Write non-secret Hermes model configuration into the hermes-home volume.";
+      description = "Structurally reconcile managed model fields and providers.local-qwen, preserving other Hermes state.";
     };
 
     uid = mkOption {
@@ -312,6 +335,10 @@ in
 
   config = mkIf cfg.enable {
     assertions = [
+      {
+        assertion = !cfg.localQwen.enable || (cfg.localQwen.baseUrl != null && cfg.localQwen.model != null);
+        message = "Enabled Hermes local Qwen requires baseUrl and an exact model ID.";
+      }
       {
         assertion = !cfg.rootless || cfg.backend == "podman";
         message = "services.hermes-webui.rootless requires services.hermes-webui.backend = \"podman\".";
@@ -432,58 +459,12 @@ in
         || ${backendBin} volume create ${lib.escapeShellArg cfg.agentSourceVolume}
 
         if [ "${if cfg.manageConfig then "1" else "0"}" = "1" ]; then
-          default_model=${lib.escapeShellArg cfg.defaultModel}
-          ${loadModelEnv}
-
-          case "$default_model" in
-            *[!A-Za-z0-9._:/+-]*)
-              echo "Invalid Hermes model id in ${cfg.defaultModelEnvVar}: $default_model" >&2
-              exit 1
-              ;;
-          esac
-
           home_mount="$(${backendBin} volume inspect ${lib.escapeShellArg cfg.homeVolume} --format '{{ .Mountpoint }}')"
-          if [ "${if rootlessPodman then "1" else "0"}" = "1" ]; then
-            ${backendBin} unshare ${shellBin} -c '
-              home_mount="$1"
-              default_model="$2"
-              provider="$3"
-              base_url="$4"
-              [ -d "$home_mount" ] || ${mkdirBin} -p "$home_mount"
-              ${catBin} > "$home_mount/config.yaml" <<EOF
-        model:
-          default: "$default_model"
-          provider: $provider
-          base_url: $base_url
-        EOF
-              ${chownBin} ${toString containerUid}:${toString containerGid} "$home_mount/config.yaml"
-              ${chmodBin} 0640 "$home_mount/config.yaml"
-              ${catBin} > ${lib.escapeShellArg webuiEnvFile} <<EOF
-        HERMES_WEBUI_DEFAULT_MODEL="$default_model"
-        EOF
-              ${chmodBin} 0644 ${lib.escapeShellArg webuiEnvFile}
-            ' -- "$home_mount" "$default_model" ${lib.escapeShellArg cfg.inferenceProvider} ${lib.escapeShellArg cfg.baseUrl}
-          else
-            ${shellBin} -c '
-              home_mount="$1"
-              default_model="$2"
-              provider="$3"
-              base_url="$4"
-              [ -d "$home_mount" ] || ${mkdirBin} -p "$home_mount"
-              ${catBin} > "$home_mount/config.yaml" <<EOF
-        model:
-          default: "$default_model"
-          provider: $provider
-          base_url: $base_url
-        EOF
-              ${chownBin} ${toString containerUid}:${toString containerGid} "$home_mount/config.yaml"
-              ${chmodBin} 0640 "$home_mount/config.yaml"
-              ${catBin} > ${lib.escapeShellArg webuiEnvFile} <<EOF
-        HERMES_WEBUI_DEFAULT_MODEL="$default_model"
-        EOF
-              ${chmodBin} 0644 ${lib.escapeShellArg webuiEnvFile}
-            ' -- "$home_mount" "$default_model" ${lib.escapeShellArg cfg.inferenceProvider} ${lib.escapeShellArg cfg.baseUrl}
-          fi
+          ${if rootlessPodman then "${backendBin} unshare" else ""} ${shellBin} -c ${lib.escapeShellArg ''
+            home_mount="$1"
+            [ -d "$home_mount" ] || ${mkdirBin} -p "$home_mount"
+            ${reconcileConfig}
+          ''} -- "$home_mount"
 
           ${lib.optionalString (cfg.environmentFile != null) ''
             if [ -r ${lib.escapeShellArg cfg.environmentFile} ]; then

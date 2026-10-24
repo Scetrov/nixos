@@ -459,3 +459,206 @@ After deployment, make no-cookie requests without following redirects:
 Roll back by reverting the Caddy routing changes and rerunning the focused play
 (or deploy the previous `caddy.nix`, which does not read the new fragment). Do not
 work around expiry by bypassing Authentik or allowing the identity origin in CSP.
+
+## Managed Inference Providers
+
+OpenRouter remains the deployment default. The pinned agent and WebUI support
+native `openai-codex` subscription authentication and keyed OpenAI-compatible
+`providers` definitions. Generated-config smoke checks verified named model
+catalog discovery and explicit routing in the WebUI, plus credential lookup in
+both execution environments. These synthetic checks alone do **not** establish
+real inference, browser interaction, OAuth entitlement or lifecycle acceptance;
+Habiki's completed live acceptance is recorded below.
+
+### Local Qwen settings
+
+`services.hermes-webui.localQwen` has these non-secret options:
+
+- `enable` (default `false`): manage the named `local-qwen` provider.
+- `baseUrl` / `model` (default `null`): exact reachable HTTP(S) URL and model ID;
+  enabled definitions require both. Embedded URL credentials/queries are rejected.
+- `contextLength` (default `null`): positive, confirmed server token limit.
+- `requireApiKey` (default `false`): require a non-empty
+  `HERMES_LOCAL_QWEN_API_KEY` in the runtime environment file. Configuration
+  contains only `key_env`, never its resolved value. Keyless definitions omit
+  that reference; internal SDK placeholder keys are not injected into Vault.
+
+Habiki records the operator-confirmed endpoint `http://10.229.2.10:9931/v1`,
+model `qwen3.8-27b`, 65,536-token context and required Vault-managed key. The
+operator confirmed tool-calling support and approved HTTP on this protected
+trusted network path. **It is enabled following secret-safe key verification,
+both-container endpoint preflight and successful live acceptance.** Container
+loopback is not the inference host: verify this address
+from both containers. Do not expose inference publicly or introduce a new port,
+proxy route, DNS alias or Authentik application for it. Reassess credential
+transport if the network path changes; HTTP alone does not encrypt the key.
+
+Prepare only an absent optional Vault field without changing existing values:
+
+```bash
+nix-shell -p python3Packages.pyyaml --run 'python3 scripts/provision_hermes_vault.py'
+```
+
+This creates `hermes_local_qwen_api_key: ""` inside encrypted `src/secrets.yml`
+using captured pipes and atomic ciphertext replacement. It does not generate a
+server key. Provision the real server-issued key through the approved encrypted
+Vault workflow, never a command argument, chat message, Nix file or log. Empty
+local keys and absent/empty `openrouter_api_key` are omitted by the existing
+secret template; retain the OpenRouter key while it is the selected provider.
+Do not create subscription token placeholders.
+
+### Configuration ownership and preservation
+
+Both setup modes use `modules/hermes-config.py` and Nix-built Python/PyYAML.
+Setup merges only `model.default`, `model.provider`, `model.base_url` and its
+managed `providers.local-qwen` definition. Other model fields, providers, legacy
+`custom_providers`, tools and unrelated settings are retained. The sidecar
+`.nixos-managed-providers.json` records the managed definition; disabling it
+removes only that owned definition. A conflicting unmanaged or manually edited
+same-name definition fails rather than being silently replaced/deleted. Resolve
+that ownership conflict during an idle maintenance window before retrying.
+
+Malformed YAML, invalid settings and missing required local keys fail before
+replacing valid configuration, with redacted diagnostics. Each output is replaced
+atomically at mode `0600`. Config and ownership state belong to the container
+UID/GID; the WebUI environment file belongs to the host setup identity so
+rootless Podman can read it. The existing secure `.env` copy remains shared by
+both runtimes. No reconciler operation touches `auth.json`, sessions, schedules,
+workspace or native OAuth state. Individual output replacement is atomic, not a
+multi-file transaction; retry setup after an interrupted write before starting
+containers. Do not reconcile while users are editing native configuration.
+
+The existing `defaultModel`, environment override `defaultModelEnvVar`,
+`inferenceProvider` and `baseUrl` options are retained. WebUI initial selection
+tracks the managed default, with explicit provider context for non-OpenRouter
+providers. A transient picker selection does not change the IaC default.
+
+### Native subscription enrollment and explicit selection
+
+Credentials are shared across this deployment's agent and WebUI, **not isolated
+per Authentik user**. Authorize access accordingly. Authentik still protects the
+browser; no new login bypass or public listener is introduced.
+
+After the focused deployment, with the operator present, enroll as the runtime
+user in the existing agent container:
+
+```bash
+ssh -t scetrov@10.229.10.2 'sudo -n podman exec -it --user hermes hermes-agent hermes auth add openai-codex --type oauth --no-browser'
+```
+
+The pinned CLI supports this native device-code command. Follow its displayed
+approval instructions locally; do not capture codes or tokens in evidence.
+`hermes auth login` does not exist, and deprecated `hermes login --provider`
+ignores that provider argument. Hermes persists refreshable credentials in
+`$HERMES_HOME/auth.json` on the shared volume. Native refresh holds the source
+store transaction and adopts a peer's rotated credentials; do not copy refresh
+tokens into Vault or a second token store. Coexistence and persistence passed
+live acceptance; forced token expiry/revocation was not tested. If enrollment
+changes native model settings, restore the
+managed default through the focused runtime automation before acceptance.
+
+Use the browser model picker to explicitly choose the enrolled subscription
+provider/model or `local-qwen`; native gateway selection should explicitly name
+`openai-codex` or `custom:local-qwen` with the exact discovered/configured model.
+The verified runtime resolver accepts those provider IDs; WebUI internally
+preserves context as `@provider:model`. Discover entitled Codex models after
+enrollment rather than assuming a model ID. Keep the managed OpenRouter default
+unless the operator explicitly changes it. Do not introduce automatic cross-provider
+fallback for primary chat/tool inference. **This is not whole-runtime provider
+isolation:** the operator explicitly approved retaining native auxiliary routing;
+background auxiliary work can use OpenRouter and incur charges independently
+of the selected primary provider. A native paid-lane warning was observed; it
+is emitted before client use and alone does not prove a billed request. On
+revoked/expired credentials, use native reauthentication; run
+`hermes auth logout --help` before intentional revocation and never delete the
+whole shared home to repair authentication.
+
+### Validation, activation and rollback
+
+```bash
+nix-shell -p python3Packages.pyyaml python3Packages.jinja2 --run \
+  'python3 -m unittest scripts.tests.test_hermes_providers scripts.tests.test_hermes_github_environment scripts.tests.test_hermes_runtime'
+python3 scripts/tests/check_hermes_provider_images.py
+```
+
+The image check uses unique disposable source/state, synthetic credentials and
+an invalid synthetic endpoint. It publishes no ports, cleans up its resources,
+and checks authenticated/keyless provider routing, WebUI discovery and explicit
+Codex context. WebUI bootstrap requires approved outbound network access for its
+existing dependency installation; the base image's system Python is not its
+prepared runtime. Image digests alone do not pin those startup-installed Python
+dependencies. Both rootful and rootless generated setup scripts have also been
+Nix-evaluated and shell syntax checked; production remains rootful.
+
+Before setting `localQwen.enable = true`, provision the key, review remote drift
+and active chats/jobs, then deploy only:
+
+```bash
+./scripts/play.sh --limit habiki --tags hermes-runtime
+```
+
+The focused play copies the reconciler alongside its module. Verify bounded
+model and tool calls with **each new provider in both browser and gateway**,
+then repeat after restart and a second focused deployment. Verify scheduling
+health and bounded journal/Loki errors using the existing procedures, without
+printing environments, prompts or native authentication files. Model discovery
+and container health alone are not acceptance. Keep acceptance incomplete when
+endpoint access, OAuth approval or browser interaction is unavailable.
+
+Rollback through the same focused automation: disable the local provider and
+restore the prior managed default, retaining all unrelated providers and native
+OAuth/session/job/workspace state. Disabling Qwen while it is the selected
+managed default is rejected; restore the default in the same change. Reverting
+to the old truncating setup module would discard unrelated configuration, so
+prefer the new reconciler with the prior settings. A previous NixOS generation
+does not itself restore copied runtime configuration/secrets. Revoke OAuth only
+when explicitly intended; do not remove Authentik or delete persistent volumes.
+
+### Completed Habiki provider acceptance
+
+Both focused deployments succeeded with `ok=17 failed=0` (first `changed=6`,
+second `changed=5`). Remote managed files matched the expected baseline;
+a non-activating baseline build differed from the active generation only in
+`/etc/issue`, with normalized activation scripts and systemd configuration
+unchanged. Preflight found zero active agents/jobs or active-session flags and
+no failed units. Both containers reached the exact Qwen model using the
+Vault-managed key without printing it. The operator completed native Codex
+enrollment in their own terminal; native credential resolution and model
+discovery succeeded independently in agent and WebUI execution environments.
+The discovered `gpt-6.1-sol` model was used for controlled acceptance, not made
+the deployment default.
+
+For each provider, gateway-container CLI checks verified exactly one terminal
+call running `printf 'opsx-hermes-provider-ok\\n'`, a successful tool result and
+the exact final marker. These checks passed initially, after Ansible-controlled
+agent/WebUI service restarts, and after the second focused deployment. The
+operator independently confirmed the same explicit-provider tool checks in the
+Authentik-protected browser at all three stages. Automation's separate browser
+was redirected to Authentik and was not used to bypass login.
+
+Reproduce only with operator-approved model calls and a currently discovered
+subscription model ID:
+
+```bash
+ssh scetrov@10.229.10.2 'sudo -n podman exec -i --user hermes hermes-agent python - --codex-model gpt-6.1-sol' < scripts/tests/check_hermes_provider_execution.py
+```
+
+Native scheduling fixture `c61825580460` executed successfully before and after
+restart. It reached its bounded 12-run cap while awaiting operator validation,
+so it was cleaned up and replaced with fixture `7f0d5c704601`, whose marker
+advanced from one successful run before redeployment to two afterward. Gateway
+metadata was fresh and advancing. Both test definitions/scripts/markers were
+removed through the native API; native execution history remains.
+
+A bounded one-hour/500-record Loki query returned HTTP/status `200` and Hermes
+logs. It included the native auxiliary paid-lane warning described above and
+the expected container `0.0.0.0`/no-WebUI-password warning; host publication is
+still only `127.0.0.1:8787`, behind Authentik. The agent publishes no port and
+no units were failed. A journal query produced the same warning categories;
+dependency-name keyword matches were not actual tracebacks. These are bounded
+observations, not a claim that every log line is error-free. Primary-provider
+isolation does not cover background auxiliary routing, per operator approval.
+
+Live rollback was not activated: disablement/state preservation and failure
+atomicity were tested synthetically, and the rollback procedure above retains
+authentication, sessions and schedules. No provider image was upgraded.

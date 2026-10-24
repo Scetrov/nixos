@@ -49,6 +49,15 @@
     agentSourceVolume = "hermes-agent-src-v2026-9-24";
     caddyListenAddress = "127.0.0.1";
     environmentFile = config.age.secrets.hermes_webui_env.path;
+    localQwen = {
+      # Operator-confirmed endpoint on a protected trusted network path.
+      # Vault key and both-container endpoint discovery verified before activation.
+      enable = true;
+      baseUrl = "http://10.229.2.10:9931/v1";
+      model = "qwen3.8-27b";
+      contextLength = 65536;
+      requireApiKey = true;
+    };
     extraEnvironment = {
       HERMES_WEBUI_TRUSTED_PROXY_AUTH_HEADER = "X-Authentik-Username";
       HERMES_WEBUI_TRUSTED_PROXY_NETS = "127.0.0.0/8, 10.0.0.0/8";
