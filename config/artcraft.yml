@@ -1,0 +1,121 @@
+# Verified 2026-10-24; release dates/holdbacks and validation: docs/artcraft.md.
+# Official icons: https://raw.githubusercontent.com/storytold/<slug>/<revision>/<icon>
+artcraft_access_group: All Applications
+artcraft_editors:
+  - slug: photocraft
+    name: PhotoCraft
+    release: v0.9.0
+    asset: photocraft-web-0.9.0.zip
+    url: https://github.com/storytold/photocraft/releases/download/v0.9.0/photocraft-web-0.9.0.zip
+    sha256: b3fa5ab6a9d32bc5ff7dfdde31939a2337471a196a2e70f1ff961a61b1bb02e6
+    revision: c699e3cda69f4852b43c0b191ab0091aaeff9d6a
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png
+    icon_sha256: fa5aee91a09ccd7954e7a4279ed2a348d7447d45f2179d9a21cd702551ac3a69
+  - slug: pdfcraft
+    name: PdfCraft
+    release: v0.8.0
+    asset: pdfcraft-web-0.8.0.zip
+    url: https://github.com/storytold/pdfcraft/releases/download/v0.8.0/pdfcraft-web-0.8.0.zip
+    sha256: 1f9ea51f3c1f71cc719c12814e10f236912fa41ef54a7782c7dd4a619d9eee9a
+    revision: 9931329b9fae0b05373b4dc3ac7c58541f0891a4
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.pdfcraft.png
+    icon_sha256: cde7ee8c5ee38f9fc40a429fd9e6d99a035bcd321701fce331bb13bac126614d
+  - slug: filmcraft
+    name: FilmCraft
+    release: v0.8.0
+    asset: filmcraft-web-0.8.0.zip
+    url: https://github.com/storytold/filmcraft/releases/download/v0.8.0/filmcraft-web-0.8.0.zip
+    sha256: 6b13956fc741522427663517b1e483d6e0777891063fed02b1bd94bfada8a6c7
+    revision: f03e21556d8e3a7155b91892d958debd5255d7af
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.filmcraft.png
+    icon_sha256: f07f1390c0467ab7e357f7bc102658caed40ec931e3614b255031c6adf555a2b
+  - slug: vectorcraft
+    name: VectorCraft
+    release: v0.12.0
+    asset: vectorcraft-web-0.12.0.zip
+    url: https://github.com/storytold/vectorcraft/releases/download/v0.12.0/vectorcraft-web-0.12.0.zip
+    sha256: 83ef4aaf0d8e535d8a79224095b5f34ad83c22a0e0bfc4fd19f22784c912529a
+    revision: 8bc65329286dc1b84aa392997bb205613c3e96cb
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.vectorcraft.png
+    icon_sha256: 440a9a0d31ea3e098a6bd2806046ea936005a008742e4cc97c0adba2574a0825
+  - slug: lightcraft
+    name: LightCraft
+    release: v0.8.0
+    asset: lightcraft-web-0.8.0.zip
+    url: https://github.com/storytold/lightcraft/releases/download/v0.8.0/lightcraft-web-0.8.0.zip
+    sha256: bfabb7edecfc8723b9d698ad2b6fa32e99fcdf977628a68b2884c4b06c6f017a
+    revision: 16dbb90499d3c63a6582fcbba1b2550a6e2da032
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.lightcraft.png
+    icon_sha256: 57e58898ea1a1012ebafe1472e2438db2f02886a0e022c6abf88bcb71b690fc3
+  - slug: designcraft
+    name: DesignCraft
+    release: v0.8.0
+    asset: designcraft-web-0.8.0.zip
+    url: https://github.com/storytold/designcraft/releases/download/v0.8.0/designcraft-web-0.8.0.zip
+    sha256: f1ebe741d89949ba1d5069a50401f14b297b9a66d9d6cd2d8a88cd83e4c77888
+    revision: 11a51d5b665aec8d6e675bd107a8a01514f10d00
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.designcraft.png
+    icon_sha256: b8407dae4f43d6f0503ec6c1df619cca34b358d8bb230c6b0d18c992aa5a7f61
+  - slug: effectcraft
+    name: EffectCraft
+    release: v0.10.0
+    asset: effectcraft-web-0.10.0.zip
+    url: https://github.com/storytold/effectcraft/releases/download/v0.10.0/effectcraft-web-0.10.0.zip
+    sha256: b922abeda2420391a7fd887f53ebae6948730e63720bad6a6eb3dc48dc1b46a8
+    revision: 05955c08b4fd025f1a09882df72e6dbff1a8148a
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.effectcraft.png
+    icon_sha256: 186a1d869a4602ec86cd03f6e5e288ebbd328e0c3d8a17c205329829392f9add
+  - slug: gridcraft
+    name: GridCraft
+    release: v0.7.0
+    asset: gridcraft-web-0.7.0.zip
+    url: https://github.com/storytold/gridcraft/releases/download/v0.7.0/gridcraft-web-0.7.0.zip
+    sha256: ad10af2baf9c7ed4ccbd81e32b37698f5075cdf4f26b726fee7fc7938a3a8d27
+    revision: d9d09f0baa912e88c5111107903fc8c640214b57
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.gridcraft.png
+    icon_sha256: 3d8cb180ae9ea3691051e8d2309e79baf6f69e0a86276bf50265b5867ff26e41
+  - slug: cadcraft
+    name: CADCraft
+    release: v0.7.0
+    asset: cadcraft-web-0.7.0.zip
+    url: https://github.com/storytold/cadcraft/releases/download/v0.7.0/cadcraft-web-0.7.0.zip
+    sha256: 47df17081e31bc25ab586ba88156dc25e07962364c73513004b9c6113b575be7
+    revision: fc4e98315a8d771b5ab832f0ade0b5e7b106df7f
+    icon: assets/app-icon/cadcraft-256.png
+    icon_sha256: f7d70f060b1c5100e766f41bb6168e3eac8eb70c21914c5840cd4d8910052341
+  - slug: deckcraft
+    name: DeckCraft
+    release: v0.7.0
+    asset: deckcraft-web-0.7.0.zip
+    url: https://github.com/storytold/deckcraft/releases/download/v0.7.0/deckcraft-web-0.7.0.zip
+    sha256: 4ab91994048c096fa356b7246c31098474d978ecd572e5b252dd825a287d1c40
+    revision: d78e657e4cb1e490ceb5445785c052d9cf5ad963
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.deckcraft.png
+    icon_sha256: 66343901b993332bceadf13277e6a028b80b2fb3a1e215b841c855be731e5130
+  - slug: soundcraft
+    name: SoundCraft
+    release: v0.7.0
+    asset: soundcraft-web-0.7.0.zip
+    url: https://github.com/storytold/soundcraft/releases/download/v0.7.0/soundcraft-web-0.7.0.zip
+    sha256: b735de61fbdc21716977ace2649709bd307de832eda2d848f94d1868acef7c45
+    revision: 3a28a657692c1b98b28c276d8f61df9471074f0f
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.soundcraft.png
+    icon_sha256: fd6fa6a938fb734990218e23523354762b601c3f06a9b93e77a5efbdae2b0fe6
+  - slug: wordcraft
+    name: WordCraft
+    release: v0.7.0
+    asset: wordcraft-web-0.7.0.zip
+    url: https://github.com/storytold/wordcraft/releases/download/v0.7.0/wordcraft-web-0.7.0.zip
+    sha256: 98df7c68a0ac788a9ac0f531fd34c31ab7d89965abb4935f57168d287dab3189
+    revision: fc41918814f62645b6746ed68e71e8c2c2e85d6f
+    icon: assets/app-icon/hicolor/256x256/apps/ai.storyteller.wordcraft.png
+    icon_sha256: 7c1791408282d01e8c5d0cb1f4080971eaa412c60518694a1cec1e60b23c7406
+  - slug: figcraft
+    name: FigCraft
+    release: v0.6.0
+    asset: figcraft-web-0.6.0.zip
+    url: https://github.com/storytold/figcraft/releases/download/v0.6.0/figcraft-web-0.6.0.zip
+    sha256: a414970e3857f6613efd7f90bd4c8394e5d51b31c4cf1fa0352f87820695b9c4
+    revision: 833f0d2c27f0acbae5394848930ae531fc89c724
+    icon: assets/app-icon/figcraft-256.png
+    icon_sha256: a4fef51224acba3f8069f119d4d9651be3c484c47c168600033b64d744f632bb

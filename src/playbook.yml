@@ -14,6 +14,10 @@
       tags: [ 'never', 'local-dns' ]
     - role: secrets
       tags: [ 'secrets', 'nixos', 'authentik', 'hermes', 'dependency-track', 'frontier-indexer', 'forgejo', 'miniflux', 'immich' ]
+    - role: artcraft
+      artcraft_enabled: "{{ inventory_hostname == 'habiki' }}"
+      artcraft_publish: true
+      tags: [ 'artcraft' ]
     - role: nixos
       tags: [ 'nixos', 'hermes', 'dependency-track', 'frontier-indexer', 'forgejo', 'miniflux', 'immich' ]
     - role: esphome

@@ -1,0 +1,7 @@
+# Check-only by default: no vault credentials, NixOS rebuild or identity changes.
+- name: Download and check official ArtCraft static packages on Habiki
+  hosts: habiki
+  roles:
+    - role: artcraft
+      artcraft_enabled: true
+      tags: [artcraft-download]

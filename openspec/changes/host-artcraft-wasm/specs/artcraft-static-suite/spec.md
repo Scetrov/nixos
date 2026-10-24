@@ -61,18 +61,26 @@ OpenTofu SHALL manage thirteen visible Authentik launcher applications, each wit
 - **THEN** the editor tiles are not visible
 - **AND** manually entering a launch URL still does not grant access
 
-### Requirement: Pinned builds and safe automated publication
+### Requirement: Pinned release downloads and safe automated publication
 
-Build automation SHALL compile the thirteen web packages from explicit immutable source revisions with source integrity verification and locked dependencies, using pinned build tooling in an isolated environment without production secrets. Publication SHALL include all upstream runtime assets, reuse unchanged pinned outputs, and preserve the currently served editor when a candidate build or package check fails. Deployment automation SHALL retain one previous working publication for rollback.
+Ansible SHALL download official GitHub WASM release bundles for all thirteen editors from explicit versioned release-asset URLs with checked-in expected SHA-256 checksums. Release selection SHALL follow the repository's version-currency and seven-day update policy. Automation SHALL verify each download before safely extracting and checking its complete runtime assets. It SHALL NOT compile source, install Rust/WASM build tooling, execute upstream packaging/install scripts or create build containers. Publication SHALL be atomic, reuse verified unchanged downloads/publications, and preserve the currently served editor when a download, integrity check, extraction or package check fails. Deployment automation SHALL retain one previous working publication for rollback.
 
-#### Scenario: Build and repeat deployment
+#### Scenario: Download and repeat deployment
 - **WHEN** the operator runs targeted ArtCraft automation for Habiki
-- **THEN** the declared inputs produce checked static packages for the thirteen editors
-- **AND** rerunning with unchanged inputs reuses existing successful outputs without creating runtime services
+- **THEN** the declared official release bundles are downloaded, SHA-256 verified and checked for all thirteen editors without compilation
+- **AND** rerunning with unchanged inputs reuses verified downloads/publications without creating build or runtime services
 
-#### Scenario: Candidate build fails
-- **WHEN** an editor's compilation or package validation fails
+#### Scenario: Candidate download or validation fails
+- **WHEN** an editor's download, safe extraction or package validation fails
 - **THEN** deployment reports the failure and does not replace that editor's currently served files
+
+#### Scenario: Release asset changes unexpectedly
+- **WHEN** the downloaded release asset does not match its checked-in expected SHA-256
+- **THEN** deployment rejects it before extraction and preserves the currently served editor
+
+#### Scenario: No suitable official bundle exists
+- **WHEN** an editor has no suitable official released WASM bundle or its bundle lacks required runtime assets
+- **THEN** deployment reports the editor and blocker without silently omitting it, compiling a replacement or adding backend services
 
 #### Scenario: Restore a previous publication
 - **WHEN** the operator selects the retained previous publication through deployment automation

@@ -1,0 +1,49 @@
+- name: Prepare or roll back the official ArtCraft packages
+  when: artcraft_enabled | bool
+  block:
+    - name: Load the explicit ArtCraft inventory
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../config/artcraft.yml"
+
+    - name: Assert the target host and editor selection
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname == 'habiki'
+          - artcraft_select is sequence and artcraft_select is not string
+          - artcraft_select | difference(artcraft_editors | map(attribute='slug') | list) | length == 0
+          - not (artcraft_rollback | bool) or artcraft_select | length > 0
+        quiet: true
+
+    - name: Create the private download directory
+      ansible.builtin.file:
+        path: "{{ artcraft_work }}"
+        state: directory
+        mode: "0700"
+
+    - name: Copy the verification and publication helper
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../scripts/artcraft.py"
+        dest: "{{ artcraft_work }}/artcraft.py"
+        mode: "0555"
+
+    - name: Prepare download inputs
+      when: not (artcraft_rollback | bool)
+      block:
+        - name: Create the release download directory
+          ansible.builtin.file:
+            path: "{{ artcraft_work }}/downloads"
+            state: directory
+            mode: "0700"
+
+        - name: Write the non-sensitive release inventory
+          ansible.builtin.copy:
+            content: "{{ {'artcraft_editors': artcraft_editors} | to_nice_json }}\n"
+            dest: "{{ artcraft_work }}/inventory.json"
+            mode: "0444"
+
+    - name: Process the selected editor packages sequentially
+      ansible.builtin.include_tasks: editor.yml
+      loop: "{{ artcraft_editors | selectattr('slug', 'in', artcraft_select) | list if artcraft_select | length > 0 else artcraft_editors }}"
+      loop_control:
+        loop_var: artcraft_editor
+        label: "{{ artcraft_editor.slug }}"

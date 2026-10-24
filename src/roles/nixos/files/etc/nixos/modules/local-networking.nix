@@ -36,6 +36,7 @@
         "identity.net.scetrov.live"
         "immich.net.scetrov.live"
         "hermes.net.scetrov.live"
+        "artcraft.net.scetrov.live"
         "dtrack.net.scetrov.live"
         "dtrack-api.net.scetrov.live"
         "homeassistant.net.scetrov.live"

@@ -1,0 +1,110 @@
+encode zstd gzip
+header {
+  Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  X-Content-Type-Options nosniff
+  Referrer-Policy same-origin
+  Cache-Control no-store
+}
+
+# The embedded outpost owns callbacks; never recursively authenticate them.
+handle /outpost.goauthentik.io/* {
+  reverse_proxy 127.0.0.1:9000
+}
+
+handle {
+  # Preserve this order: normal directive sorting puts redirects before auth.
+  route {
+    forward_auth http://127.0.0.1:9000 {
+      uri /outpost.goauthentik.io/auth/caddy
+    }
+
+    # Only authorized responses may be stored, and never in shared caches.
+    header Cache-Control "private, no-cache"
+    @hashed path_regexp hashed ^/[a-z]+craft/[^/]+-[a-f0-9]{16}(_bg)?\.(js|wasm|png|ico)$
+    header @hashed Cache-Control "private, max-age=31536000, immutable"
+    @wasm path *.wasm
+    header @wasm Content-Type application/wasm
+
+    redir / /photocraft/ 302
+
+    redir /photocraft /photocraft/ 308
+    handle_path /photocraft/* {
+      root * /var/lib/artcraft/photocraft
+      file_server
+    }
+
+    redir /pdfcraft /pdfcraft/ 308
+    handle_path /pdfcraft/* {
+      root * /var/lib/artcraft/pdfcraft
+      file_server
+    }
+
+    redir /filmcraft /filmcraft/ 308
+    handle_path /filmcraft/* {
+      root * /var/lib/artcraft/filmcraft
+      file_server
+    }
+
+    redir /vectorcraft /vectorcraft/ 308
+    handle_path /vectorcraft/* {
+      root * /var/lib/artcraft/vectorcraft
+      file_server
+    }
+
+    redir /lightcraft /lightcraft/ 308
+    handle_path /lightcraft/* {
+      root * /var/lib/artcraft/lightcraft
+      file_server
+    }
+
+    redir /designcraft /designcraft/ 308
+    handle_path /designcraft/* {
+      root * /var/lib/artcraft/designcraft
+      file_server
+    }
+
+    redir /effectcraft /effectcraft/ 308
+    handle_path /effectcraft/* {
+      root * /var/lib/artcraft/effectcraft
+      file_server
+    }
+
+    redir /gridcraft /gridcraft/ 308
+    handle_path /gridcraft/* {
+      root * /var/lib/artcraft/gridcraft
+      file_server
+    }
+
+    redir /cadcraft /cadcraft/ 308
+    handle_path /cadcraft/* {
+      root * /var/lib/artcraft/cadcraft
+      file_server
+    }
+
+    redir /deckcraft /deckcraft/ 308
+    handle_path /deckcraft/* {
+      root * /var/lib/artcraft/deckcraft
+      file_server
+    }
+
+    redir /soundcraft /soundcraft/ 308
+    handle_path /soundcraft/* {
+      root * /var/lib/artcraft/soundcraft
+      file_server
+    }
+
+    redir /wordcraft /wordcraft/ 308
+    handle_path /wordcraft/* {
+      root * /var/lib/artcraft/wordcraft
+      file_server
+    }
+
+    redir /figcraft /figcraft/ 308
+    handle_path /figcraft/* {
+      root * /var/lib/artcraft/figcraft
+      file_server
+    }
+
+    respond "Not Found" 404
+  }
+}

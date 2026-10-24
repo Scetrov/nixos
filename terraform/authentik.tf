@@ -578,6 +578,7 @@ resource "authentik_outpost" "proxy" {
     authentik_provider_proxy.metrics.id,
     authentik_provider_proxy.homeassistant.id,
     authentik_provider_proxy.garage_admin.id,
+    authentik_provider_proxy.artcraft.id,
   ]
 
   config = jsonencode({

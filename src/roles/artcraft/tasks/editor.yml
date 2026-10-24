@@ -1,0 +1,58 @@
+- name: Fetch the integrity-checked official editor release
+  when: not (artcraft_rollback | bool)
+  ansible.builtin.get_url:
+    url: "{{ artcraft_editor.url }}"
+    dest: "{{ artcraft_work }}/downloads/{{ artcraft_editor.asset }}"
+    checksum: "sha256:{{ artcraft_editor.sha256 }}"
+    mode: "0400"
+    timeout: 120
+
+- name: Safely extract and check the official release without executing package code
+  when: not (artcraft_rollback | bool)
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_facts.python.executable }}"
+      - "{{ artcraft_work }}/artcraft.py"
+      - prepare
+      - --inventory
+      - "{{ artcraft_work }}/inventory.json"
+      - --work
+      - "{{ artcraft_work }}"
+      - --slug
+      - "{{ artcraft_editor.slug }}"
+  register: artcraft_prepare_result
+  changed_when: artcraft_prepare_result.rc == 0 and (artcraft_prepare_result.stdout_lines[-1] | from_json).changed
+
+- name: Publish the checked editor with a retained previous version
+  when: artcraft_publish | bool and not (artcraft_rollback | bool)
+  become: true
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_facts.python.executable }}"
+      - "{{ artcraft_work }}/artcraft.py"
+      - publish
+      - --root
+      - "{{ artcraft_root }}"
+      - --slug
+      - "{{ artcraft_editor.slug }}"
+      - --key
+      - "{{ (artcraft_prepare_result.stdout_lines[-1] | from_json).key }}"
+      - --candidate
+      - "{{ (artcraft_prepare_result.stdout_lines[-1] | from_json).site }}"
+  register: artcraft_publish_result
+  changed_when: artcraft_publish_result.rc == 0 and (artcraft_publish_result.stdout_lines[-1] | from_json).changed
+
+- name: Restore the retained previous editor publication
+  when: artcraft_rollback | bool
+  become: true
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_facts.python.executable }}"
+      - "{{ artcraft_work }}/artcraft.py"
+      - rollback
+      - --root
+      - "{{ artcraft_root }}"
+      - --slug
+      - "{{ artcraft_editor.slug }}"
+  register: artcraft_rollback_result
+  changed_when: artcraft_rollback_result.rc == 0 and (artcraft_rollback_result.stdout | from_json).changed

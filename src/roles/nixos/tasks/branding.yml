@@ -1,0 +1,32 @@
+- name: Copy Authentik branding assets
+  tags: [authentik-branding]
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/roles/nixos/files/etc/nixos/branding/{{ item }}"
+    dest: "/var/lib/authentik/branding/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - logo.png
+    - background.jpg
+    - hermes-caduceus-84a4bc433bfd.png
+    - home-assistant.png
+    - forgejo.png
+    - miniflux.png
+    - immich-a4cda3df8fe5.png
+    - filebrowser-quantum-636c950ca219.png
+    - photocraft-fa5aee91a09c.png
+    - pdfcraft-cde7ee8c5ee3.png
+    - filmcraft-f07f1390c046.png
+    - vectorcraft-440a9a0d31ea.png
+    - lightcraft-57e58898ea1a.png
+    - designcraft-b8407dae4f43.png
+    - effectcraft-186a1d869a46.png
+    - gridcraft-3d8cb180ae9e.png
+    - cadcraft-f7d70f060b1c.png
+    - deckcraft-66343901b993.png
+    - soundcraft-fd6fa6a938fb.png
+    - wordcraft-7c1791408282.png
+    - figcraft-a4fef51224ac.png
+  when: authentik_config_enabled | default(false)

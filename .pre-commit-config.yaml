@@ -48,6 +48,13 @@ repos:
         pass_filenames: false
         files: ^(terraform/(authentik(-flows|-settings)?\.tf|variables\.tf)$|src/roles/authentik-config/|scripts/tofu\.sh$|scripts/tests/(test_authentik_(passkey_flows|login)|test_tofu_fixture|run_authentik_passkey_browser)\.py$)
 
+      - id: artcraft-publication
+        name: ArtCraft package and publication safety
+        entry: python3 -m unittest scripts.tests.test_artcraft scripts.tests.test_artcraft_configuration
+        language: system
+        pass_filenames: false
+        files: ^(config/artcraft\.yml|scripts/artcraft\.py|scripts/tests/test_artcraft(_configuration)?\.py|src/artcraft(-deploy)?\.yml|src/roles/artcraft/|src/roles/nixos/(tasks/branding\.yml|files/etc/nixos/(branding/|modules/(artcraft\.caddy|caddy\.nix|local-networking\.nix)))|terraform/(artcraft|authentik)\.tf|tests/artcraft-eval\.nix|scripts/play\.sh)
+
       - id: tofu-fmt
         name: tofu fmt
         entry: scripts/tofu.sh -- fmt -write=true

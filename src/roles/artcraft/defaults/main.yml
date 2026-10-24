@@ -1,0 +1,7 @@
+artcraft_enabled: false
+artcraft_work: /var/tmp/artcraft-downloads
+artcraft_root: /var/lib/artcraft
+artcraft_publish: false
+artcraft_rollback: false
+# Empty selects the entire explicit inventory; useful for diagnosing one editor.
+artcraft_select: []

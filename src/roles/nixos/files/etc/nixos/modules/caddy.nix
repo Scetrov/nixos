@@ -143,6 +143,16 @@ lib.mkIf config.services.grafana.enable {
       '';
     };
 
+    virtualHosts."artcraft.net.scetrov.live" = {
+      useACMEHost = "scetrov.live";
+      # Existing Alloy journal collection carries these access logs to Loki.
+      logFormat = ''
+        output stderr
+        format json
+      '';
+      extraConfig = builtins.readFile ./artcraft.caddy;
+    };
+
     virtualHosts."hermes.net.scetrov.live" = lib.mkIf config.services.hermes-webui.enable {
       useACMEHost = "scetrov.live";
       extraConfig = builtins.readFile ./hermes-auth.caddy;

@@ -22,6 +22,7 @@ Options:
                                                 no channel updates, OpenTofu or blanket restarts)
                            - hermes-auth      : Proxy-only Hermes auth repair (requires --limit habiki;
                                                 no channel updates or blanket container restarts)
+                           - artcraft         : Habiki-only official WASM publication, branding & SSO
                            - dependency-track : Dependency Track deployment & configuration
                            - filebrowser      : Habiki Documents service: identity, secrets, runtime and
                                                 verified scopes (requires --limit habiki; standalone tag)
@@ -258,6 +259,22 @@ if [[ "$TAGS" == "database-upgrade" ]]; then
         exit 1
     fi
     PLAYBOOK="src/upgrade-databases.yml"
+fi
+
+if has_tag artcraft; then
+    if [[ "$LIMIT" != "habiki" || "$TAGS" != "artcraft" ]]; then
+        echo "Error: artcraft requires --limit habiki and cannot be combined with other tags." >&2
+        exit 1
+    fi
+    for arg in "${EXTRA_ARGS[@]}"; do
+        case "$arg" in
+            --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*)
+                echo "Error: artcraft target/tag overrides after -- are not supported." >&2
+                exit 1
+                ;;
+        esac
+    done
+    PLAYBOOK="src/artcraft-deploy.yml"
 fi
 
 # Build Ansible arguments

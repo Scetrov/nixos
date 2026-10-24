@@ -1,0 +1,65 @@
+# Habiki-only publication/identity/proxy deployment; no secret regeneration,
+# channel changes or blanket container restarts.
+- name: Deploy the official ArtCraft suite on Habiki
+  hosts: habiki
+  tags: [artcraft]
+  pre_tasks:
+    - name: Assert the explicitly targeted publication host
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname == 'habiki'
+          - ansible_limit | default('') == 'habiki'
+        quiet: true
+  roles:
+    - role: artcraft
+      artcraft_enabled: true
+      artcraft_publish: true
+  tasks:
+    - name: Deploy official local branding through the shared automation
+      ansible.builtin.include_tasks: roles/nixos/tasks/branding.yml
+
+    - name: Provision only ArtCraft access tiles and shared outpost membership
+      delegate_to: localhost
+      become: false
+      ansible.builtin.command:
+        argv:
+          - "{{ playbook_dir }}/../scripts/tofu.sh"
+          - --
+          - apply
+          - -auto-approve
+          - -target=authentik_policy_binding.artcraft_access
+          - -target=authentik_policy_binding.artcraft_editor_access
+          - -target=authentik_outpost.proxy
+      no_log: true
+      changed_when: true
+
+    - name: Copy the ArtCraft Caddy and shared DNS configuration
+      become: true
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/roles/nixos/files/etc/nixos/modules/{{ item }}"
+        dest: "/etc/nixos/modules/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - caddy.nix
+        - artcraft.caddy
+        - local-networking.nix
+
+    - name: Activate the NixOS configuration without updating channels
+      become: true
+      ansible.builtin.command:
+        argv: [nixos-rebuild, switch]
+      changed_when: true
+
+    - name: Reload the existing Blocky hosts-file mapping
+      become: true
+      ansible.builtin.systemd:
+        name: blocky.service
+        state: reloaded
+
+    - name: Verify Caddy remains active
+      become: true
+      ansible.builtin.command:
+        argv: [systemctl, is-active, caddy.service]
+      changed_when: false
