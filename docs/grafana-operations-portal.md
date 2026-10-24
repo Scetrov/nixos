@@ -34,7 +34,49 @@ The Grafana operations portal is managed declaratively from source control.
 - `dependency-track`: metrics and logs available after Prometheus scrape onboarding; traces and profiles are not yet present.
 - `oncall`: logs available now; metrics exporter, traces, and profiles are not yet present.
 - `hermes`: logs and external UI available now; metrics, traces, and profiles are not yet present.
-- `home-assistant`: logs available now and external UI available when the service is healthy; metrics and traces remain follow-up work defined in the Home Assistant platform spec.
+- `home-assistant`: logs and authenticated local metrics collection are configured, with retained environmental history in Mimir; see [the service runbook](home-assistant.md). Traces still require independent integration/verification.
+
+## Dashboard semantics and validation
+
+System Resources is now owned by `terraform/grafana.tf` and
+`terraform/dashboards/system-resources.json`, not embedded Nix dashboard JSON.
+The Grafana module removes the legacy file to avoid duplicate provisioning.
+Use Mimir UID `mimir`, derive the `host` dropdown from real host labels, and
+filter CPU/memory/disk queries by the selected host rather than instance aliases.
+Old acceptance tasks checking for `/etc/grafana/dashboards/system-resources.json`
+are superseded by this ownership change; they are not outstanding deployment work.
+
+Platform Hosts Reporting uses active Unix integration scrapes:
+
+```promql
+count(count by (host) (up{job="integrations/unix"} == 1))
+```
+
+The full-width stack-health row includes Prometheus. Fleet pressure views cover
+root filesystem space, throughput/IOPS, disk busy/queue and network errors/drops
+with meaningful host/device legends. They are concise drilldown entry points,
+not host-wide values mislabelled as application consumption.
+
+House panels use retained Home Assistant environmental metrics and reviewed
+indoor/outdoor allowlists, not every similarly named sensor. GitHub risk views
+distinguish zero findings from unavailable/forbidden/disabled coverage and link
+to the repository drilldown. AI quota cards follow the
+[freshness/window contract](codex-app-server.md#exporter-and-dashboard-contract).
+Project Zomboid is registered in Operations / Services and the service catalog.
+
+Validate JSON and real datasource queries, selected-host isolation, catalog
+links and available signal drilldowns before applying through `scripts/tofu.sh`.
+For missing traces/profiles, show the gap rather than fabricating coverage.
+Dashboard rollback restores source and reapplies through the wrapper; persistent
+Mimir/Loki history is not deleted. The old declarative resource-dashboard archive
+had four unchecked rollout checks; validate the current OpenTofu-owned dashboard
+when changing it rather than treating old checkboxes as proof of live acceptance.
+
+Investigations group recurring logs by source/message, rank actual service
+failure above accepted noise, and record the reason and revisit condition for a
+deferral. After remediation, verify service health, the original symptom in recent
+logs, and its real telemetry path. A passing readiness probe alone is not proof
+of authenticated database access or successful application setup.
 
 ## Reviewed Noise And Remediation Decisions
 

@@ -1,9 +1,0 @@
-{
-  "status": "ready",
-  "project": "efctl",
-  "version": "main",
-  "project_uuid": "3761ac8d-a1ce-4b1e-bfa6-7ae29141160a",
-  "team": "sbom-collector",
-  "acl": "enabled",
-  "token": "present"
-}

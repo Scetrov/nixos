@@ -21,7 +21,11 @@ tests may resolve the LAN hostname to `127.0.0.1` while retaining its hostname
 for TLS verification and S3 signatures.
 
 This is a single-host backup target, not disaster recovery: data is stored on
-Habiki's SSD and is not replicated off-host.
+Habiki's SSD and is not replicated off-host. Persistent service state is beneath
+`/var/lib/garage`; ordinary restarts/rebuilds/disablement preserve it. The module
+selects `pkgs.garage_2`, and its evaluation checks the intended package version;
+do not revive the superseded `pkgs.garage` alias from an old upgrade plan.
+Direct S3/RPC/admin/metrics listeners stay loopback-only with no router forwards.
 
 ## Minecraft operator backups
 
@@ -80,6 +84,29 @@ remote state. Existing S3 endpoints remain available.
 Recovery of the operator pair is the Vault entry above, or the sensitive
 OpenTofu state output if Vault persistence failed. Do not run `garage key info
 --show-secret` or print provider output.
+
+## Verification and compatibility
+
+The 2026-10-18 LAN endpoint acceptance recorded signed listing, PUT, byte-exact
+GET/DELETE and a 6 MiB multipart transfer, with normal TLS verification.
+Anonymous/invalid signatures failed. Disallowed IPv4/IPv6 socket sources were
+denied even with spoofed forwarded headers. Both DNS resolvers converged.
+Tailnet-source tests originated on Habiki; no separate tailnet-only client or
+external-WAN denial test was performed. Those are coverage limits, not passed
+remote-client checks.
+
+The later broker proof used Garage 2.4.1 and verified authenticated OpenTofu
+provisioning, read/write with owner/bucket-creation disabled, unauthenticated
+admin 401, a successful proof-object transfer/cleanup, encrypted Vault export
+and a no-change repeat plan. The earlier LAN smoke test used the then-running
+v1 API; it is not authority to downgrade the current broker/provider contract.
+Backend transport is `verify-full`; see [PostgreSQL TLS](postgresql-tls.md).
+
+Each wrapper invocation exchanges a fresh Authentik machine JWT. A saved plan
+cannot be reused across wrapper invocations when its provider token differs;
+review/apply using the supported wrapper workflow. Native token scopes are
+endpoint-scoped, not bucket-scoped; keep the accepted infrastructure-only
+cross-bucket authority distinct from the Minecraft key's narrow permissions.
 
 ## Provisioning a project bucket
 

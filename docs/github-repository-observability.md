@@ -29,6 +29,22 @@ The NixOS module is enabled on `habiki` through `scetrov.services.github-reposit
 
 The exporter listens on `127.0.0.1:9177` and Prometheus scrapes it with job `github-repository-observability`. Collection runs in the background every 15 minutes by default; `/metrics` serves the last cached result and does not call GitHub during scrapes.
 
+## Coverage and failure semantics
+
+Installation visibility bounds discovery; pagination and declarative inclusion
+policy decide the estate, not a hardcoded snapshot. Aggregate by bounded owner,
+repository, severity and tool dimensions. Do not use alert titles, arbitrary
+URLs, CVEs, package names, rule IDs or branches as unbounded metric labels.
+Use repository links for detailed remediation instead.
+
+The GitHub Repository Health dashboard and platform risk summary use retained
+Mimir metrics. A missing permission, disabled scanner, exhausted rate limit or
+collection failure is unknown coverage, not zero alerts. Review source
+availability, last-success age and collection duration/rate-limit metrics along
+with backlog/severity counts. Rollback disables the service/scrape and removes
+its dashboard resources through automation; App revocation is a separate action
+and retained observability history is not purged.
+
 ## Key metrics
 
 - `github_repository_info`

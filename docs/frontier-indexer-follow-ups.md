@@ -19,20 +19,14 @@ The change is a single declarative knob with no data or schema impact. To roll b
 deploy: marker `7` unchanged, `frontier-indexer-schema-reset` logged
 "skipped: no new generation".)
 
-## 1. Roll `frontier-indexer` image to v0.4.1
+## Release follow-up superseded
 
-- **When:** ~2026-10-22, after the seven-day release-age window for v0.4.1 has
-  elapsed.
-- **What:** Bump the pinned image in
-  `src/roles/nixos/files/device-configuration/habiki.nix`
-  (`scetrov.services.frontier-indexer.indexerImage`) from `v0.4.0` to `v0.4.1`,
-  updating the `sha256:` digest to the new image digest.
-- **Impact:** v0.4.1 is a same-cycle additive change (protocol 139, new
-  `address_aliases` migration) and requires **no schema reset**. The reset
-  generation marker must stay unchanged (currently `7`).
-- **Deploy:** `./scripts/play.sh --limit habiki --tags frontier-indexer`.
+The old v0.4.1 cooldown reminder is superseded: Habiki now declares digest-pinned
+v0.5.0. Do not deploy the historical v0.4.1 target from this note. Continue to
+review release compatibility and preserve generation `7` for non-reset changes;
+configuration inspection alone is not a live rollout check.
 
-## 2. Fix the chain-head exporter probe
+## Fix the chain-head exporter probe
 
 - **What:** Repoint the `frontier_indexer_chain_head_checkpoint` exporter probe
   from the deprecated public JSON-RPC endpoint to the public GraphQL endpoint

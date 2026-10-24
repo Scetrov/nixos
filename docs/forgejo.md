@@ -71,6 +71,20 @@ Query both Blocky servers after rollout to confirm they answer
 - Admission is by Authentik group membership: the `Forgejo Owners` group (currently only `scetrov`). The OIDC source grants Forgejo administration from that signed claim; email strings are never used for authorization.
 - To admit or remove a member, change the group in the managed Authentik configuration and re-run the Authentik deployment path. OIDC auto-enrollment creates the Forgejo account on first sign-in; removing a member does **not** immediately revoke existing Forgejo sessions, SSH keys, or tokens (see revocation below).
 
+## Deferred Actions boundary
+
+Actions and retained experimental runner code remain inactive; prior runner
+designs are not an accepted production capability. Any separately approved
+activation must first prove native checkout/test/build/artifact compatibility
+with the selected rootless runtime. Limit registration to trusted owner or
+explicit repositories, not instance-global untrusted jobs. Use a dedicated
+non-administrative identity, container-only execution, no host runtime socket,
+privileged mode, arbitrary host mounts or deployment/registration credentials
+inside jobs. Bound concurrency, CPU/memory and runner-owned cleanup, and test
+credential rotation/re-registration without duplicate runners. Pin job images
+by digest and actions by full commit hash. Do not treat the old suggested
+one-job/2-vCPU/2-GiB limits as automatic activation approval.
+
 ## Automatic browser SSO
 
 Anonymous root visits use Forgejo's native `LANDING_PAGE = login`. Caddy sends

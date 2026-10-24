@@ -10,7 +10,8 @@ reports 35 healthy, 192 excluded and zero errors. Actions, ingress and identity
 reconciliation are unchanged. Live acceptance verified autonomous native updates,
 all 2,699 branch/tag refs against GitHub, and an explicitly approved stale-status/
 recovery test. The normal three-hour threshold is restored and current errors
-are zero; see the OpenSpec acceptance evidence for details.
+were zero at the recorded 2026-10-22 acceptance. These are dated results, not a
+fresh live inventory; use the protected report and metrics below for current state.
 
 | Source | Case-insensitive name glob | Private destination | Forgejo ID | Planned repositories |
 | --- | --- | --- | --- | --- |
@@ -27,10 +28,11 @@ one-minute minimum. Its default native scheduler checks due mirrors every ten
 minutes, separately from the hourly discovery timer, so a due mirror may wait
 until the following scheduler tick.
 
-Live report: `/var/lib/forgejo-mirrors/report.json`, mode 0600. The recorded public
-inventory is `openspec/changes/archive/2026-10-22-mirror-selected-github-repositories/report-only-inventory.json`.
-It records the pre-approval plan of 35 destinations, 192 exclusions, no conflicts/
-errors and 2,044,647 KiB (~1.95 GiB) reported GitHub size. Refreshed size before
+Live report: `/var/lib/forgejo-mirrors/report.json`, mode 0600. The historical
+pre-approval inventory recorded 35 destinations, 192 exclusions, no conflicts/
+errors and 2,044,647 KiB (~1.95 GiB) reported GitHub size. The source-owner and
+destination mapping above preserves the approved boundary; the full dated JSON
+snapshot remains in Git history, not a required operational input. Refreshed size before
 import was 2,047,768 KiB with unchanged selection. This is **not** a storage bound:
 LFS volume, temporary imports, overhead and growth remain unbounded. The focused
 lane checks the existing 500 GiB free-space reserve before activation.
@@ -210,8 +212,8 @@ acceptance, regardless of a recent Git timestamp; restore source objects or
 credentials and verify destination LFS bytes before declaring recovery.
 Last success advances only for a fully successful apply, not report-only. Monitor
 missing/stale last-run signals too: a process killed before publication cannot
-report its own failure. Live stale/failure verification is recorded in the
-OpenSpec acceptance evidence. An explicitly approved one-second threshold test
+report its own failure. At the recorded 2026-10-22 acceptance, an explicitly
+approved one-second threshold test
 emitted 35 stale errors in Mimir and stale logs in Loki; restoring 10,800 seconds
 returned all 35 mirrors to healthy with zero errors. No Forgejo or Frontier
 restart occurred. Do not repeat fault-injection checks without review.

@@ -25,4 +25,26 @@ Habiki includes `media/maps/Muldraugh, KY/worldmap.png` at 10234×8314 pixels. I
 
 After the player joined, a focused Loki query `{service="project-zomboid",host="habiki"}` returned a stream with `unit="project-zomboid.service"`, confirming the Alloy journal relabel and host correlation. Older logs from before the relabel may lack the `service` label. Process CPU and RSS are JVM-attributable, so no host-wide proxy or additional collector is needed.
 
+## Dashboard behaviour and evidence limits
+
+The source-controlled service dashboard combines playability, world activity,
+JVM/runtime, GM detail and operational logs, and is discoverable from the
+operations catalog. CPU/RSS must be JVM/service-attributable, not host totals
+presented as game consumption. The telemetry/dashboard work added no game alert
+rules, paging routes or notification-policy changes.
+
+Activity charts use reset-aware discrete `increase(...[$__interval])` buckets
+over the selected range, with a five-minute minimum (ordinarily readable
+5–15-minute buckets), not overlapping rolling-hour totals. All seven native
+event series remain distinct; fire kills are a subset of total kills, not an
+independent stacked addition. Missing source series is unavailable data, not
+proof of zero events.
+
+The roster is based on verified coordinate observations in the dashboard time
+range: native Player ID, last observed timestamp and latest available World X/Y.
+It is not a historical account directory. An empty range has no observed players;
+current-position views still depend on online telemetry. Health, days alive and
+individual zombies-killed columns require verified native per-player signals
+and must not be added as fabricated placeholders.
+
 The validation kept RCON disabled (the module's profile initialization sets `RCONPort=0`, `RCONPassword=`), installed no client software and did not introduce a RCON credential. The endpoint is enabled through NixOS automation, not an imperative edit to mutable game state.

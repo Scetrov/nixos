@@ -106,12 +106,30 @@ bounded readiness/SQL timeouts and blocks initial application startup on failure
 An already-running service uses its normal restart/reconnect path after database
 restarts. Provisioning never drops/recreates existing data to recover availability.
 
+## Accepted verification limits
+
+The original 2026-10-16 rollout was accepted by the operator with explicit
+verification deferrals, not a claim that every service-lifecycle/security test
+passed. Independent checks recorded active services, loopback-only listening,
+HTTPS and unauthenticated API/metrics boundaries, least-privileged role flags,
+in-memory Vault/provider/runtime credential matches, Loki delivery and a healthy
+inactive alert. Fyne DNS propagation was not confirmed at that sign-off.
+
+Still do not claim comprehensive initial/repeated setup, password rotation,
+database-outage/migration recovery, cross-database denial, negative browser
+authorization, disabled-local-login or notification **delivery** coverage from
+that acceptance. Later subscription fixtures and the 2026-10-17 production
+sync below establish their specifically listed API/OPML/recovery outcomes, not
+every deferred reader/database test. Recheck both DNS servers and all relevant
+security/recovery paths when changing the service; carry remaining work in this
+runbook or an issue rather than restoring the retired task list.
+
 ## Git-managed subscriptions
 
 `config/miniflux/feeds.json` is the hand-edited authority: 47 sources, currently
 37 enabled and ten disabled with reasons. The initial seed had 39 enabled and
 eight disabled; two more were disabled after authorized Habiki testing below.
-The change's `feed-audit.md` records
+The [initial feed audit summary](#initial-feed-audit-provenance) records
 point-in-time research, not a guarantee of ongoing ingestion. Edit titles,
 categories, public HTTP(S) URLs and `enabled`; disabled entries need a `reason`.
 Use `aliases` only for known alternative stored URLs. Keep an old URL as an alias
@@ -263,6 +281,40 @@ touching the reader, subscriptions, database, routes or identity. Remove the
 optional Vault token and its encrypted consumer file through reviewed automation
 when no longer needed, and revoke the personal key in Miniflux. Do not invoke the
 subscription tag after disabling its units.
+
+## Initial feed audit provenance
+
+Read-only HTTP/XML research on 2026-10-17 reduced 50 supplied entries to 47:
+Architect Security was duplicated verbatim; Microsoft and Google each had two
+URLs for one subscription. Initially 26 supplied endpoints parsed directly,
+13 needed redirects/replacements and eight were disabled. These agent-host
+observations are not Habiki ingestion or ongoing-publication guarantees.
+
+The catalogue retains exact URLs, matching aliases and disabled reasons.
+Notable reviewed replacements were PortSwigger's native blog RSS, Dark Reading
+`/rss.xml`, SC World's RSS, the publisher-advertised Smashing Security RSS
+(redirecting to RedCircle), BrakeSec's Libsyn RSS instead of its TLS-failing
+original host, HTTPS Google FeedBurner, SecurityWeek and Europol's news API RSS.
+Krebs moved to HTTPS; Microsoft aliases collapse to the en-us feed.
+The Register retained its readable publisher URL and later gained the observed
+API redirect alias during live sync. ZDNet redirects to general news, not a
+security-only publication. Preserve these matching decisions when editing URLs.
+
+Initial disabled sources were Forbes/Davey Winder (HTTP 403), three ICO feeds
+(explicit redesign/unavailability notices), SANS DFIR (HTML landing-page redirect),
+ShiftSec Left (DNS failure), GreatHorn (404) and Threatpost (two timeouts,
+inconclusive). Disabled means do not create, not unsubscribe or prove cessation.
+Black Swan, NCSC and Google had freshness warnings. Some endpoints depended on
+a Miniflux user-agent; a successful agent-host request did not prevent the later
+Check Point/Security Boulevard production 403s recorded above.
+
+Revalidate publisher replacements before enabling; never auto-adopt a guessed
+URL or disable TLS verification. Original primary references:
+[Smashing Security subscriptions](https://www.smashingsecurity.com/subscribe/),
+[ICO feed notices](https://ico.org.uk/global/rss-feeds/) and
+[Miniflux native API](https://miniflux.app/docs/api.html).
+The complete dated research table remains available in Git history; the
+catalogue is the only hand-edited subscription authority.
 
 ## Non-destructive rollback
 

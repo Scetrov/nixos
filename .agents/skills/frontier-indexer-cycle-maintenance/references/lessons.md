@@ -1,6 +1,6 @@
 # Lessons from the Cycle 6 → Cycle 7 change
 
-Historical evidence: `openspec/changes/archive/2026-10-09-upgrade-frontier-indexer-cycle-7/validation.md`. These observations are examples, not defaults for future cycles.
+Operational contract: `docs/frontier-indexer-cycle-recovery.md`. Detailed Cycle 7 rollout evidence remains in Git history. These observations are examples, not defaults for future cycles.
 
 - **SQL stdin was missing.** `podman run` without `-i` silently discarded the SQL heredoc. `psql` exited successfully, so a generation marker could be published without resetting the schema. Real container testing caught retained watermarks. Preserve stdin forwarding and a regression that requires actual table removal.
 - **Readiness was not authentication.** The old startup graph reset before database preflight. Preserve readiness → authenticated preflight → reset → indexer, including credential-repair testing without logging passwords.

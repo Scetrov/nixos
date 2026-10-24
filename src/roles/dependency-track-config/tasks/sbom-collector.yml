@@ -13,7 +13,6 @@
     DT_ENABLE_ACL: "{{ '1' if (github_sbom_enable_portfolio_acl | bool) else '0' }}"
     DT_VAULT: "{{ playbook_dir }}/secrets.yml"
     DT_VAULT_PASSWORD_FILE: "{{ lookup('env', 'HOME') }}/.ansible/nixos_vault_password"
-    DT_EVIDENCE_PATH: "{{ playbook_dir }}/../openspec/changes/ingest-github-sbom-artifacts/target.json"
   delegate_to: localhost
   register: github_sbom_target
   changed_when: "'\"changed\": true' in github_sbom_target.stdout"

@@ -97,6 +97,55 @@ Expected outage: Codex quota metrics remain unavailable from state loss until an
 
 If a future declarative encrypted backup is approved, this runbook may name it only after a restore into isolated protected state succeeds and `account/read` reports authenticated without exposing credentials.
 
+## Exporter and dashboard contract
+
+The hardened `ai-usage-exporter.service` serves cached Prometheus metrics at
+`127.0.0.1:9188/metrics`. Source polling defaults to 900 seconds with bounded
+10-second requests; source requests are staggered. Scrapes do not trigger
+provider calls. The exporter reads only the authorized control socket and
+OpenRouter runtime secret, not Codex's OAuth state. Codex failure must not stop
+OpenRouter collection or the metrics HTTP server.
+
+Codex collection initializes the local protocol and uses
+`account/rateLimits/read`, preferring `rateLimitsByLimitId.codex` and falling
+back to `rateLimits`. The exporter does not refresh ChatGPT tokens itself,
+poll WHAM, or copy workstation credentials. A reached-limit classification sets
+`ai_codex_limit_reached`; unknown plan names are accepted as info values.
+
+Window labels describe provider-reported duration, not primary/secondary slots:
+
+- 10,080 minutes becomes `weekly`; 300 minutes becomes `5h`.
+- Other positive durations receive deterministic duration-derived labels.
+- Missing windows emit no synthetic zero/presence/usage/reset series.
+- Duplicate normalized durations or malformed/non-finite window values fail the
+  scrape with sanitized diagnostics, not complete account payloads.
+
+Usage, duration, presence and absolute reset timestamps are distinct metrics.
+A failed poll retains last-known values and last-success time while setting
+source success to zero. Transport/protocol failure leaves the last explicit
+authentication value unchanged (or absent); only an explicit unauthenticated
+account response sets it to zero. Never interpret retained auth or quota as proof
+of current availability.
+
+Both `terraform/dashboards/ai-usage.json` and the platform overview use Mimir.
+The overview has paired Weekly Remaining/Reset and 5-Hour Remaining/Reset cards.
+Current-value expressions require authentication, source success, that window's
+presence, and last success no older than two reported source intervals. Failure
+or absence renders N/A, not zero or cached allowance. Remaining is
+`100 - ai_codex_window_used_percent`; reset duration is
+`clamp_min(ai_codex_window_reset_timestamp_seconds - time(), 0)`.
+Use pink below 20% remaining, amber through 50%, teal above 50%; the retired
+`7d` label is not queried. Fire quota/presence conclusions only from fresh data.
+OpenRouter credits, percentage consumed, history and per-source freshness/health
+remain distinct views; absence of a Codex five-hour window does not fabricate one.
+
+Regression checks:
+
+```sh
+python3 -m unittest discover -s src/roles/nixos/tests -p 'test_ai_usage_*.py'
+nix-instantiate --eval --strict --json --expr 'import ./src/roles/nixos/tests/ai-usage-eval.nix {}'
+```
+
 ## Alerting follow-up inputs
 
 This change adds dashboard health only; it does not create Grafana contact points, notification policies, or alert rules. A separate declarative alerting proposal can use:

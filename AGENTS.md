@@ -73,6 +73,10 @@ We use **Grafana** and **Loki** for central observability.
     *   `dependency-track`: Perform end-to-end Dependency Track deployment (secrets, host services, Authentik SSO, and API mappings).
 *   **Agent Guideline:** When executing tasks as an agent, always prefer targeted runs using `--limit` and `--tags` to speed up execution, reduce resource utilization, and minimize blast radius (e.g., `./scripts/play.sh --limit habiki --tags hermes`).
 
+### **Living Documentation**
+*   Read `docs/README.md` for service runbooks.
+*   When proposing, implementing, or finalizing OpenSpec work, follow `docs/documentation-workflow.md`: update living contracts in `docs/`, archive before final commit/PR with `--skip-specs`, then remove preserved completed artifacts rather than retaining historical task/spec trees.
+
 ### **Repository Hygiene**
 *   The `terraform/.gitignore` MUST exclude `.terraform/`, `.opentofu/`, and any `*.tfstate` files to prevent accidental leakage of resource metadata or cached secrets.
 *   The `terraform/.terraform.lock.hcl` should also be ignored to avoid platform-specific lock conflicts in this environment.

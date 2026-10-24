@@ -238,7 +238,10 @@ No upload key is issued while ACL is disabled, or if the team already has a key
 that is not recorded in the vault. A newly issued key is appended to encrypted
 `src/secrets.yml` as `dtrack_sbom_collector_token` and is not rotated
 automatically. Record the printed project UUID in the collector source mapping
-before enabling uploads.
+before enabling uploads. The role consumes the script's sanitized JSON result;
+normal provisioning does not write evidence into a temporary change directory.
+An optional `DT_EVIDENCE_PATH` is only for an explicitly selected operator-owned
+output file whose parent already exists, not an operational OpenSpec dependency.
 
 ## Validation and rollout status
 

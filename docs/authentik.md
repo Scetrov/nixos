@@ -174,8 +174,9 @@ state, containers, volumes, network, and browser profile are removed afterward.
 Authenticated success checks wait for final navigation before checking identity;
 earlier polling could race with login and expire the new session cookie.
 
-Detailed historical and current outcomes are recorded in
-`openspec/changes/archive/2026-10-17-add-authentik-passkey-first/evidence.md`.
+The acceptance summary above preserves the operational outcome and its limits.
+Earlier prototypes and detailed dated transcripts are retained in Git history,
+not required as a second live authentication runbook.
 
 ## Installation Model
 
@@ -683,10 +684,40 @@ This repository uses a "Compute and Capture" pattern for OIDC credentials to eli
 4.  **Encryption**: `scripts/tofu.sh` immediately encrypts the file using `ansible-vault`.
 5.  **Consumption**: The main `src/playbook.yml` is configured to optionally include `generated-secrets.yml`.
 
+### Deployment ordering and consistency
+
+Provider outputs are authoritative for Grafana, Dependency-Track, Forgejo and
+other managed OIDC consumers. Refresh encrypted `src/generated-secrets.yml`
+**before** Ansible loads variables, renders agenix files or activates consumers.
+Ansible `vars_files` loaded before a role cannot be assumed to refresh when that
+role writes new outputs. First deployment must provision identity prerequisites
+before consumers; do not rely on an undocumented second full deployment.
+
+Reject empty, missing, malformed and placeholder values before touching runtime
+configuration. Do not silently keep stale consumer credentials when output
+refresh fails. Use each service's targeted orchestration and reject
+`--skip-generated-refresh` where the lane requires fresh outputs. Compare
+provider/consumer values in memory and report only match status or non-sensitive
+metadata; never print secrets. Reconcile only owned admin-group membership:
+packaged/admin blueprints must preserve OpenTofu-owned application and unrelated
+memberships, including during credential repair.
+
 ### Proven Safety Rules
 
 - **Avoid Special Characters**: Use `special = false` in `random_password` resources. This prevents shell interpolation or YAML parsing errors when secrets are moved between Tofu, Bash, and Ansible.
 - **Stable Identifiers**: Use `random_id` for client IDs to ensure they remain consistent across infrastructure updates.
+
+## Application branding
+
+Ansible owns locally served branding assets; OpenTofu owns application icon
+references. Visible applications need appropriate artwork. Forgejo/Miniflux use
+official 512 × 512 PNG assets with immutable upstream provenance and SHA-256
+checksums. Branding-only deployment must not alter access policy or open ports.
+Hermes retains the supplied caduceus SVG (path/viewBox/transform/even-odd fill and
+cyan-to-blue gradient) and a transparent PNG whose served filename includes the
+first 12 SHA-256 hex characters. Content-addressed URLs avoid stale browser icons;
+retain the source and checksum metadata alongside assets rather than a separate
+icon-change specification.
 
 ## OIDC Integration Patterns
 

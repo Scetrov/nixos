@@ -1,6 +1,6 @@
 # Private Documents service (Habiki)
 
-Status: implementation and disposable-fixture validation; live rollout acceptance must be recorded separately. No personal-data deployment is implied by the fixture results.
+Status: implementation and disposable-fixture validation; live rollout acceptance must be recorded separately. No personal-data deployment is implied by the fixture results. The retired change checklist marked rollout complete but supplied no separate detailed live acceptance record; that checkbox alone does not establish each production security/browser check.
 
 ## Boundary
 
@@ -19,7 +19,7 @@ Edit `src/filebrowser-enrollments.json`. Each entry contains:
 - `authentik_pk`: directory lookup locator only; OpenTofu rejects a lookup whose returned UUID differs;
 - `unix_username`: exact lowercase Unix/Quantum username and emitted `preferred_username`.
 
-Initial identities are `scetrov`, `pinkgiraffes` and `flyingfire`; confirmed UUIDs are recorded in the OpenSpec design. Resolve a new Authentik identity through the authenticated directory API, requiring exactly one case-insensitive exact username match before recording its UUID/PK. Never derive enrollment from email/display names or arbitrary SSO claims.
+Initial identities are `scetrov`, `pinkgiraffes` and `flyingfire`; the confirmed UUID/PK mappings are authoritative in `src/filebrowser-enrollments.json`, not a historical design document. Resolve a new Authentik identity through the authenticated directory API, requiring exactly one case-insensitive exact username match before recording its UUID/PK. Never derive enrollment from email/display names or arbitrary SSO claims.
 
 Existing Unix accounts retain their UID, shell, credentials and groups. Missing explicitly enrolled accounts are created with a locked password and `nologin`, without SSH keys or extra groups. Documents roots must belong to their Unix account. Unsafe paths, UID aliases, identity reassignment, nested filesystems, special files and hard-linked regular files fail closed and require review; symlinks inside Documents are not traversed by ACL automation.
 
@@ -62,7 +62,6 @@ The component tag is standalone and rejects widened targets/trailing overrides. 
 Read-only/disposable validation:
 
 ```sh
-openspec validate add-filebrowser-quantum --strict
 python3 -m unittest scripts.tests.test_filebrowser_identity scripts.tests.test_filebrowser_acl scripts.tests.test_filebrowser_host scripts.tests.test_filebrowser_configuration scripts.tests.test_filebrowser_reconcile
 python3 scripts/tests/validate_filebrowser_tofu.py
 python3 scripts/tests/run_filebrowser_integration.py --remote habiki.net.scetrov.live

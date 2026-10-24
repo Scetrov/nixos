@@ -2,11 +2,11 @@
 
 ## Implementation status
 
-Work in progress under `openspec/changes/host-artcraft-wasm/`. All thirteen
-packages and icons were published on Habiki and targeted identity provisioning
-and NixOS activation succeeded. Deployment then stopped at an unsupported Blocky
-reload. Live DNS/authentication/logging and production browser acceptance remain
-unverified; do not treat the suite as accepted.
+The retired change's final acceptance record says the operator completed and
+accepted deployment/security, production browser/rollback and sign-off checks
+on 2026-10-24. The archiving agent did not rerun those checks. This supersedes
+the earlier blocked-rollout status below, while preserving the distinction
+between operator-reported acceptance and independently observed evidence.
 
 The operator confirmed **All Applications** on 2026-10-24 for both shared proxy
 authorization and launcher visibility. Do not change group memberships or grant
@@ -44,6 +44,22 @@ was assumed. Dates below are UTC.
 Release evidence is available at
 `https://api.github.com/repos/storytold/<slug>/releases`; commit resolution at
 `https://api.github.com/repos/storytold/<slug>/commits/<release>`.
+
+## Serving and authorization contract
+
+Existing Caddy serves the thirteen lowercase editor prefixes as static sites,
+without per-editor backends, runtime containers or new listening ports.
+The authenticated root redirects to `/photocraft/`; slashless editor paths
+redirect to trailing-slash paths. WASM uses `application/wasm`, entry HTML
+requires revalidation, and missing assets/unknown paths return 404 without
+directory listings or fallback to another editor's HTML.
+
+Documents **and assets** require the shared hostname-level Authentik policy;
+only outpost callback handling avoids recursive auth. The thirteen launcher
+tiles have the same approved visibility policy and distinct official local icons,
+not independent authorization providers. Keep the hidden enforcement
+application and existing All Applications boundary; do not grant General User
+or change memberships as part of asset maintenance.
 
 ## Download and publication automation
 
@@ -130,7 +146,7 @@ browser tests used ephemeral profiles with external DNS blocked and SwiftShader;
 no upstream scripts or source builds were run. VectorCraft initialized without
 requesting external fonts, but Arabic rendering is not verified.
 
-## Deployment blocker (2026-10-24)
+## Earlier deployment blocker and later acceptance (2026-10-24)
 
 `./scripts/play.sh --limit habiki --tags artcraft` downloaded, verified and
 published all thirteen packages, copied the icons, provisioned targeted identity
@@ -146,8 +162,12 @@ tasks, 47 changed, one failed; the final Caddy-active check was not reached.
 The deployment log is `/tmp/artcraft-deploy.log` (private, ephemeral). Changes
 before the failure remain applied; this was not an atomic whole-suite rollout.
 
-Pending: correct DNS activation through automation with operator approval,
-rerun the targeted deployment, propagate DNS on Fyne, verify live authentication,
-callbacks, denied assets, tile visibility, local icons and Loki delivery, then
-complete production browser interactions and automated preservation/rollback.
-Do not archive or commit/PR before successful acceptance.
+The original remaining checks were DNS activation/propagation, authentication
+and callbacks, denied assets, tile visibility/icons, Loki delivery, production
+browser interactions and automated preservation/rollback. The final change
+record subsequently attributes completion of those checks to the operator's
+explicit acceptance on 2026-10-24; it does not supply a new agent-observed
+successful deployment transcript. Do not infer which Blocky repair was used or
+repeat the failed reload instruction from this history. Future changes must
+verify their own activation/security/rollback results rather than reuse old
+acceptance as proof of current health.

@@ -127,7 +127,10 @@ ansible habiki -i src/inventory.yml --become \
 ```
 
 Do not close issue #30 until all required deployed checks have passed. Do not
-archive the OpenSpec change while implementation/required verification is blocked.
+finalize a change while implementation/required verification is blocked.
+The retired implementation checklist marked these checks complete but did not
+include a separate per-check live evidence record. Preserve that limitation;
+this consolidation does not certify a new mobile/recovery/security test.
 
 ## Troubleshooting and regression checks
 

@@ -39,6 +39,13 @@ Then run the container with:
 podman run --rm -it --userns=keep-id -v "$(pwd):/workspace" -v ~/.ansible:/root/.ansible:ro nixos_devenv -c zsh
 ```
 
+## Documentation
+
+Start with the [operations documentation index](docs/README.md) for service
+runbooks and the [docs-first change workflow](docs/documentation-workflow.md).
+Historical plans and completed task lists are retained in Git history rather
+than a second living-documentation tree.
+
 ## Reference
 
 ### Secret Management

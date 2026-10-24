@@ -1,20 +1,15 @@
 schema: spec-driven
-
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
-
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+context: |
+  Living service documentation and enduring contracts are authoritative in docs/.
+  Read docs/documentation-workflow.md before proposing, applying or archiving.
+  OpenSpec artifacts are temporary active-change plans. Use runbooks and actual
+  configuration as the baseline, not permanent capability specs.
+rules:
+  proposal:
+    - Identify the owning docs/ runbook and reference the current system baseline.
+  specs:
+    - Capture affected desired behaviour and acceptance scenarios temporarily.
+    - Reconcile enduring contracts into docs/ instead of a permanent specs tree.
+  tasks:
+    - Include runbook reconciliation and truthful preservation of verification gaps.
+    - Finalize with archive --skip-specs, then prune only the completed archive.
