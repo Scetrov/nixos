@@ -50,6 +50,7 @@ in
         hugo
         llvmPackages.libclang
         lsb-release
+        mprocs
         nixfmt
         nmap
         pkg-config
