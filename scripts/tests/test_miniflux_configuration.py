@@ -62,6 +62,10 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(disabled.returncode, 0, disabled.stderr[-4000:])
         self.assertEqual(json.loads(disabled.stdout)["subscriptionUnits"], {})
 
+    def test_enabled_service_keeps_approved_package_across_channel_updates(self):
+        for grafana in (True, False):
+            self.assertEqual(self.configs[True, grafana]["packageVersion"], "2.3.3")
+
     def test_native_loopback_runtime_and_credentials(self):
         cfg = self.configs[True, True]
         self.assertTrue(cfg["enabled"])

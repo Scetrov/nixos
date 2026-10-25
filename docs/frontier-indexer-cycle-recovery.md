@@ -54,4 +54,36 @@ If cutover fails:
 
 Do not activate a pre-transition NixOS generation, decrement the generation, or set it to null to bypass a guard. Any subsequent destructive reindex requires a separately reviewed higher generation.
 
+### Diagnosing a failed label after an interrupted rebuild
+
+A `failed` unit alone does not establish an application crash. On 2026-10-25,
+Habiki's journal showed an explicit systemd stop at 13:18:55 UTC during Ansible
+activity, followed by `Termination received`, `Shutting down gracefully` and
+`Error: Service has been terminated gracefully`. The container returned exit 1,
+which systemd recorded as a failure. Loki independently recorded the termination;
+watermarks had been advancing immediately beforehand. The rebuild workflow
+intentionally does not restart the stopped writer when the subsequent switch fails.
+
+Read-only inspection found TimescaleDB active, marker `7` intact, and 59 pipeline
+watermarks spanning checkpoints `399063684`–`399063686`. These are point-in-time
+observations, not evidence of resumed ingestion. The reported later rebuild was
+blocked by the Miniflux package approval guard; the writer's stop predates that
+reported invocation. No restart, reset or database mutation was performed during
+the investigation.
+
+Correct and validate the host configuration, then recover through the managed
+deployment above after maintenance authorization. Retain generation `7`, confirm
+the equal-generation reset is skipped, and verify advancing watermarks and metrics.
+Do not erase the schema or globally treat exit code 1 as successful to clear this
+label: genuine application failures can return the same code.
+
+The authorized 2026-10-25 recovery subsequently completed the targeted NixOS
+workflow on Bullit and Habiki without Ansible failures. Habiki's indexer resumed
+on the unchanged image digest and generation `7`; all three reset invocations
+logged the equal-generation skip. Across a 20-second sample, all 59 pipeline
+watermarks advanced (minimum `399086159` → `399089432`). Metrics returned HTTP
+200, Prometheus reported `up=1`, and Loki received fresh watermark logs with no
+matching startup warnings/errors after benign database disconnects were excluded.
+This verifies recovery, not completion of catch-up or the deferred chain-head probe.
+
 A filesystem marker is not transactional with PostgreSQL. Database and marker backups/restores must be coordinated; restoring only one can trigger a reset or incorrectly suppress one. Marker persistence is not a complete disaster-recovery guarantee.

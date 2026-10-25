@@ -90,6 +90,7 @@ in
   enabled = cfg.services.miniflux.enable;
   localDatabase = cfg.services.postgresql.enable;
   packageVersion = cfg.services.miniflux.package.version;
+  packageDrvPath = cfg.services.miniflux.package.drvPath;
   environment = if enable then cfg.systemd.services.miniflux.environment else { };
   credentials = if enable then cfg.systemd.services.miniflux.serviceConfig.LoadCredential else [ ];
   ordering =

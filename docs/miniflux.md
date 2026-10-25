@@ -45,6 +45,28 @@ same alias using the existing DNS-only workflow (a separate, explicit target):
 Verify both resolvers return `10.229.10.2`; DNS caches may retain earlier NXDOMAIN
 answers. The Habiki-only tag intentionally does not deploy to Fyne or other hosts.
 
+## Package approval and channel updates
+
+The module explicitly pins Miniflux 2.3.3 with fixed source and Go vendor hashes
+from nixpkgs revision `abe3984d3db7c6aaaf97295ab4dab999709896bd`, rather than
+inheriting the moving channel's release. Keep the version assertion as a separate
+approval guard. To upgrade, review release age/security and compatibility, update
+the source/vendor hashes and approved version together, build the package, and
+verify OIDC, API authentication and database migrations before activation.
+
+On 2026-10-25, channel Miniflux 2.3.4 failed the 2.3.3 approval guard. Upstream
+released 2.3.4 on 2026-10-20; it was held under the seven-day policy pending
+review, not approved merely because the channel selected it. The existing live
+service was still running 2.3.3. Never use this pin to downgrade a database that
+has already migrated under a newer release; see the rollback restrictions below.
+
+The authorized same-day targeted NixOS deployment completed successfully on
+Habiki and Bullit. Habiki retained Miniflux 2.3.3 with an active service, healthy
+private/public health checks and Prometheus `up=1`; unauthenticated `/v1/me`
+returned 401 and public `/metrics` returned 404. Thirty focused configuration,
+identity, database-setup and Vault regressions passed locally. Browser OIDC and
+migration/recovery scenarios were not rerun for this unchanged application release.
+
 ## Access and trust boundary
 
 The confidential Authentik OIDC provider registers only

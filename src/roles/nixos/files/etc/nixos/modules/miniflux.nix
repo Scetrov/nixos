@@ -198,6 +198,20 @@ in
 
       services.miniflux = {
         enable = true;
+        # Retain the approved release across channel updates. Source/vendor hashes:
+        # nixpkgs abe3984d3db7c6aaaf97295ab4dab999709896bd.
+        package = pkgs.miniflux.overrideAttrs (
+          finalAttrs: _: {
+            version = "2.3.3";
+            src = pkgs.fetchFromGitHub {
+              owner = "miniflux";
+              repo = "v2";
+              tag = finalAttrs.version;
+              hash = "sha256-zJ8ir6t3J65RTNi7XtTsbuG3VQId3xvEhLP6Cgn0+xg=";
+            };
+            vendorHash = "sha256-+5vpLTpShQegLzFzAl7H86i71G+PXP66w9mIr440+oA=";
+          }
+        );
         createDatabaseLocally = false;
         config = {
           LISTEN_ADDR = "127.0.0.1:8091";
