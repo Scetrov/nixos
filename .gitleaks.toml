@@ -9,3 +9,9 @@ paths = [
   '''^esphome/src/secrets\.yaml$''',
   '''^esphome/src/\.esphome/.*$''',
 ]
+
+[[allowlists]]
+description = "Ignore generated Graphify stat-index hash cache"
+paths = [
+  '''^graphify-out/cache/stat-index\.json$''',
+]

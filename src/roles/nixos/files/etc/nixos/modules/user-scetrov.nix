@@ -69,6 +69,7 @@ in
         unstable.pre-commit
         unzip
         usbutils
+        uv
         wrangler
       ])
       ++ lib.optionals (pkgs.stdenv.hostPlatform.system == "x86_64-linux") [
