@@ -160,6 +160,22 @@
       changed_when: false
       when: not ansible_check_mode
 
+    - name: Verify security scanners inside both agent execution environments
+      become: true
+      ansible.builtin.command:
+        argv: [podman, exec, "{{ item[0] }}", "{{ item[1] }}", "{{ item[2] }}"]
+      loop:
+        - [hermes-agent, trivy, --version]
+        - [hermes-agent, grype, version]
+        - [hermes-agent, syft, version]
+        - [hermes-agent, osv-scanner, version]
+        - [hermes-webui, trivy, --version]
+        - [hermes-webui, grype, version]
+        - [hermes-webui, syft, version]
+        - [hermes-webui, osv-scanner, version]
+      changed_when: false
+      when: not ansible_check_mode
+
     - name: Verify GitHub CLI has normal unauthenticated behavior
       become: true
       ansible.builtin.command:
