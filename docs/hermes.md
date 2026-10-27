@@ -98,6 +98,28 @@ actual GitHub credentials. It performs these checks in **both** containers:
 WebUI imports and constructs its own `AIAgent` for chats, so gateway-only
 installation would not cover browser-driven tool execution.
 
+### Security scanners inside both agent runtimes
+
+The same read-only, no-dynamic-loader approach used for the GitHub CLI applies
+to the container security scanners. The gateway agent and WebUI each receive
+`trivy`, `grype`, `syft`, and `osv-scanner` from
+`services.hermes-webui.securityToolsPackage`. The default derives each payload
+from the static nixpkgs build (`pkgs.pkgsStatic.<tool>`) and the build rejects
+any binary that requires a dynamic loader. Only the four executables are
+mounted, at `/usr/local/bin/{trivy,grype,syft,osv-scanner}`, not the host Nix
+store; no startup package installation or image modification occurs.
+Nix verifies the source and vendor hashes.
+
+Availability does not imply the scanners are authoritative: trivy, grype, and
+osv-scanner download vulnerability feeds at scan time, and syft generates SBOMs,
+so their network access and feed access are the operator's responsibility.
+These tools are present to make scanning available inside the agent runtimes;
+they do not configure or run a scan automatically.
+
+After deployment, `sudo -n podman exec hermes-agent trivy --version`,
+`grype version`, `syft version`, and `osv-scanner version` must succeed in both
+`hermes-agent` and `hermes-webui`.
+
 ## Container Model
 The module is set up for rootless Podman by default:
 * Service user: `hermes-webui`
@@ -177,8 +199,9 @@ Use `./scripts/play.sh --limit habiki --tags hermes-runtime`. This guarded path:
   files, and Habiki device configuration.
 - Runs `nixos-rebuild switch` without channel updates or OpenTofu, refreshes the
   shared Hermes `.env`, and restarts only the agent and WebUI containers.
-- Checks container services, the absent password variable, `gh --version` inside
-  both agent runtimes, and normal CLI behavior without credentials.
+- Checks container services, the absent password variable, `gh --version` and
+  the `trivy`/`grype`/`syft`/`osv-scanner` version commands inside both agent
+  runtimes, and normal CLI behavior without credentials.
 
 Encryption intentionally refreshes the ciphertext on each non-check deployment.
 Before activation, review remote `/etc/nixos` drift: copying the device/Caddy

@@ -91,6 +91,17 @@ class HermesEnvironmentTests(unittest.TestCase):
         self.assertIn("readelf -l", module)
         self.assertNotIn("hermes_github_token", module)
 
+    def test_gateway_and_webui_agent_runtimes_get_static_security_scanners(self):
+        module = (ROOT / "src/roles/nixos/files/etc/nixos/modules/hermes.nix").read_text()
+        for tool in ["trivy", "grype", "syft", "osv-scanner"]:
+            mount = f'"${{cfg.securityToolsPackage}}/bin/{tool}:/usr/local/bin/{tool}:ro"'
+            for name in ["hermes-agent", "hermes-webui"]:
+                block = module.split(f"      {name} = {{", 1)[1].split("// podmanRootlessConfig", 1)[0]
+                self.assertIn(mount, block)
+            self.assertEqual(module.count(mount), 2)
+        self.assertIn("pkgs.pkgsStatic.", module)
+        self.assertIn("hermes-security-scanners", module)
+
     def test_habiki_uses_private_backend_and_trusted_proxy_without_password(self):
         host = (ROOT / "src/roles/nixos/files/device-configuration/habiki.nix").read_text()
         block = host.split("  services.hermes-webui = {", 1)[1].split("\n  age.secrets.", 1)[0]

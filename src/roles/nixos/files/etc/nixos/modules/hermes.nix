@@ -64,6 +64,34 @@ let
           exit 1
         fi
       '';
+  # Same approach as the GitHub CLI: extract each scanner's static ELF payload
+  # so the containers need neither a Nix-store shell wrapper nor /nix/store.
+  # The build hard-fails if any payload requires a dynamic loader.
+  securityTools =
+    let
+      tools = [ "trivy" "grype" "syft" "osv-scanner" ];
+      toolCheck = tool:
+        let
+          staticTool = pkgs.pkgsStatic.${tool};
+        in
+        ''
+          cp ${staticTool}/bin/${tool} "$out/bin/${tool}"
+          readelf -l "$out/bin/${tool}" > elf-headers
+          if grep -q INTERP elf-headers; then
+            echo "Hermes security tool ${tool} must not require a dynamic loader" >&2
+            exit 1
+          fi
+        '';
+    in
+    pkgs.runCommand "hermes-security-scanners"
+      {
+        nativeBuildInputs = [ pkgs.buildPackages.binutils ];
+      }
+      ''
+        mkdir -p "$out/bin"
+        ${lib.concatMapStrings toolCheck tools}
+        rm -f elf-headers
+      '';
   webuiEnvFile = "${toString cfg.home}/webui.env";
   configPython = pkgs.python3.withPackages (p: [ p.pyyaml ]);
   managedSettings = pkgs.writeText "hermes-managed-settings.json" (
@@ -302,6 +330,12 @@ in
       description = "Static GitHub CLI package mounted read-only into gateway and WebUI agent runtimes at /usr/local/bin/gh.";
     };
 
+    securityToolsPackage = mkOption {
+      type = types.package;
+      default = securityTools;
+      description = "Static container security scanners (trivy, grype, syft, osv-scanner) mounted read-only into the gateway and WebUI agent runtimes under /usr/local/bin.";
+    };
+
     webuiImage = mkOption {
       type = types.str;
       default = "ghcr.io/nesquena/hermes-webui:latest@sha256:5fb831ca2a9f3f0b93b84c1ebaaeedf5809d914a33bbf969e5c29a5bb75cb47c";
@@ -490,6 +524,10 @@ in
           "${cfg.homeVolume}:/home/hermes/.hermes"
           "${cfg.agentSourceVolume}:/opt/hermes"
           "${cfg.githubCliPackage}/bin/gh:/usr/local/bin/gh:ro"
+          "${cfg.securityToolsPackage}/bin/trivy:/usr/local/bin/trivy:ro"
+          "${cfg.securityToolsPackage}/bin/grype:/usr/local/bin/grype:ro"
+          "${cfg.securityToolsPackage}/bin/syft:/usr/local/bin/syft:ro"
+          "${cfg.securityToolsPackage}/bin/osv-scanner:/usr/local/bin/osv-scanner:ro"
         ];
         environment = cfg.extraEnvironment // {
           HERMES_HOME = "/home/hermes/.hermes";
@@ -511,6 +549,10 @@ in
           "${cfg.agentSourceVolume}:/home/hermeswebui/.hermes/hermes-agent"
           "${toString cfg.workspace}:/workspace"
           "${cfg.githubCliPackage}/bin/gh:/usr/local/bin/gh:ro"
+          "${cfg.securityToolsPackage}/bin/trivy:/usr/local/bin/trivy:ro"
+          "${cfg.securityToolsPackage}/bin/grype:/usr/local/bin/grype:ro"
+          "${cfg.securityToolsPackage}/bin/syft:/usr/local/bin/syft:ro"
+          "${cfg.securityToolsPackage}/bin/osv-scanner:/usr/local/bin/osv-scanner:ro"
         ];
         environment = cfg.extraEnvironment // {
           HERMES_WEBUI_HOST = "0.0.0.0";
