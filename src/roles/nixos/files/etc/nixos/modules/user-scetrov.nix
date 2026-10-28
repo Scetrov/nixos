@@ -34,6 +34,7 @@ in
     shell = pkgs.zsh;
     packages =
       (with pkgs; [
+        awk
         btop
         bubblewrap
         clang
