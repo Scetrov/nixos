@@ -1286,6 +1286,235 @@
           "targetBlank": true
         }
       ]
+    },
+    {
+      "id": 14,
+      "type": "table",
+      "title": "Issues and Main Failures by Repository",
+      "description": "Rolling issues created in 7 days (open or closed, excluding PRs), failing checks/status contexts on main's latest commit, and literal main presence. No main is not applicable and contributes zero failures; a zero is not proof that CI is configured. Unavailable or stale data is N/A, never a fabricated zero. Existing App visibility and repository inclusion policy apply.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mimir"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 16
+      },
+      "pluginVersion": "13.0.11",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join((max by (owner, repository) (github_repository_info{owner=~\"RichardSlater|Scetrov\"}) and on() (github_repository_observability_collection_success == 1) and on() ((time() - github_repository_observability_last_success_timestamp_seconds) <= (2 * github_repository_observability_collection_interval_seconds))), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join((github_repository_issues_created_last_7_days{owner=~\"RichardSlater|Scetrov\"} and on(owner, repository) (github_repository_signal_available{owner=~\"RichardSlater|Scetrov\",signal=\"issues\"} == 1) and on() (github_repository_observability_collection_success == 1) and on() ((time() - github_repository_observability_last_success_timestamp_seconds) <= (2 * github_repository_observability_collection_interval_seconds))), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join((github_repository_main_failing_statuses{owner=~\"RichardSlater|Scetrov\"} and on(owner, repository) (github_repository_signal_available{owner=~\"RichardSlater|Scetrov\",signal=\"main_statuses\"} == 1) and on() (github_repository_observability_collection_success == 1) and on() ((time() - github_repository_observability_last_success_timestamp_seconds) <= (2 * github_repository_observability_collection_interval_seconds))), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "editorMode": "code",
+          "expr": "label_join((github_repository_main_branch_present{owner=~\"RichardSlater|Scetrov\"} and on(owner, repository) (github_repository_signal_available{owner=~\"RichardSlater|Scetrov\",signal=\"main_statuses\"} == 1) and on() (github_repository_observability_collection_success == 1) and on() ((time() - github_repository_observability_last_success_timestamp_seconds) <= (2 * github_repository_observability_collection_interval_seconds))), \"repo\", \"/\", \"owner\", \"repository\")",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "D"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "repo",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "repo",
+                "Value #B",
+                "Value #C",
+                "Value #D"
+              ]
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "repo": 0,
+              "Value #B": 1,
+              "Value #C": 2,
+              "Value #D": 3
+            },
+            "renameByName": {
+              "repo": "Repository",
+              "Value #B": "Issues 7d",
+              "Value #C": "Failing main",
+              "Value #D": "Has main"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "N/A",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4B678C"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Repository"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open repository",
+                    "url": "https://github.com/${__value.raw}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Failing main"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#008791",
+                      "value": null
+                    },
+                    {
+                      "color": "#FF3E8D",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Has main"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "No",
+                        "color": "#855F90",
+                        "index": 0
+                      },
+                      "1": {
+                        "text": "Yes",
+                        "color": "#008791",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Failing main",
+            "desc": true
+          }
+        ],
+        "footer": {
+          "show": false
+        }
+      }
     }
   ],
   "refresh": "1m",

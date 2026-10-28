@@ -194,6 +194,33 @@ class PlatformOverviewAIUsageDashboardTests(unittest.TestCase):
         self.assertIn("2 * ai_exporter_poll_interval_seconds", expression)
         self.assertIn(f'ai_codex_window_present{{window="{window}"}} == 1', expression)
 
+    def test_overview_omits_disk_and_network_pressure_panels(self) -> None:
+        retired_ids = {11, 12, 13, 14, 15}
+        self.assertTrue(retired_ids.isdisjoint(self.panels))
+        for panel in self.panels.values():
+            self.assertFalse(panel["title"].startswith(("Disk ", "Root Disk ", "Network Errors")))
+
+    def test_cpu_occupies_former_root_disk_position(self) -> None:
+        panel = self.panels[8]
+        self.assertEqual(panel["title"], "CPU Used by Host")
+        self.assertEqual(panel["gridPos"], {"h": 8, "w": 6, "x": 0, "y": 12})
+        self.assertIn('node_cpu_seconds_total{mode="idle"}', panel["targets"][0]["expr"])
+
+    def test_overview_panels_do_not_overlap(self) -> None:
+        panels = list(self.panels.values())
+        for index, panel in enumerate(panels):
+            a = panel["gridPos"]
+            self.assertLessEqual(a["x"] + a["w"], 24)
+            for other in panels[index + 1:]:
+                b = other["gridPos"]
+                overlaps = (
+                    a["x"] < b["x"] + b["w"]
+                    and b["x"] < a["x"] + a["w"]
+                    and a["y"] < b["y"] + b["h"]
+                    and b["y"] < a["y"] + a["h"]
+                )
+                self.assertFalse(overlaps, (panel["title"], other["title"]))
+
     def test_remaining_panels_use_semantic_freshness_gated_usage(self) -> None:
         for panel_id, title, window in (
             (33, "5-Hour Remaining", "5h"),
@@ -224,6 +251,33 @@ class PlatformOverviewAIUsageDashboardTests(unittest.TestCase):
                 expression = panel["targets"][0]["expr"]
                 self.assertIn(f'ai_codex_window_reset_timestamp_seconds{{window="{window}"}} - time()', expression)
                 self.assert_freshness_gated(expression, window)
+
+    def test_banked_reset_expiry_card_matches_five_hour_size_and_is_freshness_gated(self) -> None:
+        panel = self.panels[37]
+        self.assertEqual(panel["title"], "Banked Reset Expires")
+        self.assertEqual(panel["gridPos"], {"h": 4, "w": 4, "x": 0, "y": 8})
+        for dimension in ("h", "w"):
+            self.assertEqual(panel["gridPos"][dimension], self.panels[34]["gridPos"][dimension])
+        self.assertEqual(panel["type"], "stat")
+        self.assertEqual(panel["fieldConfig"]["defaults"]["unit"], "clocks")
+        self.assertEqual(panel["fieldConfig"]["defaults"]["decimals"], 0)
+        self.assertEqual(panel["fieldConfig"]["defaults"]["noValue"], "N/A")
+        self.assertEqual(panel["options"]["graphMode"], "none")
+        self.assertEqual(len(panel["targets"]), 1)
+        target = panel["targets"][0]
+        self.assertEqual(target["datasource"]["uid"], "mimir")
+        self.assertTrue(target["instant"])
+        self.assertFalse(target["range"])
+        expression = target["expr"]
+        self.assertIn("ai_codex_banked_reset_next_expiry_timestamp_seconds - time()", expression)
+        self.assertIn("ai_codex_banked_reset_next_expiry_timestamp_seconds > time()", expression)
+        self.assertIn("ai_codex_banked_reset_details_complete == 1", expression)
+        self.assertIn("ai_codex_authenticated == 1", expression)
+        self.assertIn('ai_exporter_scrape_success{source="codex"} == 1', expression)
+        self.assertIn('time() - ai_exporter_last_success_timestamp_seconds{source="codex"}', expression)
+        self.assertIn('2 * ai_exporter_poll_interval_seconds{source="codex"}', expression)
+        self.assertNotIn("ai_codex_window_reset_timestamp_seconds", expression)
+        self.assertNotIn("or on() vector(0)", expression)
 
     def test_retired_fixed_window_labels_are_absent(self) -> None:
         expressions = "\n".join(

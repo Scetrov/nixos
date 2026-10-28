@@ -52,10 +52,11 @@ Platform Hosts Reporting uses active Unix integration scrapes:
 count(count by (host) (up{job="integrations/unix"} == 1))
 ```
 
-The full-width stack-health row includes Prometheus. Fleet pressure views cover
-root filesystem space, throughput/IOPS, disk busy/queue and network errors/drops
-with meaningful host/device legends. They are concise drilldown entry points,
-not host-wide values mislabelled as application consumption.
+The full-width stack-health row includes Prometheus. The platform overview keeps
+CPU and memory pressure alongside house and service signals. CPU occupies the
+former root-disk panel's 6-column by 8-row position. Root disk utilization, disk
+IOPS/throughput/busy time and network errors/drops are omitted from this overview;
+use the System Resources drilldown for detailed host resource investigation.
 
 House panels use retained Home Assistant environmental metrics and reviewed
 indoor/outdoor allowlists, not every similarly named sensor. GitHub risk views

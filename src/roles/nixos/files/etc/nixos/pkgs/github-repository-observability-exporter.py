@@ -12,6 +12,7 @@ import argparse
 import base64
 import json
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -28,7 +29,10 @@ from cryptography.hazmat.primitives.asymmetric import padding
 LOG = logging.getLogger("github-repository-observability-exporter")
 API = "https://api.github.com"
 SEVERITIES = ("critical", "high", "medium", "low", "warning", "note", "error", "unknown")
-SIGNALS = ("repository", "pull_requests", "dependabot", "code_scanning")
+SIGNALS = ("repository", "pull_requests", "issues", "main_statuses", "dependabot", "code_scanning")
+FAILING_CHECK_CONCLUSIONS = {"failure", "timed_out", "action_required", "startup_failure"}
+CHECK_CONCLUSIONS = FAILING_CHECK_CONCLUSIONS | {"success", "neutral", "cancelled", "skipped", "stale"}
+CHECK_STATES = {"queued", "in_progress", "completed", "waiting", "requested", "pending"}
 
 
 def now_ts() -> int:
@@ -54,6 +58,72 @@ def prom_escape(value: str) -> str:
 
 def labels(**values: str | int | bool) -> str:
     return "{" + ",".join(f'{k}="{prom_escape(str(v).lower() if isinstance(v, bool) else str(v))}"' for k, v in values.items()) + "}"
+
+
+def complete_page_rows(pages: list[Any], field_name: str) -> list[dict[str, Any]]:
+    """Reject truncated or changing result sets instead of emitting partial counts."""
+    expected: int | None = None
+    rows: dict[int, dict[str, Any]] = {}
+    if not pages:
+        raise ValueError("missing result page")
+    for page in pages:
+        if not isinstance(page, dict) or not isinstance(page.get(field_name), list):
+            raise ValueError("invalid result page")
+        total = page.get("total_count")
+        if isinstance(total, bool) or not isinstance(total, int) or total < 0:
+            raise ValueError("invalid result count")
+        if expected is not None and expected != total:
+            raise ValueError("result count changed during pagination")
+        expected = total
+        for row in page[field_name]:
+            if not isinstance(row, dict):
+                raise ValueError("invalid result row")
+            row_id = row.get("id")
+            if isinstance(row_id, bool) or not isinstance(row_id, int) or row_id <= 0:
+                raise ValueError("invalid result identifier")
+            if row_id in rows and rows[row_id] != row:
+                raise ValueError("result changed during pagination")
+            rows[row_id] = row
+    if len(rows) != expected:
+        raise ValueError("incomplete result pages")
+    return list(rows.values())
+
+
+def count_main_failures(status_pages: list[Any], check_pages: list[Any], sha: str) -> int:
+    statuses = complete_page_rows(status_pages, "statuses")
+    checks = complete_page_rows(check_pages, "check_runs")
+    if any(page.get("sha") != sha for page in status_pages):
+        raise ValueError("status reference mismatch")
+    latest_statuses: dict[str, dict[str, Any]] = {}
+    latest_checks: dict[tuple[int, str], dict[str, Any]] = {}
+    for status in statuses:
+        context = status.get("context")
+        if not isinstance(context, str) or not context or status.get("state") not in ("failure", "error", "pending", "success"):
+            raise ValueError("invalid commit status")
+        if context not in latest_statuses or status["id"] > latest_statuses[context]["id"]:
+            latest_statuses[context] = status
+    for check in checks:
+        app = check.get("app")
+        app_id = app.get("id") if isinstance(app, dict) else None
+        name = check.get("name")
+        state = check.get("status")
+        conclusion = check.get("conclusion")
+        if isinstance(app_id, bool) or not isinstance(app_id, int) or app_id <= 0 or not isinstance(name, str) or not name:
+            raise ValueError("invalid check identity")
+        if check.get("head_sha") != sha or not isinstance(state, str) or state not in CHECK_STATES:
+            raise ValueError("invalid check reference or state")
+        if state == "completed":
+            if not isinstance(conclusion, str) or conclusion not in CHECK_CONCLUSIONS:
+                raise ValueError("invalid check conclusion")
+        elif conclusion is not None:
+            raise ValueError("unfinished check has a conclusion")
+        key = (app_id, name)
+        if key not in latest_checks or check["id"] > latest_checks[key]["id"]:
+            latest_checks[key] = check
+    return sum(status["state"] in ("failure", "error") for status in latest_statuses.values()) + sum(
+        check["status"] == "completed" and check["conclusion"] in FAILING_CHECK_CONCLUSIONS
+        for check in latest_checks.values()
+    )
 
 
 @dataclass
@@ -129,11 +199,13 @@ class GitHubClient:
             raw = resp.read()
             return (json.loads(raw) if raw else None), {k.lower(): v for k, v in resp.headers.items()}
 
-    def paged(self, path: str, token: str) -> list[Any]:
+    def paged(self, path: str, token: str, *, require_list: bool = False) -> list[Any]:
         results: list[Any] = []
         next_path: str | None = path
         while next_path:
             data, headers = self.request(next_path, token=token)
+            if require_list and not isinstance(data, list):
+                raise ValueError("GitHub paginated response is not an array")
             if isinstance(data, list):
                 results.extend(data)
             elif data is not None:
@@ -177,6 +249,12 @@ class Collector:
             "# TYPE github_repository_signal_available gauge",
             "# HELP github_repository_open_pull_requests Open pull request count by repository.",
             "# TYPE github_repository_open_pull_requests gauge",
+            "# HELP github_repository_issues_created_last_7_days Issues created in the last seven days, open or closed, excluding pull requests.",
+            "# TYPE github_repository_issues_created_last_7_days gauge",
+            "# HELP github_repository_main_failing_statuses Failing checks and commit-status contexts on main's current commit; zero when main is absent.",
+            "# TYPE github_repository_main_failing_statuses gauge",
+            "# HELP github_repository_main_branch_present Whether a literal main branch exists.",
+            "# TYPE github_repository_main_branch_present gauge",
             "# HELP github_repository_oldest_open_pull_request_age_seconds Age of the oldest open pull request.",
             "# TYPE github_repository_oldest_open_pull_request_age_seconds gauge",
             "# HELP github_repository_dependabot_open_alerts Open Dependabot alerts by severity.",
@@ -209,6 +287,8 @@ class Collector:
                         lines.append(f"github_repository_info{labels(owner=repo.owner, repository=repo.name, archived=repo.archived, fork=repo.fork, default_branch=repo.default_branch or '')} 1")
                         self.safe_signal(lines, repo, "repository", "ok", 1)
                         self.collect_prs(lines, repo, token)
+                        self.collect_issues(lines, repo, token, int(started))
+                        self.collect_main_statuses(lines, repo, token)
                         self.collect_dependabot(lines, repo, token)
                         self.collect_code_scanning(lines, repo, token)
         except Exception:
@@ -225,6 +305,9 @@ class Collector:
             "# HELP github_repository_observability_repositories_seen Repositories emitted in the last collection.",
             "# TYPE github_repository_observability_repositories_seen gauge",
             f"github_repository_observability_repositories_seen {repos_seen}",
+            "# HELP github_repository_observability_collection_interval_seconds Configured background collection interval.",
+            "# TYPE github_repository_observability_collection_interval_seconds gauge",
+            f"github_repository_observability_collection_interval_seconds {self.cfg.interval_seconds}",
             "# HELP github_repository_observability_collection_duration_seconds Duration of the last collection.",
             "# TYPE github_repository_observability_collection_duration_seconds gauge",
             f"github_repository_observability_collection_duration_seconds {duration:.3f}",
@@ -246,6 +329,78 @@ class Collector:
             self.safe_signal(lines, repo, "pull_requests", "ok", 1)
         except HTTPError as e:
             self.safe_signal(lines, repo, "pull_requests", f"http_{e.code}", 0)
+
+    def collect_issues(self, lines: list[str], repo: Repo, token: str, collected_at: int) -> None:
+        cutoff = collected_at - 7 * 86400
+        # GitHub's since filter uses UPDATED time, not creation time. Widen its
+        # exclusive boundary by one second, then filter created_at locally.
+        since = datetime.fromtimestamp(cutoff - 1, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        query = urlencode({"state": "all", "since": since, "sort": "created", "direction": "desc", "per_page": 100})
+        try:
+            issues = self.client.paged(f"/repos/{repo.owner}/{repo.name}/issues?{query}", token, require_list=True)
+            numbers: set[int] = set()
+            for issue in issues:
+                if not isinstance(issue, dict):
+                    raise ValueError("invalid issue row")
+                if "pull_request" in issue:
+                    continue
+                raw_created = issue.get("created_at")
+                if not isinstance(raw_created, str):
+                    raise ValueError("missing issue creation time")
+                created = datetime.fromisoformat(raw_created.replace("Z", "+00:00"))
+                if created.tzinfo is None:
+                    raise ValueError("issue creation time has no timezone")
+                if cutoff <= created.timestamp() <= collected_at:
+                    number = issue.get("number")
+                    if isinstance(number, bool) or not isinstance(number, int) or number <= 0:
+                        raise ValueError("invalid issue number")
+                    numbers.add(number)
+            lines.append(f"github_repository_issues_created_last_7_days{labels(owner=repo.owner, repository=repo.name)} {len(numbers)}")
+            self.safe_signal(lines, repo, "issues", "ok", 1)
+        except HTTPError as error:
+            self.safe_signal(lines, repo, "issues", f"http_{error.code}", 0)
+        except (URLError, TimeoutError):
+            self.safe_signal(lines, repo, "issues", "request_failed", 0)
+        except (TypeError, ValueError, OverflowError):
+            self.safe_signal(lines, repo, "issues", "invalid_response", 0)
+
+    def collect_main_statuses(self, lines: list[str], repo: Repo, token: str) -> None:
+        path = f"/repos/{repo.owner}/{repo.name}"
+        try:
+            present = 1
+            try:
+                branch, _ = self.client.request(f"{path}/branches/main", token=token)
+            except HTTPError as error:
+                if error.code != 404:
+                    raise
+                # A 404 alone can also mean insufficient access. Only a
+                # successful branch listing can establish that main is absent.
+                branches = self.client.paged(f"{path}/branches?per_page=100", token, require_list=True)
+                if any(not isinstance(item, dict) or not isinstance(item.get("name"), str) for item in branches):
+                    raise ValueError("invalid branch listing")
+                if any(item["name"] == "main" for item in branches):
+                    raise ValueError("inconsistent main branch lookup")
+                present = 0
+            failures = 0
+            if present:
+                if not isinstance(branch, dict) or branch.get("name") != "main" or not isinstance(branch.get("commit"), dict):
+                    raise ValueError("invalid main branch")
+                sha = branch["commit"].get("sha")
+                if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", sha):
+                    raise ValueError("invalid main commit")
+                # Pin both APIs to one SHA so a moving main cannot mix commits.
+                statuses = self.client.paged(f"{path}/commits/{sha}/status?per_page=100", token)
+                checks = self.client.paged(f"{path}/commits/{sha}/check-runs?filter=latest&per_page=100", token)
+                failures = count_main_failures(statuses, checks, sha)
+            lines.append(f"github_repository_main_branch_present{labels(owner=repo.owner, repository=repo.name)} {present}")
+            lines.append(f"github_repository_main_failing_statuses{labels(owner=repo.owner, repository=repo.name)} {failures}")
+            self.safe_signal(lines, repo, "main_statuses", "ok" if present else "no_main", 1)
+        except HTTPError as error:
+            self.safe_signal(lines, repo, "main_statuses", f"http_{error.code}", 0)
+        except (URLError, TimeoutError):
+            self.safe_signal(lines, repo, "main_statuses", "request_failed", 0)
+        except (TypeError, ValueError, OverflowError):
+            self.safe_signal(lines, repo, "main_statuses", "invalid_response", 0)
 
     def collect_dependabot(self, lines: list[str], repo: Repo, token: str) -> None:
         counts: dict[str, int] = {s: 0 for s in ("critical", "high", "medium", "low", "unknown")}

@@ -350,6 +350,99 @@ class CodexNormalizationTests(unittest.TestCase):
         self.assertEqual(windows["weekly"].used_percent, 100)
 
 
+def reset_credit(credit_id: str = "synthetic-reset", **changes: object) -> dict:
+    return {
+        "id": credit_id,
+        "grantedAt": 1690000000,
+        "status": "available",
+        "resetType": "codexRateLimits",
+        "expiresAt": 1900000000,
+        **changes,
+    }
+
+
+class CodexResetCreditTests(unittest.TestCase):
+    def normalize(self, count: int, credits: object):
+        return exporter.normalize_codex_reset_credits(
+            {"rateLimitResetCredits": {"availableCount": count, "credits": credits}},
+            1700000000,
+        )
+
+    def test_selects_earliest_available_expiry_not_weekly_reset(self) -> None:
+        result = self.normalize(2, [
+            reset_credit("later", expiresAt=1900000100),
+            reset_credit("earlier"),
+            reset_credit("used", status="redeemed", expiresAt=1800000000),
+            reset_credit("in-flight", status="redeeming", expiresAt=1750000000),
+        ])
+        self.assertEqual(result.available_count, 2)
+        self.assertTrue(result.details_complete)
+        self.assertEqual(result.next_expiry, 1900000000)
+
+    def test_missing_summary_is_unknown_not_zero(self) -> None:
+        for payload in ({}, {"rateLimitResetCredits": None}):
+            with self.subTest(payload=payload):
+                self.assertEqual(
+                    exporter.normalize_codex_reset_credits(payload, 1700000000),
+                    exporter.CodexResetCredits(),
+                )
+
+    def test_missing_capped_or_inconsistent_details_never_guess_expiry(self) -> None:
+        for count, credits in ((2, None), (2, []), (2, [reset_credit()]), (0, [reset_credit()])):
+            with self.subTest(count=count, credits=credits):
+                result = self.normalize(count, credits)
+                self.assertEqual(result.available_count, count)
+                self.assertFalse(result.details_complete)
+                self.assertIsNone(result.next_expiry)
+
+    def test_no_credits_and_non_expiring_credits_are_distinct_from_unknown(self) -> None:
+        empty = self.normalize(0, [])
+        non_expiring = self.normalize(1, [reset_credit(expiresAt=None)])
+        mixed = self.normalize(2, [reset_credit("forever", expiresAt=None), reset_credit()])
+        self.assertEqual(empty, exporter.CodexResetCredits(0, True, None))
+        self.assertEqual(non_expiring, exporter.CodexResetCredits(1, True, None))
+        self.assertEqual(mixed, exporter.CodexResetCredits(2, True, 1900000000))
+
+    def test_unknown_status_type_missing_expiry_and_expired_rows_are_unknown(self) -> None:
+        missing_expiry = reset_credit()
+        del missing_expiry["expiresAt"]
+        for credit in (
+            reset_credit(status="unknown"),
+            reset_credit(status="future-status"),
+            reset_credit(resetType="unknown"),
+            missing_expiry,
+            reset_credit(expiresAt=1700000000),
+            reset_credit(expiresAt=1699999999),
+        ):
+            with self.subTest(credit=credit):
+                result = self.normalize(1, [credit])
+                self.assertEqual(result, exporter.CodexResetCredits(1, False, None))
+
+    def test_malformed_summary_is_rejected_without_echoing_values(self) -> None:
+        marker = "synthetic-private-display-text"
+        malformed = [
+            marker,
+            {},
+            {"availableCount": True},
+            {"availableCount": -1},
+            {"availableCount": 1.5},
+            {"availableCount": 1, "credits": marker},
+            {"availableCount": 1, "credits": [marker]},
+            {"availableCount": 2, "credits": [reset_credit(), reset_credit()]},
+        ]
+        malformed.extend(
+            {"availableCount": 1, "credits": [reset_credit(expiresAt=value)]}
+            for value in (marker, True, 0, -1, 1900000000.5, float("nan"), float("inf"))
+        )
+        for summary in malformed:
+            with self.subTest(summary=summary):
+                with self.assertRaises(exporter.CodexSchemaError) as raised:
+                    exporter.normalize_codex_reset_credits(
+                        {"rateLimitResetCredits": summary}, 1700000000,
+                    )
+                self.assertNotIn(marker, str(raised.exception))
+
+
 class CollectorTests(unittest.TestCase):
     def collector(self, codex: object, openrouter: RecordingOpenRouter | None = None):
         return exporter.Collector(
@@ -404,6 +497,56 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(collector._codex_authenticated, 0)
         self.assertEqual(collector._codex_last_success, initial_timestamp)
         self.assertIn("weekly", collector._codex_windows)
+
+    def test_banked_reset_metrics_are_unlabeled_and_clear_when_details_disappear(self) -> None:
+        payload = dict(load_fixture("weekly-only.json")["rateLimits"])
+        marker = "synthetic-private-reset-display"
+        payload["rateLimitResetCredits"] = {
+            "availableCount": 1,
+            "credits": [reset_credit(marker, title=marker, description=marker)],
+        }
+        without_details = {**payload, "rateLimitResetCredits": {"availableCount": 1}}
+        collector = self.collector(SequenceCodex(
+            exporter.CodexPollResult(True, payload),
+            exporter.CodexPollResult(True, without_details),
+            exporter.CodexPollResult(True, {"rateLimits": {}}),
+        ))
+        with mock.patch.object(exporter.time, "time", return_value=1700000000):
+            collector._scrape_codex()
+            metrics = collector._render()
+            self.assertIn("ai_codex_banked_resets_available 1", metrics)
+            self.assertIn("ai_codex_banked_reset_details_complete 1", metrics)
+            self.assertIn("ai_codex_banked_reset_next_expiry_timestamp_seconds 1900000000", metrics)
+            self.assertNotIn(marker, metrics)
+            self.assert_valid_exposition(metrics)
+            collector._scrape_codex()
+            samples = [line for line in collector._render().splitlines() if not line.startswith("#")]
+            self.assertIn("ai_codex_banked_reset_details_complete 0", samples)
+            self.assertFalse(any(line.startswith("ai_codex_banked_reset_next_expiry_timestamp_seconds ") for line in samples))
+            collector._scrape_codex()
+            samples = [line for line in collector._render().splitlines() if not line.startswith("#")]
+            self.assertFalse(any(line.startswith("ai_codex_banked_resets_available ") for line in samples))
+
+    def test_banked_expiry_failure_retains_cache_but_marks_source_failed(self) -> None:
+        payload = dict(load_fixture("weekly-only.json")["rateLimits"])
+        payload["rateLimitResetCredits"] = {"availableCount": 1, "credits": [reset_credit()]}
+        malformed = {**payload, "rateLimitResetCredits": {"availableCount": "invalid"}}
+        collector = self.collector(SequenceCodex(
+            exporter.CodexPollResult(True, payload),
+            exporter.CodexTransportError("socket unavailable"),
+            exporter.CodexPollResult(True, malformed),
+            exporter.CodexPollResult(False, None),
+        ))
+        with mock.patch.object(exporter.time, "time", return_value=1700000000):
+            collector._scrape_codex()
+        for _ in range(3):
+            collector._scrape_codex()
+            self.assertEqual(collector._codex_scrape_success, 0)
+            self.assertEqual(collector._codex_last_success, 1700000000)
+            self.assertEqual(collector._codex_reset_credits.next_expiry, 1900000000)
+            collector._scrape_openrouter()
+            self.assertEqual(collector._openrouter_scrape_success, 1)
+        self.assertEqual(collector._codex_authenticated, 0)
 
     def test_unknown_auth_is_omitted_before_first_explicit_observation(self) -> None:
         collector = self.collector(SequenceCodex(exporter.CodexTransportError("unreachable")))

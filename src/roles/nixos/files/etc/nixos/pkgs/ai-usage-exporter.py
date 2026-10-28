@@ -338,6 +338,62 @@ class CodexWindow:
     reset_timestamp: float | None
 
 
+@dataclass(frozen=True)
+class CodexResetCredits:
+    available_count: int | None = None
+    details_complete: bool = False
+    next_expiry: int | None = None
+
+
+def normalize_codex_reset_credits(result: dict[str, Any], now: float) -> CodexResetCredits:
+    """Require complete, understood detail rows before claiming the next expiry."""
+    summary = result.get("rateLimitResetCredits")
+    if summary is None:
+        return CodexResetCredits()
+    if not isinstance(summary, dict):
+        raise CodexSchemaError("Codex reset-credit summary is not an object")
+    count = summary.get("availableCount")
+    if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+        raise CodexSchemaError("Codex reset-credit count is not a non-negative integer")
+    unknown = CodexResetCredits(available_count=count)
+    credits = summary.get("credits")
+    if credits is None:
+        return unknown
+    if not isinstance(credits, list):
+        raise CodexSchemaError("Codex reset-credit details are not an array")
+
+    seen_ids: set[str] = set()
+    expiries: list[int] = []
+    available = 0
+    for credit in credits:
+        if not isinstance(credit, dict):
+            raise CodexSchemaError("Codex reset-credit detail is not an object")
+        credit_id = credit.get("id")
+        if not isinstance(credit_id, str) or not credit_id or credit_id in seen_ids:
+            raise CodexSchemaError("Codex reset-credit identifier is missing or duplicated")
+        seen_ids.add(credit_id)
+        status = credit.get("status")
+        if status in ("redeemed", "redeeming"):
+            continue
+        if status != "available" or credit.get("resetType") != "codexRateLimits":
+            return unknown
+        available += 1
+        # Only an explicit null means non-expiring; omission means unknown.
+        if "expiresAt" not in credit:
+            return unknown
+        expiry = credit["expiresAt"]
+        if expiry is None:
+            continue
+        if isinstance(expiry, bool) or not isinstance(expiry, int) or expiry <= 0:
+            raise CodexSchemaError("Codex reset-credit expiry is not a positive integer")
+        if expiry <= now:
+            return unknown
+        expiries.append(expiry)
+    if available != count:
+        return unknown
+    return CodexResetCredits(count, True, min(expiries) if expiries else None)
+
+
 def _finite_number(value: Any, field_name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise CodexSchemaError(f"Codex {field_name} has an unexpected type")
@@ -480,6 +536,7 @@ class Collector:
         self._poll_interval = poll_interval
 
         self._codex_windows: dict[str, CodexWindow] = {}
+        self._codex_reset_credits = CodexResetCredits()
         self._codex_limit_reached = 0
         self._codex_plan_type = "unknown"
         self._codex_has_snapshot = False
@@ -518,6 +575,8 @@ class Collector:
             assert result.rate_limits is not None
             snapshot = select_rate_limit_snapshot(result.rate_limits)
             windows, plan_type, limit_reached = normalize_codex_snapshot(snapshot)
+            reset_credits = normalize_codex_reset_credits(result.rate_limits, time.time())
+            self._codex_reset_credits = reset_credits
             self._codex_windows = windows
             self._codex_plan_type = plan_type
             self._codex_limit_reached = limit_reached
@@ -620,6 +679,26 @@ class Collector:
         )
         if self._codex_authenticated is not None:
             lines.append(f"ai_codex_authenticated {self._codex_authenticated}")
+
+        reset_credits = self._codex_reset_credits
+        lines.extend(
+            [
+                "# HELP ai_codex_banked_resets_available Provider-reported available banked resets.",
+                "# TYPE ai_codex_banked_resets_available gauge",
+                "# HELP ai_codex_banked_reset_details_complete Whether all available reset expiry details are known.",
+                "# TYPE ai_codex_banked_reset_details_complete gauge",
+                f"ai_codex_banked_reset_details_complete {int(reset_credits.details_complete)}",
+                "# HELP ai_codex_banked_reset_next_expiry_timestamp_seconds Earliest available banked reset expiry.",
+                "# TYPE ai_codex_banked_reset_next_expiry_timestamp_seconds gauge",
+            ]
+        )
+        if reset_credits.available_count is not None:
+            lines.append(f"ai_codex_banked_resets_available {reset_credits.available_count}")
+        if reset_credits.next_expiry is not None:
+            lines.append(
+                "ai_codex_banked_reset_next_expiry_timestamp_seconds "
+                f"{reset_credits.next_expiry}"
+            )
 
         if self._codex_has_snapshot:
             lines.extend(

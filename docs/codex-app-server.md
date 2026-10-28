@@ -146,6 +146,71 @@ python3 -m unittest discover -s src/roles/nixos/tests -p 'test_ai_usage_*.py'
 nix-instantiate --eval --strict --json --expr 'import ./src/roles/nixos/tests/ai-usage-eval.nix {}'
 ```
 
+## Banked reset expiry
+
+Banked resets are saved, manually redeemed allowance resets with an offer-specific
+expiry, not the automatic weekly/5-hour reset or purchased credits. See OpenAI's
+[reset guidance](https://help.openai.com/en/articles/20001498-how-resets-work-in-codex).
+The **Banked Reset Expires** countdown therefore describes an expiry, not an
+automatic quota reset.
+
+The repository-pinned Codex 0.162.0
+[account/rateLimits/read schema](https://github.com/openai/codex/blob/rust-v0.162.0/codex-rs/app-server-protocol/schema/json/v2/GetAccountRateLimitsResponse.json)
+already defines a top-level `rateLimitResetCredits` summary containing
+`availableCount` and optional `credits`. Detail entries include `status`,
+`resetType` and nullable `expiresAt` (Unix seconds). A null detail list means only
+the count is known; an empty list means no available details were returned. The
+backend may cap the list below `availableCount`, and null expiry means a credit
+does not expire. These are upstream schema capabilities, not confirmation that
+the Habiki account currently returns complete expiry details.
+
+The exporter reuses its existing authenticated socket read, polling and freshness
+controls. No new service, dependency, browser scraping, credential access or reset
+redemption is added. It exports three unlabeled gauges:
+
+- `ai_codex_banked_resets_available`: provider-reported count; absent when unknown.
+- `ai_codex_banked_reset_details_complete`: 1 only when unique detail rows cover
+  the reported available count with understood status/type and explicit expiry
+  values. Null expiry means non-expiring; omitted expiry remains unknown.
+- `ai_codex_banked_reset_next_expiry_timestamp_seconds`: earliest future expiry
+  among available `codexRateLimits` credits, emitted only with complete details.
+  Redeeming/redeemed credits are ignored; IDs and display text are never labels.
+
+Missing summaries and null/capped/inconsistent details cannot produce a guessed
+countdown. Malformed shapes, counts, identifiers or expiry values fail the Codex
+poll with sanitized diagnostics. Failed polls retain the last-known cache and
+success timestamp, but the dashboard gates on authentication, source success and
+freshness. A successful poll with missing details clears the cached expiry.
+Already-expired entries make details incomplete until the provider refreshes them;
+the panel also excludes timestamps that expire between polls.
+
+The platform overview's **Banked Reset Expires** stat is 4 columns by 4 rows at
+`x=0, y=8`, matching **5-Hour Reset** in size. Grafana's native `clocks` unit with
+zero decimals displays compact whole hours (`21h`, `72h`), switching to minutes
+or seconds below one hour. It floors the duration rather than rounding up and
+does not switch longer spans to days/weeks. N/A means no expiring credit,
+incomplete details, expired data or failed/stale collection; it never means a
+fabricated zero. Use
+the count and completeness gauges to distinguish no available credits (count 0),
+non-expiring credits (positive count, complete details, no expiry timestamp) and
+unknown expiry details (completeness 0).
+
+For later rollouts, run the exporter/dashboard regression checks above, verify a
+sanitized live summary (counts/timestamps only), apply the exporter through
+Ansible/NixOS and the dashboard through `scripts/tofu.sh`, then query Mimir and
+visually review a dashboard snapshot. Avoid channel updates and blanket container
+restarts for exporter-only updates; review `nixos-rebuild dry-activate` before
+switching because the complete host generation can include unrelated drift.
+
+On 2026-10-28, the exporter and dashboard were deployed. Habiki supplied complete
+details for two available resets, with earliest expiry `2026-10-29T17:15:35Z`;
+Codex and OpenRouter polls succeeded and the countdown was confirmed in Mimir and
+a rendered dashboard. The operator approved restoring the repository user module
+to remove an invalid remote-only `awk` entry, plus the activation plan's Immich
+and FileBrowser restarts. All affected units were active afterward; Immich and
+FileBrowser HTTP checks returned 200. These are dated observations, not guarantees
+of future credit availability or expiry-detail completeness.
+
 ## Alerting follow-up inputs
 
 This change adds dashboard health only; it does not create Grafana contact points, notification policies, or alert rules. A separate declarative alerting proposal can use:

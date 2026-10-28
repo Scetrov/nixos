@@ -653,10 +653,10 @@
         }
       },
       "gridPos": {
-        "h": 4,
-        "w": 12,
+        "h": 8,
+        "w": 6,
         "x": 0,
-        "y": 8
+        "y": 12
       },
       "id": 8,
       "options": {
@@ -1203,108 +1203,6 @@
       ],
       "title": "Code Scan Alerts",
       "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "percent"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 0,
-        "y": 12
-      },
-      "id": 11,
-      "options": {
-        "annotations": {
-          "clustering": -1,
-          "multiLane": false
-        },
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "13.0.3",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "100 - (avg by (host) (node_filesystem_avail_bytes{mountpoint=\"/\", fstype!~\"tmpfs|fuse.lxcfs|overlay|squashfs\"}) / avg by (host) (node_filesystem_size_bytes{mountpoint=\"/\", fstype!~\"tmpfs|fuse.lxcfs|overlay|squashfs\"}) * 100)",
-          "legendFormat": "{{host}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Root Disk Utilization by Host",
-      "type": "timeseries"
     },
     {
       "datasource": {
@@ -2032,81 +1930,46 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "fixedColor": "#4B678C",
+            "mode": "fixed"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": true,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 12,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
+          "noValue": "N/A",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
+                "color": "#4B678C",
+                "value": null
               }
             ]
           },
-          "unit": "ops"
+          "unit": "clocks",
+          "decimals": 0
         }
       },
       "gridPos": {
-        "h": 8,
-        "w": 6,
+        "h": 4,
+        "w": 4,
         "x": 0,
-        "y": 20
+        "y": 8
       },
-      "id": 13,
+      "id": 37,
       "options": {
-        "annotations": {
-          "clustering": -1,
-          "multiLane": false
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
       "pluginVersion": "13.0.3",
       "targets": [
@@ -2116,23 +1979,16 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by (host, device) (rate(node_disk_reads_completed_total{device!~\"loop.*|ram.*|fd.*|sr.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} read IOPS",
+          "expr": "(ai_codex_banked_reset_next_expiry_timestamp_seconds - time()) and on() (ai_codex_banked_reset_next_expiry_timestamp_seconds > time()) and on() (ai_codex_banked_reset_details_complete == 1) and on() (ai_codex_authenticated == 1) and on() (ai_exporter_scrape_success{source=\"codex\"} == 1) and on() ((time() - ai_exporter_last_success_timestamp_seconds{source=\"codex\"}) <= (2 * ai_exporter_poll_interval_seconds{source=\"codex\"}))",
+          "instant": true,
+          "legendFormat": "Banked Reset Expires",
+          "range": false,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "-sum by (host, device) (rate(node_disk_writes_completed_total{device!~\"loop.*|ram.*|fd.*|sr.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} write IOPS",
-          "refId": "B"
         }
       ],
-      "title": "Disk IOPS by Host / Device",
-      "type": "timeseries"
+      "title": "Banked Reset Expires",
+      "type": "stat",
+      "description": "Time until the earliest available banked Codex reset expires, not an automatic quota reset. N/A means no expiring reset, incomplete expiry details, expired data, or unavailable/stale collection. Redeem resets manually in Codex."
     },
     {
       "datasource": {
@@ -2142,81 +1998,44 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "fixedColor": "#4B678C",
+            "mode": "fixed"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": true,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 12,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "Bps"
+          "decimals": 0,
+          "noValue": "N/A",
+          "unit": "short"
         }
       },
       "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 20
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 8
       },
-      "id": 12,
-      "options": {
-        "annotations": {
-          "clustering": -1,
-          "multiLane": false
-        },
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
+      "id": 38,
+      "links": [
+        {
+          "targetBlank": false,
+          "title": "GitHub Repository Health",
+          "url": "/d/github-repo-health/github-repository-health"
         }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
       },
       "pluginVersion": "13.0.3",
       "targets": [
@@ -2226,23 +2045,16 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "sum by (host, device) (rate(node_disk_read_bytes_total{device!~\"loop.*|ram.*|fd.*|sr.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} read",
+          "expr": "sum(github_repository_issues_created_last_7_days{owner=~\"RichardSlater|Scetrov\"}) and on() (min(github_repository_signal_available{owner=~\"RichardSlater|Scetrov\",signal=\"issues\"}) == 1) and on() (count(github_repository_issues_created_last_7_days{owner=~\"RichardSlater|Scetrov\"}) == count(github_repository_info{owner=~\"RichardSlater|Scetrov\"})) and on() (count(count by (owner) (github_repository_info{owner=~\"RichardSlater|Scetrov\"})) == 2) and on() (github_repository_observability_collection_success == 1) and on() ((time() - github_repository_observability_last_success_timestamp_seconds) <= (2 * github_repository_observability_collection_interval_seconds))",
+          "instant": true,
+          "range": false,
+          "legendFormat": "GitHub Issues 7d",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "-sum by (host, device) (rate(node_disk_written_bytes_total{device!~\"loop.*|ram.*|fd.*|sr.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} write",
-          "refId": "B"
         }
       ],
-      "title": "Disk Throughput by Host / Device",
-      "type": "timeseries"
+      "title": "GitHub Issues 7d",
+      "type": "stat",
+      "description": "Issues created in the last rolling 7 days across monitored RichardSlater and Scetrov repositories, by any author, including closed issues and excluding PRs. Uses the existing App visibility and fork/archive/exclusion policy. Refreshed every 15 minutes. N/A means incomplete owner/repository coverage or failed/stale collection."
     },
     {
       "datasource": {
@@ -2252,83 +2064,56 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "max": 100,
-          "min": 0,
+          "decimals": 0,
+          "noValue": "N/A",
+          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": 0
+                "color": "#008791",
+                "value": null
               },
               {
-                "color": "red",
-                "value": 80
+                "color": "#FF3E8D",
+                "value": 1
               }
             ]
-          },
-          "unit": "percent"
+          }
         }
       },
       "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 20
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 8
       },
-      "id": 14,
-      "options": {
-        "annotations": {
-          "clustering": -1,
-          "multiLane": false
-        },
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
+      "id": 39,
+      "links": [
+        {
+          "targetBlank": false,
+          "title": "GitHub Repository Health",
+          "url": "/d/github-repo-health/github-repository-health"
         }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
       },
       "pluginVersion": "13.0.3",
       "targets": [
@@ -2338,143 +2123,16 @@
             "uid": "mimir"
           },
           "editorMode": "code",
-          "expr": "100 * avg by (host, device) (rate(node_disk_io_time_seconds_total{device!~\"loop.*|ram.*|fd.*|sr.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} busy",
+          "expr": "sum(github_repository_main_failing_statuses{owner=~\"RichardSlater|Scetrov\"}) and on() (min(github_repository_signal_available{owner=~\"RichardSlater|Scetrov\",signal=\"main_statuses\"}) == 1) and on() (count(github_repository_main_failing_statuses{owner=~\"RichardSlater|Scetrov\"}) == count(github_repository_info{owner=~\"RichardSlater|Scetrov\"})) and on() (count(count by (owner) (github_repository_info{owner=~\"RichardSlater|Scetrov\"})) == 2) and on() (github_repository_observability_collection_success == 1) and on() ((time() - github_repository_observability_last_success_timestamp_seconds) <= (2 * github_repository_observability_collection_interval_seconds))",
+          "instant": true,
+          "range": false,
+          "legendFormat": "GitHub Main Failures",
           "refId": "A"
         }
       ],
-      "title": "Disk Busy Time by Host / Device",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "mimir"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "ops"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 20
-      },
-      "id": 15,
-      "options": {
-        "annotations": {
-          "clustering": -1,
-          "multiLane": false
-        },
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "13.0.3",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "sum by (host, device) (rate(node_network_receive_errs_total{device!~\"lo|veth.*|docker.*|cni.*|flannel.*|virbr.*|br-.*|tun.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} rx errors",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "sum by (host, device) (rate(node_network_transmit_errs_total{device!~\"lo|veth.*|docker.*|cni.*|flannel.*|virbr.*|br-.*|tun.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} tx errors",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "sum by (host, device) (rate(node_network_receive_drop_total{device!~\"lo|veth.*|docker.*|cni.*|flannel.*|virbr.*|br-.*|tun.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} rx drops",
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "mimir"
-          },
-          "editorMode": "code",
-          "expr": "sum by (host, device) (rate(node_network_transmit_drop_total{device!~\"lo|veth.*|docker.*|cni.*|flannel.*|virbr.*|br-.*|tun.*\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} / {{device}} tx drops",
-          "refId": "D"
-        }
-      ],
-      "title": "Network Errors / Drops by Host / Device",
-      "type": "timeseries"
+      "title": "GitHub Main Failures",
+      "type": "stat",
+      "description": "Failing GitHub check runs and failure/error commit-status contexts on the latest commit of literal main across monitored RichardSlater and Scetrov repositories. Latest result per status context and per check app/name; pending, cancelled, skipped, neutral and stale checks do not count. Confirmed absent main contributes zero. N/A means incomplete coverage or failed/stale collection. Refreshed every 15 minutes."
     },
     {
       "id": 35,
