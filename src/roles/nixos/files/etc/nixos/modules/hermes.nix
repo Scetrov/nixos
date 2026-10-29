@@ -69,8 +69,14 @@ let
   # The build hard-fails if any payload requires a dynamic loader.
   securityTools =
     let
-      tools = [ "trivy" "grype" "syft" "osv-scanner" ];
-      toolCheck = tool:
+      tools = [
+        "trivy"
+        "grype"
+        "syft"
+        "osv-scanner"
+      ];
+      toolCheck =
+        tool:
         let
           staticTool = pkgs.pkgsStatic.${tool};
         in
