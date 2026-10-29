@@ -1,0 +1,264 @@
+# Ordered, narrow deployment: initialize/protect issuer state, configure the
+# public receiver and DNS, then activate the HTTPS-CDP-bearing XRDP leaf.
+- name: Prepare Bullit issuer state and publisher credential
+  hosts: bullit
+  gather_facts: false
+  vars_files: [secrets.yml]
+  tags: [xrdp-pki]
+  tasks:
+    - name: Require the explicit three-host PKI scope
+      ansible.builtin.assert:
+        that: ["ansible_limit == 'bullit,habiki,fyne'", "xrdp_crl_publisher_key is defined"]
+        quiet: true
+      no_log: true
+
+    - name: Resolve OpenSSL from existing Nixpkgs
+      ansible.builtin.command:
+        argv: [nix-build, '<nixpkgs>', '-A', openssl, --no-out-link]
+      register: pki_openssl
+      changed_when: false
+      check_mode: false
+
+    - name: Resolve age from existing Nixpkgs for scoped encryption
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv: [nix-build, '<nixpkgs>', '-A', age, --no-out-link]
+      register: pki_age
+      changed_when: false
+      check_mode: false
+
+    - name: Check the durable issuer marker
+      become: true
+      ansible.builtin.stat:
+        path: /var/lib/xrdp-ca/ca-sha256
+      register: pki_marker
+
+    - name: Require explicit first initialization or recovery
+      ansible.builtin.assert:
+        that:
+          - pki_marker.stat.exists or (xrdp_pki_initialize | default(false) | bool)
+        fail_msg: "Missing issuer state: restore the Habiki backup, or explicitly approve FIRST initialization with xrdp_pki_initialize=true. Never reset lost revocation records."
+
+    - name: Initialize once and import legacy issuance and diagnostic revocations
+      become: true
+      ansible.builtin.script:
+        cmd: >-
+          {{ playbook_dir }}/roles/nixos/files/etc/nixos/modules/xrdp-tls-renew.py init
+          --state /var/lib/xrdp-ca --ca /run/agenix/xrdp_ca_cert --ca-key /run/agenix/xrdp_ca_key
+          --openssl {{ pki_openssl.stdout | trim }}/bin/openssl
+          --import-cert /var/lib/xrdp-tls/current/cert.pem
+          --revoke-cert /var/lib/xrdp-crl-probe-fixtures/valid.cer
+          --revoke-cert /var/lib/xrdp-crl-probe-fixtures/revoked.cer
+        executable: python3
+      when: not pki_marker.stat.exists and not ansible_check_mode
+
+    - name: Read the publisher's existing agenix recipient policy
+      delegate_to: localhost
+      ansible.builtin.command:
+        argv:
+          - nix-instantiate
+          - --eval
+          - --strict
+          - --json
+          - --expr
+          - 'builtins.concatStringsSep "\n" (import ./secrets.nix)."xrdp_crl_publisher_key.age".publicKeys'
+        chdir: "{{ playbook_dir }}/roles/secrets/files/secrets"
+      register: pki_recipients
+      changed_when: false
+      check_mode: false
+
+    - name: Encrypt only the publisher credential without plaintext files
+      when: not ansible_check_mode
+      block:
+        - name: Prepare a private encryption workspace
+          delegate_to: localhost
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: .xrdp-encrypt
+          register: pki_workspace
+        - name: Write public encryption recipients
+          delegate_to: localhost
+          ansible.builtin.copy:
+            content: "{{ pki_recipients.stdout | from_json }}\n"
+            dest: "{{ pki_workspace.path }}/recipients"
+            mode: '0600'
+        - name: Encrypt the Vault-backed identity on stdin
+          delegate_to: localhost
+          ansible.builtin.command:
+            argv: ["{{ pki_age.stdout | trim }}/bin/age", --encrypt, --armor, --recipients-file, "{{ pki_workspace.path }}/recipients", --output, "{{ pki_workspace.path }}/publisher.age"]
+            stdin: "{{ xrdp_crl_publisher_key }}"
+            stdin_add_newline: false
+          no_log: true
+        - name: Preserve generated ciphertext in the existing secret workflow
+          delegate_to: localhost
+          ansible.builtin.copy:
+            src: "{{ pki_workspace.path }}/publisher.age"
+            dest: "{{ playbook_dir }}/roles/secrets/files/secrets/xrdp_crl_publisher_key.age"
+            mode: '0600'
+          no_log: true
+        - name: Deploy only the publisher ciphertext to Bullit
+          become: true
+          ansible.builtin.copy:
+            src: "{{ pki_workspace.path }}/publisher.age"
+            dest: /root/secrets/xrdp_crl_publisher_key.age
+            owner: root
+            group: root
+            mode: '0600'
+          no_log: true
+      always:
+        - name: Remove the encryption workspace
+          delegate_to: localhost
+          ansible.builtin.file:
+            path: "{{ pki_workspace.path }}"
+            state: absent
+          when: pki_workspace is defined
+          no_log: true
+
+- name: Deploy Habiki public CRL receiver and monitoring
+  hosts: habiki
+  gather_facts: false
+  tags: [xrdp-pki]
+  pre_tasks:
+    - name: Guard the complete ordered PKI scope
+      ansible.builtin.assert:
+        that: ["ansible_limit == 'bullit,habiki,fyne'"]
+        quiet: true
+  tasks:
+    - name: Prepare the root-owned SFTP chroot
+      become: true
+      ansible.builtin.file:
+        path: /var/lib/xrdp-crl
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Install only the existing public CA for CRL verification
+      become: true
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../docs/certs/bullit-xrdp-ca.crt"
+        dest: /var/lib/xrdp-crl/ca.crt
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Deploy only PKI receiver and observability configuration
+      become: true
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/roles/nixos/files/{{ item.source }}"
+        dest: "/etc/nixos/{{ item.target }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - {source: etc/nixos/modules/xrdp-crl.nix, target: modules/xrdp-crl.nix}
+        - {source: etc/nixos/modules/xrdp-crl-monitor.py, target: modules/xrdp-crl-monitor.py}
+        - {source: etc/nixos/modules/xrdp-crl-publisher.pub, target: modules/xrdp-crl-publisher.pub}
+        - {source: etc/nixos/modules/alloy.nix, target: modules/alloy.nix}
+        - {source: etc/nixos/modules/prometheus.nix, target: modules/prometheus.nix}
+        - {source: etc/nixos/modules/local-networking.nix, target: modules/local-networking.nix}
+        - {source: device-configuration/habiki.nix, target: device-configuration.nix}
+    - name: Check whether the PKI monitor is already installed
+      become: true
+      ansible.builtin.stat:
+        path: /etc/systemd/system/xrdp-crl-monitor.service
+      register: pki_monitor_unit
+    - name: Clear a prior bootstrap monitor failure before activation
+      become: true
+      ansible.builtin.command:
+        argv: [systemctl, reset-failed, xrdp-crl-monitor.service]
+      when: pki_monitor_unit.stat.exists and not ansible_check_mode
+    - name: Activate Habiki PKI without channel updates or blanket restarts
+      become: true
+      ansible.builtin.command:
+        argv: [nixos-rebuild, switch]
+      when: not ansible_check_mode
+    - name: Reload Habiki local DNS
+      become: true
+      ansible.builtin.systemd_service:
+        name: blocky.service
+        state: restarted
+      when: not ansible_check_mode
+
+- name: Converge only Fyne's shared local DNS alias
+  hosts: fyne
+  gather_facts: false
+  tags: [xrdp-pki]
+  pre_tasks:
+    - name: Guard the complete ordered PKI scope
+      ansible.builtin.assert:
+        that: ["ansible_limit == 'bullit,habiki,fyne'"]
+        quiet: true
+  tasks:
+    - name: Use the existing DNS-only automation
+      ansible.builtin.include_role:
+        name: local-dns
+
+- name: Activate the Bullit issuer after HTTPS publication infrastructure is ready
+  hosts: bullit
+  gather_facts: false
+  tags: [xrdp-pki]
+  pre_tasks:
+    - name: Guard the complete ordered PKI scope
+      ansible.builtin.assert:
+        that: ["ansible_limit == 'bullit,habiki,fyne'"]
+        quiet: true
+  tasks:
+    - name: Deploy only Bullit issuer modules
+      become: true
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/roles/nixos/files/etc/nixos/modules/{{ item }}"
+        dest: "/etc/nixos/modules/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop: [xrdp-tls.nix, xrdp-tls-renew.py, local-networking.nix]
+    - name: Clear a previous failed PKI attempt before Bullit activation
+      become: true
+      ansible.builtin.command:
+        argv: [systemctl, reset-failed, xrdp-tls-renew.service]
+      when: not ansible_check_mode
+    - name: Activate Bullit without channel updates or unrelated provisioning
+      become: true
+      ansible.builtin.command:
+        argv: [nixos-rebuild, switch]
+      when: not ansible_check_mode
+    - name: Refresh CRL and remote backup before certificate activation
+      become: true
+      ansible.builtin.systemd_service:
+        name: xrdp-tls-renew.service
+        state: started
+      when: not ansible_check_mode
+    - name: Wait for the queued listener-only restart
+      ansible.builtin.command:
+        argv: [systemctl, is-active, xrdp.service, xrdp-sesman.service, xrdp-tls-renew.timer]
+      register: pki_listener
+      until: pki_listener.rc == 0
+      retries: 10
+      delay: 2
+      changed_when: false
+      when: not ansible_check_mode
+
+- name: Verify public CRL monitoring and remove retired test files
+  hosts: habiki
+  gather_facts: false
+  tags: [xrdp-pki]
+  pre_tasks:
+    - name: Guard the complete ordered PKI scope
+      ansible.builtin.assert:
+        that: ["ansible_limit == 'bullit,habiki,fyne'"]
+        quiet: true
+  tasks:
+    - name: Verify signed CRL and remote recovery records
+      become: true
+      ansible.builtin.systemd_service:
+        name: xrdp-crl-monitor.service
+        state: started
+      when: not ansible_check_mode
+    - name: Remove retired probe resources only after production publication
+      become: true
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/xrdp-crl-https-probe
+        - /etc/nixos/modules/xrdp-crl-https-probe.nix
+      when: not ansible_check_mode

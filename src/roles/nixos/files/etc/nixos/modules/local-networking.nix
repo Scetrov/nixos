@@ -28,6 +28,7 @@
         "habiki.net.scetrov.live"
         "s3.net.scetrov.live"
         "garage-admin.net.scetrov.live"
+        "crl.net.scetrov.live"
         "source.net.scetrov.live"
         "feed.net.scetrov.live"
         "files.net.scetrov.live"

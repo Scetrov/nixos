@@ -36,6 +36,8 @@ Options:
                            - esphome          : ESPHome secret rendering, validation, build, and OTA deploy
                            - secrets          : Secrets generation and deployment
                            - local-dns        : Shared DNS aliases only (existing Fyne/Habiki config)
+                           - xrdp-pki         : Ordered private CRL receiver, DNS and Bullit issuer rollout
+                                                (requires --limit bullit,habiki,fyne; no channel updates)
                            - forgejo-mirrors  : Focused Habiki discovery; dry activation by default,
                                                 import policy requires -e forgejo_mirrors_imports_approved=true;
                                                 switch with -e forgejo_mirrors_apply=true after review
@@ -174,6 +176,21 @@ done
 
 # Database maintenance is deliberately separate from normal deployment roles.
 PLAYBOOK="src/playbook.yml"
+if has_tag xrdp-pki; then
+    if [[ "$LIMIT" != "bullit,habiki,fyne" || "$TAGS" != "xrdp-pki" ]]; then
+        echo "Error: xrdp-pki requires --limit bullit,habiki,fyne and cannot be combined with other tags." >&2
+        exit 1
+    fi
+    for argument in "${EXTRA_ARGS[@]}"; do
+        case "$argument" in
+            --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*|--start-at-task|--start-at-task=*)
+                echo "Error: xrdp-pki scope or ordering overrides are not supported." >&2
+                exit 1
+                ;;
+        esac
+    done
+    PLAYBOOK="src/xrdp-pki.yml"
+fi
 if [[ "$FILEBROWSER_DEPLOY" == true ]]; then
     PLAYBOOK="src/filebrowser.yml"
 fi

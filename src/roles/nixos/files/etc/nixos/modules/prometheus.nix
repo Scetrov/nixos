@@ -15,6 +15,15 @@
               server_name: headscale.net.scetrov.live
             headers:
               Host: headscale.net.scetrov.live
+        xrdp_crl_https:
+          prober: http
+          timeout: 10s
+          http:
+            fail_if_not_ssl: true
+            valid_status_codes: [200]
+            follow_redirects: false
+            tls_config:
+              server_name: crl.net.scetrov.live
         filebrowser_https:
           prober: http
           timeout: 10s
@@ -83,6 +92,29 @@
                 annotations:
                   summary: Garage host storage has less than the 500 GiB reserve
                   description: Free space on Habiki's persistent Garage filesystem is below the required recovery reserve.
+          - name: xrdp-pki
+            rules:
+              - alert: XrdpCrlUnavailable
+                expr: probe_success{job="xrdp-crl-edge"} != 1 or absent(probe_success{job="xrdp-crl-edge"})
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: Private XRDP HTTPS CRL endpoint is unavailable
+              - alert: XrdpCrlInvalidOrStale
+                expr: xrdp_crl_valid{job="xrdp-pki"} != 1 or absent(xrdp_crl_valid{job="xrdp-pki"}) or time() - xrdp_crl_check_timestamp_seconds{job="xrdp-pki"} > 900
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: XRDP CRL signature, freshness or monitor failed
+              - alert: XrdpCrlRenewalOverdue
+                expr: xrdp_crl_next_update_timestamp_seconds{job="xrdp-pki"} - time() < 172800 or time() - xrdp_crl_backup_timestamp_seconds{job="xrdp-pki"} > 129600
+                for: 15m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: XRDP CRL refresh or remote issuer backup is overdue
           - name: forgejo
             rules:
               - alert: ForgejoServiceUnavailable
@@ -96,6 +128,32 @@
       ''
     ];
     scrapeConfigs = [
+      {
+        job_name = "xrdp-pki";
+        scrape_interval = "60s";
+        metrics_path = "/api/v0/component/prometheus.exporter.unix.xrdp_pki/metrics";
+        static_configs = [ { targets = [ "127.0.0.1:12345" ]; } ];
+      }
+      {
+        job_name = "xrdp-crl-edge";
+        metrics_path = "/probe";
+        params.module = [ "xrdp_crl_https" ];
+        static_configs = [ { targets = [ "https://crl.net.scetrov.live/bullit-xrdp.crl" ]; } ];
+        relabel_configs = [
+          {
+            source_labels = [ "__address__" ];
+            target_label = "__param_target";
+          }
+          {
+            source_labels = [ "__param_target" ];
+            target_label = "instance";
+          }
+          {
+            target_label = "__address__";
+            replacement = "127.0.0.1:9115";
+          }
+        ];
+      }
       {
         job_name = "prometheus";
         static_configs = [

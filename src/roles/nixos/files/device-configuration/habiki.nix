@@ -6,6 +6,7 @@
     ./modules/authentik.nix
     ./modules/blocky.nix
     ./modules/caddy.nix
+    ./modules/xrdp-crl.nix
     ./modules/dependency-track.nix
     ./modules/frontier-indexer.nix
     ./modules/forgejo.nix

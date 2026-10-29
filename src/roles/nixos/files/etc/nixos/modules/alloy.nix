@@ -198,6 +198,21 @@
       }
     ''}
 
+    ${lib.optionalString (config.systemd.services ? xrdp-crl-monitor) ''
+      prometheus.exporter.unix "xrdp_pki" {
+        set_collectors = ["textfile"]
+        textfile {
+          directory = "/var/lib/xrdp-crl-metrics"
+        }
+      }
+      prometheus.scrape "xrdp_pki" {
+        targets = prometheus.exporter.unix.xrdp_pki.targets
+        forward_to = [prometheus.remote_write.central.receiver]
+        job_name = "xrdp-pki"
+        scrape_interval = "60s"
+      }
+    ''}
+
     prometheus.scrape "local" {
       targets    = prometheus.exporter.unix.local.targets
       forward_to = [prometheus.remote_write.central.receiver]

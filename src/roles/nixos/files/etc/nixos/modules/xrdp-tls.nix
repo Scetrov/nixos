@@ -8,11 +8,19 @@ let
   tlsDir = "/var/lib/xrdp-tls";
   ca = config.age.secrets.xrdp_ca_cert.path;
   caKey = config.age.secrets.xrdp_ca_key.path;
+  knownHosts = pkgs.writeText "xrdp-crl-known-hosts" ''
+    10.229.10.2 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ6Gw0SitGQ9Z2WcxD/KyS142YlBZYg6aFeYymRIdMFR
+  '';
   prepare = pkgs.writeShellScript "xrdp-tls-renew" ''
     set -euo pipefail
-    result="$(${pkgs.python3}/bin/python3 ${./xrdp-tls-renew.py} \
-      --target ${tlsDir} --ca ${ca} --ca-key ${caKey} \
-      --openssl ${pkgs.openssl}/bin/openssl --group xrdp)"
+    if ! result="$(${pkgs.python3}/bin/python3 ${./xrdp-tls-renew.py} renew \
+      --target ${tlsDir} --state /var/lib/xrdp-ca --ca ${ca} --ca-key ${caKey} \
+      --openssl ${pkgs.openssl}/bin/openssl --group xrdp \
+      --sftp ${pkgs.openssh}/bin/sftp --identity "$CREDENTIALS_DIRECTORY/publisher-key" \
+      --known-hosts ${knownHosts} --trust-bundle ${config.security.pki.caBundle})"; then
+      echo "$result" >&2
+      exit 1
+    fi
     echo "$result"
     # Never restart sesman (which owns existing desktop sessions). Queue the
     # listener restart so it cannot deadlock on this required startup unit.
@@ -26,6 +34,10 @@ in
   # not readable by the network-facing xrdp user or other managed hosts.
   age.secrets.xrdp_ca_cert.file = /root/secrets/xrdp_ca_cert.age;
   age.secrets.xrdp_ca_key.file = /root/secrets/xrdp_ca_key.age;
+  age.secrets.xrdp_crl_publisher_key.file = /root/secrets/xrdp_crl_publisher_key.age;
+
+  # Only an explicit initialization/recovery operation creates issuance records.
+  systemd.tmpfiles.rules = [ "d /var/lib/xrdp-ca 0700 root root -" ];
 
   services.xrdp = {
     sslCert = "${tlsDir}/current/cert.pem";
@@ -44,15 +56,25 @@ in
     after = [
       "agenix-install-secrets.service"
       "agenix-chown.service"
+      "network-online.target"
     ];
+    wants = [ "network-online.target" ];
     before = [ "xrdp.service" ];
     restartTriggers = [
       config.age.secrets.xrdp_ca_cert.file
       config.age.secrets.xrdp_ca_key.file
+      config.age.secrets.xrdp_crl_publisher_key.file
     ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = prepare;
+      User = "root";
+      LoadCredential = [ "publisher-key:${config.age.secrets.xrdp_crl_publisher_key.path}" ];
+      ReadWritePaths = [ "/var/lib/xrdp-ca" ];
+      TimeoutStartSec = "180s";
+      # systemd reapplies StateDirectory ownership on every invocation,
+      # including no-op renewals. Keep directory traversal available to xrdp.
+      Group = "xrdp";
       StateDirectory = "xrdp-tls";
       StateDirectoryMode = "0750";
       UMask = "0077";

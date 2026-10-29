@@ -8,7 +8,17 @@ let
         ../src/roles/nixos/files/etc/nixos/modules/xrdp-tls.nix
         ({ lib, ... }: {
           options.age.secrets = lib.mkOption {
-            type = lib.types.attrs;
+            type = lib.types.attrsOf (
+              lib.types.submodule (
+                { name, ... }: {
+                  options.file = lib.mkOption { type = lib.types.path; };
+                  options.path = lib.mkOption {
+                    type = lib.types.str;
+                    default = "/run/agenix/${name}";
+                  };
+                }
+              )
+            );
             default = { };
           };
           config = {
@@ -18,6 +28,7 @@ let
             age.secrets = {
               xrdp_ca_cert.path = "/run/agenix/xrdp_ca_cert";
               xrdp_ca_key.path = "/run/agenix/xrdp_ca_key";
+              xrdp_crl_publisher_key.path = "/run/agenix/xrdp_crl_publisher_key";
             };
           };
         })
@@ -39,6 +50,11 @@ assert !(libHas "req -x509" service.preStart);
 assert libHas "test -s /var/lib/xrdp-tls/current/key.pem" service.preStart;
 assert libHas "security_layer=tls" cfg.services.xrdp.extraConfDirCommands;
 assert renew.serviceConfig.ProtectSystem == "strict";
+assert renew.serviceConfig.Group == "xrdp";
+assert renew.serviceConfig.User == "root";
+assert renew.serviceConfig.ReadWritePaths == [ "/var/lib/xrdp-ca" ];
+assert builtins.elem "publisher-key:/run/agenix/xrdp_crl_publisher_key"
+  renew.serviceConfig.LoadCredential;
 assert cfg.systemd.timers.xrdp-tls-renew.timerConfig.Persistent;
 assert cfg.systemd.timers.xrdp-tls-renew.timerConfig.OnCalendar == "daily";
 {
