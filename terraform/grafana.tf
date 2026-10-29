@@ -208,3 +208,15 @@ resource "grafana_dashboard" "llama_cpp_service" {
   config_json = file("${local.grafana_portal.source_root}/llama-cpp-service.json")
   overwrite   = true
 }
+
+resource "grafana_dashboard" "nvidia_gpu_overview" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/nvidia-gpu-overview.json")
+  overwrite   = true
+}
+
+resource "grafana_dashboard" "nvidia_gpu_metrics" {
+  folder      = grafana_folder.operations_services.uid
+  config_json = file("${local.grafana_portal.source_root}/nvidia-gpu-metrics.json")
+  overwrite   = true
+}

@@ -36,6 +36,22 @@ The Grafana operations portal is managed declaratively from source control.
 - `hermes`: logs and external UI available now; metrics, traces, and profiles are not yet present.
 - `home-assistant`: logs and authenticated local metrics collection are configured, with retained environmental history in Mimir; see [the service runbook](home-assistant.md). Traces still require independent integration/verification.
 
+## Nvidia GPU dashboards
+
+The `Nvidia GPU Overview` (`svc-nvidia-gpu-overview`) and `Nvidia GPU Metrics`
+(`svc-nvidia-gpu-metrics`) dashboards are adapted from the upstream
+[nvidia_gpu_exporter Grafana dashboards](https://github.com/utkuozdemir/nvidia_gpu_exporter/tree/main/docs/grafana)
+(gnetId 25547 and 14574). Adaptations from upstream: the datasource picker
+variable is replaced by the fixed `mimir` datasource, and the `job`, `node`
+and `gpu` variables default to `nvidia_gpu`, `qwen-4090` and the single RTX
+4090 UUID on the Windows PC running the exporter. The overview's GPU rows
+link into the detail dashboard by UID, so the upstream detail UID must stay
+renamed together with the link targets in both files.
+
+The `nvidia_gpu` scrape itself is not yet managed in this repository; it is
+surfaced as an ingestion gap until the scrape configuration is codified in
+`prometheus.nix` or the Alloy configuration.
+
 ## Dashboard semantics and validation
 
 System Resources is now owned by `terraform/grafana.tf` and
