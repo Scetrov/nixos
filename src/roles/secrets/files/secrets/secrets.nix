@@ -29,6 +29,9 @@ in
   "ssh_bastion_key.age".publicKeys = users ++ systems;
   "wireless_pskraw.age".publicKeys = users ++ systems;
   "wireless_ssid.age".publicKeys = users ++ systems;
+  # devenv is Bullit\'s host key; do not distribute the XRDP CA to other hosts.
+  "xrdp_ca_cert.age".publicKeys = users ++ [ devenv ];
+  "xrdp_ca_key.age".publicKeys = users ++ [ devenv ];
   "authentik_postgresql_password.age".publicKeys = users ++ systems;
   "authentik_secret_key.age".publicKeys = users ++ systems;
   "cloudflare_dns_zone_api_key.age".publicKeys = users ++ systems;

@@ -32,6 +32,8 @@ they are not fresh health checks or certification of untested clients.
   Minecraft bucket, credential boundaries and recovery limits.
 - [Shared PostgreSQL TLS](postgresql-tls.md): verified clients, certificate
   renewal and non-destructive recovery.
+- [Bullit XRDP TLS](xrdp.md): private CA trust, unattended certificate renewal,
+  targeted deployment and client enrollment.
 - [Maintenance](maintenance.md): dependency integrity/release policy, stateful
   upgrades and retained recovery assets, declarative Rust/Cargo tooling.
 - [Frontier cycle recovery](frontier-indexer-cycle-recovery.md) and

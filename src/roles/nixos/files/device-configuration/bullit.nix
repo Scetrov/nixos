@@ -8,6 +8,7 @@
     ./modules/user-scetrov-gui.nix
     ./modules/user-scetrov-syncthing.nix
     ./modules/xrdp.nix
+    ./modules/xrdp-tls.nix
   ];
 
   environment.systemPackages = [ pkgs.cloudflared ];
