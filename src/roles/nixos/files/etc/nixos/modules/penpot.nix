@@ -283,19 +283,22 @@ in
         ];
       }
     ];
+    # The prometheus module owns the single top-level `groups:` key; append
+    # this group to the end of that document instead of emitting a second
+    # `groups:` mapping (duplicate top-level keys are invalid YAML).
     services.prometheus.rules = lib.mkAfter [
       ''
-        groups:
-          - name: penpot
-            rules:
-              - alert: PenpotServiceUnavailable
-                expr: probe_success{job="penpot-edge"} != 1 or absent(probe_success{job="penpot-edge"})
-                for: 5m
-                labels:
-                  severity: critical
-                  service: penpot
-                annotations:
-                  summary: Penpot HTTPS/backend readiness probe failed
+
+        - name: penpot
+          rules:
+            - alert: PenpotServiceUnavailable
+              expr: probe_success{job="penpot-edge"} != 1 or absent(probe_success{job="penpot-edge"})
+              for: 5m
+              labels:
+                severity: critical
+                service: penpot
+              annotations:
+                summary: Penpot HTTPS/backend readiness probe failed
       ''
     ];
   };
