@@ -86,7 +86,8 @@ class ConfigurationTests(unittest.TestCase):
     def test_only_native_authentication_is_configured(self):
         flags = self.config["environment"]["PENPOT_FLAGS"].split()
         for flag in ("enable-login-with-oidc", "enable-oidc-registration", "disable-registration",
-                     "disable-login-with-password", "disable-smtp", "enable-secure-session-cookies", "enable-mcp"):
+                     "disable-login-with-password", "disable-smtp", "disable-email-verification",
+                     "enable-secure-session-cookies", "enable-mcp"):
             self.assertIn(flag, flags)
         self.assertNotIn("forward_auth http", self.config["virtualHost"])
         tofu = (ROOT / "terraform/penpot.tf").read_text()

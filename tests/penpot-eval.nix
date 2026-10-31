@@ -50,6 +50,7 @@ assert builtins.elem "--network=penpot" backend.extraOptions;
 assert
   backend.environment.PENPOT_OIDC_BASE_URI
   == "https://identity.net.scetrov.live/application/o/penpot/";
+assert backend.environment.PENPOT_SSRF_ALLOWED_HOSTS == "identity.net.scetrov.live";
 assert !(backend.environment ? PENPOT_SECRET_KEY);
 assert !(backend.environment ? PENPOT_DATABASE_PASSWORD);
 assert builtins.all (s: s.mode == "0400") (builtins.attrValues cfg.age.secrets);

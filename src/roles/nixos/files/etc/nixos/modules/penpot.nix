@@ -15,7 +15,11 @@ let
     "penpot_oidc_client_id"
     "penpot_oidc_client_secret"
   ];
-  flags = "enable-login-with-oidc enable-oidc-registration disable-registration disable-login-with-password disable-smtp enable-secure-session-cookies disable-telemetry enable-mcp";
+  # disable-email-verification: SMTP is intentionally absent, so Penpot must
+  # activate OIDC-registered profiles immediately instead of gating them on a
+  # verification e-mail that can never be delivered (with the flag on, an
+  # inactive profile would also be rejected as email-already-exists).
+  flags = "enable-login-with-oidc enable-oidc-registration disable-registration disable-login-with-password disable-smtp disable-email-verification enable-secure-session-cookies disable-telemetry enable-mcp";
   commonEnvironment = {
     PENPOT_FLAGS = flags;
     PENPOT_PUBLIC_URI = "https://${domain}";
@@ -148,6 +152,9 @@ in
           PENPOT_TELEMETRY_ENABLED = "false";
           PENPOT_OIDC_BASE_URI = "https://identity.net.scetrov.live/application/o/penpot/";
           PENPOT_OIDC_SCOPES = "openid profile email";
+          # Penpot 2.15+ SSRF guard blocks the host-gateway-resolved identity
+          # host (private IP) during OIDC discovery; allowlist it explicitly.
+          PENPOT_SSRF_ALLOWED_HOSTS = "identity.net.scetrov.live";
         };
         volumes = [
           "${stateDir}/assets:/opt/data/assets:U"

@@ -29,8 +29,18 @@ Configuration owners:
 
 Browser login uses Authentik OIDC only. Password login and public registration
 are disabled; OIDC registration is enabled so an authorized first-time user can
-receive a Penpot account. Authentik restricts the application to **All
-Applications**. The callback is
+receive a Penpot account. The backend resolves the identity host through the
+Podman network (private IP), so `PENPOT_SSRF_ALLOWED_HOSTS` allowlists
+`identity.net.scetrov.live`; without it Penpot 2.15+ SSRF protection blocks OIDC
+discovery and login fails with a generic error. Authentik restricts the
+application to **All Applications**.
+
+`disable-email-verification` is set in `PENPOT_FLAGS` because SMTP is not
+configured: OIDC-registered profiles are activated immediately instead of being
+held on a verification e-mail that can never be delivered. Identity (and
+e-mail verification) is delegated to Authentik. If this flag is ever removed
+while an inactive profile exists, re-registration fails with
+`email-already-exists`; activate the row in the `profile` table instead. The callback is
 `https://penpot.net.scetrov.live/api/auth/oidc/callback`, using the issuer
 `https://identity.net.scetrov.live/application/o/penpot/`. There is no SMTP, so
 email invitations/password recovery are not an operational access path.
