@@ -173,7 +173,7 @@ prepare_garage_broker() {
 }
 
 refresh_generated_secrets() {
-    local json_outputs tmp_sec_file
+    local json_outputs tmp_sec_file=""
     json_outputs="$(tofu -chdir="$TERRAFORM_DIR" output -json)"
     tmp_sec_file="$(mktemp /dev/shm/generated-secrets.XXXXXX)"
     chmod 0600 "$tmp_sec_file"
@@ -190,7 +190,14 @@ refresh_generated_secrets() {
     # closed (non-zero, nothing written) on missing/empty/null/placeholder
     # values, including the Forgejo additions. Keep the temp file 0600 and
     # never echo the manifest.
-    python3 "$ROOT_DIR/scripts/render_generated_secrets.py" "$tmp_sec_file" <<< "$json_outputs"
+    if ! (set -o pipefail; python3 "$ROOT_DIR/scripts/render_generated_secrets.py" \
+            "$tmp_sec_file" <<< "$json_outputs"); then
+        local render_rc=${PIPESTATUS[1]}
+        # The renderer's stderr is already on our stderr; fail closed so the
+        # existing encrypted manifest is never truncated by a failed refresh.
+        echo "render_generated_secrets: generated-secret refresh failed (renderer exit ${render_rc}); existing ${GENERATED_SECRETS_FILE} left untouched." >&2
+        exit "$render_rc"
+    fi
 
     ansible-vault encrypt "$tmp_sec_file" \
         --vault-password-file "$VAULT_PASSWORD_FILE" \
