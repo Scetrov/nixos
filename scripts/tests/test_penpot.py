@@ -95,6 +95,18 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIn("https://penpot.net.scetrov.live/api/auth/oidc/callback", tofu)
         self.assertIn('client_type        = "confidential"', tofu)
 
+    def test_application_icon_is_deployed_and_integrity_named(self):
+        import hashlib
+
+        name = "penpot-708e96e898dc.png"
+        asset = ROOT / "src/roles/nixos/files/etc/nixos/branding" / name
+        self.assertEqual(hashlib.sha256(asset.read_bytes()).hexdigest(),
+                         "708e96e898dc85e6852f409ec52f6b4961f56716b3390749b0bd5e51c385117e")
+        self.assertIn(f'meta_icon         = "/static/dist/branding/{name}"',
+                      (ROOT / "terraform/penpot.tf").read_text())
+        self.assertIn(f"    - {name}",
+                      (ROOT / "src/roles/nixos/tasks/branding.yml").read_text())
+
     def test_query_keys_are_removed_from_proxy_logs(self):
         logging = self.config["runtimeLogging"]
         self.assertIn("request>uri query", logging)

@@ -79,6 +79,43 @@ proxy debug/request logging or collect raw MCP client traces containing the key.
 A synthetic-key check of the deployed proxy/application/Loki path remains part
 of live acceptance.
 
+## Application icon and team fonts
+
+The Authentik tile uses the official Penpot 2.18.4 favicon, vendored from
+`frontend/resources/images/favicon.png` at upstream commit
+`2df5f417a01519044ce26ffe2dbaab1f9d365c33`. Its SHA256 is
+`708e96e898dc85e6852f409ec52f6b4961f56716b3390749b0bd5e51c385117e`.
+`src/roles/nixos/tasks/branding.yml` deploys the integrity-named asset before
+`terraform/penpot.tf` points the application at the local Authentik static URL.
+Refresh it with targeted `--limit habiki --tags authentik-branding` automation
+and a reviewed `authentik_application.penpot` plan/apply via `scripts/tofu.sh`.
+
+Custom fonts belong to a **team**, not the NixOS host. Use the team's dashboard
+**Fonts** page to upload Disket Mono Regular (400) and Bold (700), then reload the
+editor. The operator chose native upload instead of custom provisioning code;
+font installation is therefore a manual follow-up, not automated host state.
+The source files in `Scetrov/void-eid/src/frontend/public/fonts` at commit
+`0deb4bddb01babd19c9f5564f05c62879518cdf4` have `.woff2` names but contain
+**WOFF1** data (`wOFF` signature). Preserve their bytes and upload them with
+`.woff` extensions so type detection is correct:
+
+- `disket-mono-regular.woff`: SHA256
+  `9a8ada8017de5fe72ee7d16c18c686d283f0bd7eac21a31768d1cbb92b4b5920`.
+- `disket-mono-bold.woff`: SHA256
+  `dbb16e1d32841858a65c1caded6705fae4a492aa5fb2b2c3b498c40bcbc3d504`.
+
+Neither font is installed merely by downloading these files. Verify both
+weights in the team's font list and the design picker after uploading them.
+
+Icon deployment acceptance: the targeted branding play completed with one
+asset changed, and the targeted OpenTofu apply updated only
+`authentik_application.penpot` (no additions/deletions). The live static URL
+returned HTTP 200 with `image/png` and the expected SHA256. Visual tile
+validation remains with the operator. The focused suite passed 22 tests with
+one optional Caddy log test skipped (`CADDY_BINARY` unset); OpenTofu validation
+and all pre-commit gates passed. This verifies only this icon change, not the
+broader pending service acceptance below.
+
 ## Runtime and persistent state
 
 Containers are `penpot-frontend`, `penpot-backend`, `penpot-postgres`,

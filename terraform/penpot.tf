@@ -46,6 +46,7 @@ resource "authentik_application" "penpot" {
   slug              = "penpot"
   protocol_provider = authentik_provider_oauth2.penpot.id
   meta_launch_url   = "https://penpot.net.scetrov.live"
+  meta_icon         = "/static/dist/branding/penpot-708e96e898dc.png"
 }
 
 resource "authentik_policy_binding" "penpot_access" {
