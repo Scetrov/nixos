@@ -78,6 +78,10 @@ in
   "immich_oidc_client_secret.age".publicKeys = users ++ [ habiki ];
   "immich_admin_email.age".publicKeys = users ++ [ habiki ];
   "immich_admin_password.age".publicKeys = users ++ [ habiki ];
+  "penpot_db_password.age".publicKeys = users ++ [ habiki ];
+  "penpot_secret_key.age".publicKeys = users ++ [ habiki ];
+  "penpot_oidc_client_id.age".publicKeys = users ++ [ habiki ];
+  "penpot_oidc_client_secret.age".publicKeys = users ++ [ habiki ];
   "frontier_indexer_db_password.age".publicKeys = users ++ systems;
   "mcp_client_token.age".publicKeys = users ++ systems;
   "garage_rpc_secret.age".publicKeys = users ++ systems;
