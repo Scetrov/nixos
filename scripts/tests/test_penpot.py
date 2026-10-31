@@ -166,10 +166,8 @@ class ConfigurationTests(unittest.TestCase):
         for name, options in self.config["healthOptions"].items():
             with self.subTest(name=name):
                 self.assertIn("--log-driver=journald", options)
-                self.assertIn("--health-on-failure=kill", options)
-        for name in ("penpot-mcp", "penpot-exporter"):
-            command = next(x.split("=", 1)[1] for x in self.config["healthOptions"][name] if x.startswith("--health-cmd="))
-            self.assertEqual(json.loads(command)[:2], ["node", "-e"])
+                self.assertIn("--no-healthcheck", options)
+                self.assertFalse(any(x.startswith("--health-") for x in options))
         self.assertIn('replacement   = "penpot"', (MODULES / "alloy.nix").read_text())
         self.assertIn('"penpot.net.scetrov.live"', (MODULES / "local-networking.nix").read_text())
         catalog = json.loads((ROOT / "terraform/dashboards/service-catalog.json").read_text())

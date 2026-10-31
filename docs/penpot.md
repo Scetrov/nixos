@@ -166,10 +166,10 @@ preparation units. Start in Grafana Explore with:
 {host="habiki", service="penpot"}
 ```
 
-Podman health checks cover database/cache readiness, backend `/readyz`, and
-frontend/exporter/MCP listeners. Failed health checks kill the unhealthy
-container so its existing systemd restart policy can recover it. Listener
-checks are not functional plugin/export tests.
+Podman health checks are disabled, including any supplied by the images: their
+transient systemd units reported startup check failures during NixOS activation.
+Systemd can restart containers that exit, but a hung container is not
+necessarily restarted automatically.
 
 The existing blackbox exporter probes HTTPS `/readyz` through Caddy and the
 backend (`job="penpot-edge"`, `service="penpot"`).
@@ -178,9 +178,9 @@ probe data. This is basic web/backend readiness, not a separate functional MCP
 or image-export alert. Use the journal and live smoke checks for those paths;
 no custom metrics exporter is added.
 
-Investigate container/preparation unit status and health without dumping their
-environments or raw secret-bearing URLs. Nginx request diagnostics are
-intentionally unavailable; use backend/MCP startup errors and health status.
+Investigate container/preparation unit status and the readiness probe without
+dumping environments or raw secret-bearing URLs. Nginx request diagnostics are
+intentionally unavailable; use backend/MCP startup errors and live smoke checks.
 
 ## Verification and remaining work
 
@@ -224,7 +224,7 @@ scope decision to their own follow-up before the change was archived. These are
   and Loki on successful and rejected/failed connections. Never use a real key
   as the diagnostic canary.
 - Saved designs/assets survive a managed restart, image export works, and a
-  controlled failure is visible in health/journal/probe alerts.
+  controlled failure is visible in systemd status, journal or probe alerts.
 
 Do not substitute fixture results or upstream trust for these operational
 observations. Record any accepted limitation explicitly rather than ticking an

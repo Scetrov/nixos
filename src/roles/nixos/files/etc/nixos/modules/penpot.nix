@@ -36,16 +36,8 @@ let
   containerOptions = [
     "--network=penpot"
     "--log-driver=journald"
+    "--no-healthcheck"
   ];
-  # Exec-form checks also work in the minimal MCP image without /bin/sh.
-  nodeHealth =
-    port:
-    "--health-cmd="
-    + builtins.toJSON [
-      "node"
-      "-e"
-      "const s=require('net').connect(${toString port},'127.0.0.1',()=>s.end());s.on('error',()=>process.exit(1));s.setTimeout(3000,()=>process.exit(1))"
-    ];
   secretFiles = map (name: config.age.secrets.${name}.file) secretNames;
 in
 {
@@ -124,10 +116,6 @@ in
         extraOptions = containerOptions ++ [
           "--memory=1g"
           "--cpus=1"
-          "--health-cmd=pg_isready -U penpot"
-          "--health-interval=30s"
-          "--health-start-period=60s"
-          "--health-on-failure=kill"
         ];
       };
       penpot-valkey = {
@@ -142,9 +130,6 @@ in
         extraOptions = containerOptions ++ [
           "--memory=256m"
           "--cpus=0.5"
-          "--health-cmd=valkey-cli ping"
-          "--health-interval=30s"
-          "--health-on-failure=kill"
         ];
       };
       penpot-backend = {
@@ -172,10 +157,6 @@ in
           "--memory=4g"
           "--cpus=2"
           "--add-host=identity.net.scetrov.live:host-gateway"
-          "--health-cmd=curl -fsS http://127.0.0.1:6060/readyz"
-          "--health-interval=30s"
-          "--health-start-period=180s"
-          "--health-on-failure=kill"
         ];
       };
       penpot-exporter = {
@@ -189,10 +170,6 @@ in
         extraOptions = containerOptions ++ [
           "--memory=1g"
           "--cpus=1"
-          (nodeHealth 6061)
-          "--health-interval=30s"
-          "--health-start-period=60s"
-          "--health-on-failure=kill"
         ];
       };
       penpot-mcp = {
@@ -202,10 +179,6 @@ in
         extraOptions = containerOptions ++ [
           "--memory=512m"
           "--cpus=0.5"
-          (nodeHealth 4401)
-          "--health-interval=30s"
-          "--health-start-period=60s"
-          "--health-on-failure=kill"
         ];
       };
       penpot-frontend = {
@@ -225,10 +198,6 @@ in
         extraOptions = containerOptions ++ [
           "--memory=256m"
           "--cpus=0.5"
-          "--health-cmd=bash -c ': > /dev/tcp/127.0.0.1/8080'"
-          "--health-interval=30s"
-          "--health-start-period=60s"
-          "--health-on-failure=kill"
         ];
       };
     };
