@@ -67,77 +67,73 @@
     ];
     rules = [
       ''
-          groups:
-            - name: headscale
-              rules:
-                - alert: HeadscaleServiceUnavailable
-                  expr: up{job="headscale"} != 1
-                  for: 5m
-                  labels:
-                    severity: critical
-                  annotations:
-                    summary: Headscale local metrics endpoint is unavailable
-                - alert: HeadscaleEdgeUnavailable
-                  expr: probe_success{job="headscale-edge"} != 1
-                  for: 5m
-                  labels:
-                    severity: critical
-                  annotations:
-                    summary: Headscale local HTTPS edge is unavailable
-            - name: garage
-              rules:
-                - alert: GarageServiceUnavailable
-                  expr: up{job="garage"} != 1
-                  for: 5m
-                  labels:
-                    severity: critical
-                  annotations:
-                    summary: Garage metrics endpoint is unavailable
-                - alert: GarageStorageReserveLow
-                  expr: node_filesystem_avail_bytes{host="habiki",mountpoint="/",fstype!~"tmpfs|fuse.lxcfs|overlay|squashfs"} < 536870912000
-                  for: 15m
-                  labels:
-                    severity: warning
-                  annotations:
-                    summary: Garage host storage has less than the 500 GiB reserve
-                    description: Free space on Habiki's persistent Garage filesystem is below the required recovery reserve.
-            - name: xrdp-pki
-              rules:
-                - alert: XrdpCrlUnavailable
-                  expr: probe_success{job="xrdp-crl-edge"} != 1 or absent(probe_success{job="xrdp-crl-edge"})
-                  for: 5m
-                  labels:
-                    severity: critical
-                  annotations:
-                    summary: Private XRDP HTTPS CRL endpoint is unavailable
-                - alert: XrdpCrlInvalidOrStale
-                  expr: xrdp_crl_valid{job="xrdp-pki"} != 1 or absent(xrdp_crl_valid{job="xrdp-pki"}) or time() - xrdp_crl_check_timestamp_seconds{job="xrdp-pki"} > 900
-                  for: 5m
-                  labels:
-                    severity: critical
-                  annotations:
-                    summary: XRDP CRL signature, freshness or monitor failed
-                - alert: XrdpCrlRenewalOverdue
-                  expr: xrdp_crl_next_update_timestamp_seconds{job="xrdp-pki"} - time() < 172800 or time() - xrdp_crl_backup_timestamp_seconds{job="xrdp-pki"} > 129600
-                  for: 15m
-                  labels:
-                    severity: warning
-                  annotations:
-                    summary: XRDP CRL refresh or remote issuer backup is overdue
-            - name: forgejo
-              rules:
-                - alert: ForgejoServiceUnavailable
-                  expr: up{job="forgejo",service="forgejo"} != 1
-                  for: 5m
-                  labels:
-                    severity: critical
-                  annotations:
-                    summary: Forgejo private metrics endpoint is unavailable
-                    description: The loopback /metrics scrape failed for 5 minutes; the web process or its database is likely down.
-        # Service modules append extra alert groups to this document by
-        # lib.mkAfter-ing their indented group here (the penpot module does
-        # this); the list concatenates into one YAML document, so no other
-        # module may emit another top-level `groups:` key.
+        groups:
+          - name: headscale
+            rules:
+              - alert: HeadscaleServiceUnavailable
+                expr: up{job="headscale"} != 1
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: Headscale local metrics endpoint is unavailable
+              - alert: HeadscaleEdgeUnavailable
+                expr: probe_success{job="headscale-edge"} != 1
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: Headscale local HTTPS edge is unavailable
+          - name: garage
+            rules:
+              - alert: GarageServiceUnavailable
+                expr: up{job="garage"} != 1
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: Garage metrics endpoint is unavailable
+              - alert: GarageStorageReserveLow
+                expr: node_filesystem_avail_bytes{host="habiki",mountpoint="/",fstype!~"tmpfs|fuse.lxcfs|overlay|squashfs"} < 536870912000
+                for: 15m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: Garage host storage has less than the 500 GiB reserve
+                  description: Free space on Habiki's persistent Garage filesystem is below the required recovery reserve.
+          - name: xrdp-pki
+            rules:
+              - alert: XrdpCrlUnavailable
+                expr: probe_success{job="xrdp-crl-edge"} != 1 or absent(probe_success{job="xrdp-crl-edge"})
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: Private XRDP HTTPS CRL endpoint is unavailable
+              - alert: XrdpCrlInvalidOrStale
+                expr: xrdp_crl_valid{job="xrdp-pki"} != 1 or absent(xrdp_crl_valid{job="xrdp-pki"}) or time() - xrdp_crl_check_timestamp_seconds{job="xrdp-pki"} > 900
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: XRDP CRL signature, freshness or monitor failed
+              - alert: XrdpCrlRenewalOverdue
+                expr: xrdp_crl_next_update_timestamp_seconds{job="xrdp-pki"} - time() < 172800 or time() - xrdp_crl_backup_timestamp_seconds{job="xrdp-pki"} > 129600
+                for: 15m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: XRDP CRL refresh or remote issuer backup is overdue
+          - name: forgejo
+            rules:
+              - alert: ForgejoServiceUnavailable
+                expr: up{job="forgejo",service="forgejo"} != 1
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: Forgejo private metrics endpoint is unavailable
+                  description: The loopback /metrics scrape failed for 5 minutes; the web process or its database is likely down.
       ''
     ];
     scrapeConfigs = [

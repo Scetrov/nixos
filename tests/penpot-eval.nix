@@ -61,6 +61,14 @@ assert builtins.elem "penpot-prepare-env.service"
 assert builtins.length cfg.systemd.services.penpot-prepare-env.serviceConfig.LoadCredential == 4;
 assert builtins.elem "d /var/lib/penpot/postgres 0700 - - -" cfg.systemd.tmpfiles.rules;
 assert builtins.elem "d /var/lib/penpot/assets 0755 - - -" cfg.systemd.tmpfiles.rules;
+# The Penpot alert ships as a standalone rule file (its own rule_files entry),
+# NOT concatenated into the shared `rules` document, so its indentation cannot
+# collide with another module's groups: key. There must be exactly one rule
+# file and the shared rules document must carry no Penpot group.
+assert builtins.length cfg.services.prometheus.ruleFiles == 1;
+assert builtins.all (
+  rule: builtins.match ".*PenpotServiceUnavailable.*" rule == null
+) cfg.services.prometheus.rules;
 {
   images = builtins.mapAttrs (_: c: c.image) containers;
   inherit (backend) environment;
@@ -71,6 +79,7 @@ assert builtins.elem "d /var/lib/penpot/assets 0755 - - -" cfg.systemd.tmpfiles.
   readinessScrape = builtins.filter (
     s: s.job_name == "penpot-edge"
   ) cfg.services.prometheus.scrapeConfigs;
+  ruleFiles = builtins.map builtins.toString cfg.services.prometheus.ruleFiles;
   rules = cfg.services.prometheus.rules;
   prepareScript = cfg.systemd.services.penpot-prepare-env.serviceConfig.ExecStart;
 }

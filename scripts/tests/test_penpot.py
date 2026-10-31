@@ -154,7 +154,15 @@ class ConfigurationTests(unittest.TestCase):
 
     def test_health_and_existing_telemetry_are_wired(self):
         self.assertEqual(len(self.config["readinessScrape"]), 1)
-        self.assertIn("PenpotServiceUnavailable", "\n".join(self.config["rules"]))
+        # The alert ships as a standalone rule file (its own rule_files entry)
+        # rather than being concatenated into the shared rules document, so it
+        # cannot collide with another module's groups: key or indentation.
+        self.assertEqual(len(self.config["ruleFiles"]), 1)
+        self.assertTrue(self.config["ruleFiles"][0].startswith("/nix/store/"))
+        source = (MODULES / "penpot.nix").read_text()
+        self.assertIn('writeText "penpot-prometheus.rules"', source)
+        self.assertIn("PenpotServiceUnavailable", source)
+        self.assertNotIn("PenpotServiceUnavailable", "\n".join(self.config["rules"]))
         for name, options in self.config["healthOptions"].items():
             with self.subTest(name=name):
                 self.assertIn("--log-driver=journald", options)
