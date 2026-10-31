@@ -8,6 +8,7 @@
     ./modules/caddy.nix
     ./modules/xrdp-crl.nix
     ./modules/dependency-track.nix
+    ./modules/penpot.nix
     ./modules/frontier-indexer.nix
     ./modules/forgejo.nix
     ./modules/grafana.nix
@@ -108,6 +109,7 @@
   # Actions/runner is deferred; retain experimental code without activating it.
   scetrov.services.forgejo.runner.enable = false;
   scetrov.services.dependency-track.enable = true;
+  scetrov.services.penpot.enable = true;
   scetrov.services.github-sbom-collector = {
     enable = true;
     reportOnly = false;

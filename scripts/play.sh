@@ -24,6 +24,7 @@ Options:
                                                 no channel updates or blanket container restarts)
                            - artcraft         : Habiki-only official WASM publication, branding & SSO
                            - dependency-track : Dependency Track deployment & configuration
+                           - penpot : Penpot host services (provision identity through tofu.sh first)
                            - filebrowser      : Habiki Documents service: identity, secrets, runtime and
                                                 verified scopes (requires --limit habiki; standalone tag)
                            - miniflux         : Habiki feed reader: provision OIDC, refresh credentials,
@@ -118,6 +119,25 @@ has_tag() {
     done
     return 1
 }
+
+if has_tag penpot; then
+    if [[ "$LIMIT" != "habiki" || "$TAGS" != "penpot" ]]; then
+        echo "Error: penpot requires --limit habiki and cannot be combined with other tags." >&2
+        exit 1
+    fi
+    if [[ "$SKIP_GENERATED_REFRESH" == true ]]; then
+        echo "Error: penpot requires authoritative generated-secret refresh." >&2
+        exit 1
+    fi
+    for argument in "${EXTRA_ARGS[@]}"; do
+        case "$argument" in
+            --limit|--limit=*|-l|-l?*|--tags|--tags=*|-t|-t?*|--skip-tags|--skip-tags=*)
+                echo "Error: penpot target/tag overrides after -- are not supported." >&2
+                exit 1
+                ;;
+        esac
+    done
+fi
 
 MINIFLUX_DEPLOY=false
 if has_tag miniflux; then
@@ -319,7 +339,7 @@ needs_generated_refresh() {
     IFS=',' read -ra tag_list <<< "$tags"
     for tag in "${tag_list[@]}"; do
         case "${tag// /}" in
-            authentik|nixos|dependency-track|secrets|forgejo|miniflux|immich)
+            authentik|nixos|dependency-track|secrets|forgejo|miniflux|immich|penpot)
                 return 0
                 ;;
         esac

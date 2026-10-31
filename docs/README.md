@@ -22,6 +22,8 @@ they are not fresh health checks or certification of untested clients.
   authorization, including the distinction between operator and agent evidence.
 - [Home Assistant](home-assistant.md): configuration ownership, native OIDC,
   Matter/Thread, Bluetooth discovery gaps and private environmental metrics.
+- [Penpot](penpot.md): native OIDC, remote MCP keys, local-only persistence,
+  deployment and pending live acceptance.
 - [Dependency-Track](dependency-track.md) and
   [OIDC auto-login decision](dependency-track-oidc-autologin.md).
 

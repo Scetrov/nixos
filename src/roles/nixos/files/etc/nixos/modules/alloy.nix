@@ -51,6 +51,13 @@
 
       rule {
         source_labels = ["__journal__systemd_unit"]
+        regex         = "(penpot-(prepare-env|network)|podman-penpot-(postgres|valkey|backend|frontend|exporter|mcp))\\.service"
+        replacement   = "penpot"
+        target_label  = "service"
+      }
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
         regex         = "github-sbom-collector\\.service"
         replacement   = "github-sbom-collector"
         target_label  = "service"

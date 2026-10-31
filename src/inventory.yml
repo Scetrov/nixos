@@ -28,6 +28,7 @@ all:
       miniflux_enabled: true
       miniflux_subscriptions_enabled: true
       immich_enabled: true
+      penpot_enabled: true
       dependency_track_config_enabled: true
       github_sbom_collector_enabled: true
       esphome_enabled: true

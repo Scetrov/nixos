@@ -13,13 +13,13 @@
     - role: local-dns
       tags: [ 'never', 'local-dns' ]
     - role: secrets
-      tags: [ 'secrets', 'nixos', 'authentik', 'hermes', 'dependency-track', 'frontier-indexer', 'forgejo', 'miniflux', 'immich' ]
+      tags: [ 'secrets', 'nixos', 'authentik', 'hermes', 'dependency-track', 'frontier-indexer', 'forgejo', 'miniflux', 'immich', 'penpot' ]
     - role: artcraft
       artcraft_enabled: "{{ inventory_hostname == 'habiki' }}"
       artcraft_publish: true
       tags: [ 'artcraft' ]
     - role: nixos
-      tags: [ 'nixos', 'hermes', 'dependency-track', 'frontier-indexer', 'forgejo', 'miniflux', 'immich' ]
+      tags: [ 'nixos', 'hermes', 'dependency-track', 'frontier-indexer', 'forgejo', 'miniflux', 'immich', 'penpot' ]
     - role: esphome
       tags: [ 'esphome' ]
     - role: authentik-config

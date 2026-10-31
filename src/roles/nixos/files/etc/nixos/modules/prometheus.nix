@@ -24,6 +24,15 @@
             follow_redirects: false
             tls_config:
               server_name: crl.net.scetrov.live
+        penpot_https:
+          prober: http
+          timeout: 10s
+          http:
+            fail_if_not_ssl: true
+            valid_status_codes: [200]
+            follow_redirects: false
+            tls_config:
+              server_name: penpot.net.scetrov.live
         filebrowser_https:
           prober: http
           timeout: 10s

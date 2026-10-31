@@ -55,6 +55,13 @@ repos:
         pass_filenames: false
         files: ^(config/artcraft\.yml|scripts/artcraft\.py|scripts/tests/test_artcraft(_configuration)?\.py|src/artcraft(-deploy)?\.yml|src/roles/artcraft/|src/roles/nixos/(tasks/branding\.yml|files/etc/nixos/(branding/|modules/(artcraft\.caddy|caddy\.nix|local-networking\.nix)))|terraform/(artcraft|authentik)\.tf|tests/artcraft-eval\.nix|scripts/play\.sh)
 
+      - id: penpot-configuration
+        name: Penpot deployment configuration
+        entry: python3 -m unittest scripts.tests.test_penpot scripts.tests.test_render_generated_secrets
+        language: system
+        pass_filenames: false
+        files: ^(terraform/(penpot\.tf|dashboards/service-catalog\.json)|tests/penpot-eval\.nix|scripts/(render_generated_secrets\.py|tests/test_(penpot|render_generated_secrets)\.py)|src/roles/nixos/files/etc/nixos/modules/(penpot.*|alloy\.nix|local-networking\.nix|prometheus\.nix))$
+
       - id: tofu-fmt
         name: tofu fmt
         entry: scripts/tofu.sh -- fmt -write=true
