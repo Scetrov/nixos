@@ -348,34 +348,33 @@
           {{ authentik_config_blueprint_name }}.
           status={{ authentik_config_blueprint_instance_after_apply.json.status | default('') }}
   always:
+    # Authentik can race task-log writes while cascading blueprint deletion,
+    # returning HTTP 500 (TaskLog -> Task foreign-key violation). Retry briefly,
+    # but still fail if the secret-bearing instance cannot be removed.
     - name: Remove the temporary managed blueprint instance from Authentik
       when:
-        - (authentik_config_blueprint_api_token | default('') | length) > 0
         - authentik_config_blueprint_instance_json is defined
         - authentik_config_blueprint_instance_json.pk is defined or authentik_config_blueprint_instance_json.instance_uuid is defined
       delegate_to: "{{ authentik_config_blueprint_delegate_host | default('localhost') }}"
-      ansible.builtin.shell: |
-        set -euo pipefail
-        curl --fail --silent --show-error --output /dev/null --write-out 'HTTP_STATUS:%{http_code}' \
-          --header 'Authorization: Bearer {{ authentik_config_blueprint_api_token }}' \
-          --request DELETE \
-          '{{ (authentik_config_blueprint_api_base_url_effective | default(authentik_config_api_base_url)) }}/managed/blueprints/{{ authentik_config_blueprint_instance_json.pk | default(authentik_config_blueprint_instance_json.instance_uuid) }}/'
-      changed_when: false
-      no_log: true
-
-    - name: Remove the temporary managed blueprint instance from Authentik with an Authentik session
-      when:
-        - (authentik_config_blueprint_api_token | default('') | length) == 0
-        - authentik_config_blueprint_instance_json is defined
-        - authentik_config_blueprint_instance_json.pk is defined or authentik_config_blueprint_instance_json.instance_uuid is defined
-      delegate_to: localhost
-      ansible.builtin.shell: |
-        set -euo pipefail
-        curl --fail --silent --show-error --output /dev/null --write-out 'HTTP_STATUS:%{http_code}' \
-          --header 'Cookie: {{ authentik_config_blueprint_cookie_header }}' \
-          --header 'X-CSRFToken: {{ authentik_config_blueprint_csrf_token }}' \
-          --request DELETE \
-          '{{ (authentik_config_blueprint_api_base_url_effective | default(authentik_config_api_base_url)) }}/managed/blueprints/{{ authentik_config_blueprint_instance_json.pk | default(authentik_config_blueprint_instance_json.instance_uuid) }}/'
+      ansible.builtin.uri:
+        url: >-
+          {{ (authentik_config_blueprint_api_base_url_effective | default(authentik_config_api_base_url)) }}/managed/blueprints/{{ authentik_config_blueprint_instance_json.pk | default(authentik_config_blueprint_instance_json.instance_uuid) }}/
+        method: DELETE
+        headers: >-
+          {{
+            {"Authorization": "Bearer " ~ authentik_config_blueprint_api_token}
+            if (authentik_config_blueprint_api_token | default('') | length) > 0
+            else {
+              "Cookie": authentik_config_blueprint_cookie_header,
+              "X-CSRFToken": authentik_config_blueprint_csrf_token,
+            }
+          }}
+        validate_certs: "{{ authentik_config_blueprint_validate_certs_effective | default(authentik_config_validate_certs) }}"
+        status_code: [204, 404]
+      register: authentik_config_blueprint_cleanup
+      until: authentik_config_blueprint_cleanup.status | default(-1) in [204, 404]
+      retries: 5
+      delay: 2
       changed_when: false
       no_log: true
 

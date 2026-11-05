@@ -430,6 +430,19 @@ Observed useful fields:
 
 Used to remove temporary blueprint instances after reconciliation.
 
+On Habiki's `2026.8.3` build, deletion immediately after apply can return HTTP
+`500` with a `TaskLog -> Task` foreign-key violation while task logs are still
+being written. The `always` cleanup uses `ansible.builtin.uri` for both bearer
+and session authentication, with up to five retries at two-second intervals.
+HTTP `204` and `404` mean cleanup is complete; exhausted retries still fail
+rather than silently retaining secret-bearing blueprint content. Credentials
+and response details remain protected by `no_log`.
+
+Run the offline regression with
+`python3 -m unittest scripts.tests.test_authentik_blueprint_cleanup`. It exercises
+the actual cleanup tasks against a local API stub, including transient failures,
+both authentication methods, an already-absent instance, and persistent failure.
+
 ### OAuth Scope Mappings
 
 #### `GET /api/v3/propertymappings/provider/scope/?managed=...`

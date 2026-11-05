@@ -41,6 +41,13 @@ repos:
         pass_filenames: false
         files: ^(src/roles/authentik-config/|scripts/tests/test_authentik_group_preservation\.py$)
 
+      - id: authentik-blueprint-cleanup
+        name: Authentik blueprint cleanup retries
+        entry: python3 -m unittest scripts.tests.test_authentik_blueprint_cleanup
+        language: system
+        pass_filenames: false
+        files: ^(src/roles/authentik-config/tasks/deploy-blueprint\.yml|scripts/tests/test_authentik_blueprint_cleanup\.py)$
+
       - id: authentik-passkey-configuration
         name: Authentik passkey-first configuration
         entry: python3 -m unittest scripts.tests.test_authentik_passkey_flows scripts.tests.test_authentik_login scripts.tests.test_tofu_fixture
