@@ -65,7 +65,7 @@ RUN mkdir -p "${NIX_CONF_DIR}" \
     && nix profile install \
         nixpkgs#gitleaks \
         nixpkgs#go \
-        nixpkgs#nodejs_24 \
+        nixpkgs#nodejs_26 \
         nixpkgs#nixos-generators \
         nixpkgs#nixfmt-rfc-style \
         nixpkgs#niv \

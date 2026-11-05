@@ -18,7 +18,7 @@ in
       go_1_27
       niv
       nixos-generators
-      nodejs_24
+      nodejs_26
       osv-scanner
       pnpm
       networkmanager-openvpn
