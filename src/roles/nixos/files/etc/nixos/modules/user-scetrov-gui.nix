@@ -69,7 +69,6 @@ in
       unstable.codex
       unstable.cursor-cli
       unstable.dotnet-ef
-      unstable.figma-agent
       unstable.insomnia
       unstable.keepassxc
       unstable.obsidian
