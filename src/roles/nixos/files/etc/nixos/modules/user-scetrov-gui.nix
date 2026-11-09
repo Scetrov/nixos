@@ -66,7 +66,6 @@ in
       unstable.bun
       unstable.chromium
       unstable.code-cursor
-      unstable.codex
       unstable.cursor-cli
       unstable.dotnet-ef
       unstable.insomnia
