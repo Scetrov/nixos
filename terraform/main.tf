@@ -8,7 +8,7 @@ terraform {
       source = "goauthentik/authentik"
       # Keep the provider SDK on the deployed Authentik 2026.8 release line.
       # Server 2026.8.3 and provider 2026.8.0 share the same API contract.
-      version = "2026.8.0"
+      version = "2026.8.2"
     }
     random = {
       source  = "hashicorp/random"
@@ -21,7 +21,7 @@ terraform {
     }
     grafana = {
       source  = "grafana/grafana"
-      version = "4.53.0"
+      version = "4.54.0"
     }
     garage = {
       source  = "xenOs76/garage"
