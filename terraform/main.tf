@@ -21,7 +21,7 @@ terraform {
     }
     grafana = {
       source  = "grafana/grafana"
-      version = "4.54.0"
+      version = "4.55.0"
     }
     garage = {
       source  = "xenOs76/garage"
