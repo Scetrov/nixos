@@ -59,7 +59,7 @@ in
     packages = with pkgs; [
       charles
       discord
-      jetbrains.rider
+      unstable.jetbrains.rider
       nerd-fonts.fira-code
       sqlite
       unstable.antigravity-hub
